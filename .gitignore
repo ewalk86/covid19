@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.PDF
+*.RDS
+*.csv
+*.docx
+*.tex
+*.pptx
+*.html
+Input
+Output

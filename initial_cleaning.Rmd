@@ -1,0 +1,107 @@
+---
+title: "MCCHD Covid-19 initial data cleaning"
+author: "Ethan Walker"
+date: "Started 2 April 2020, Updated 2 April 2020"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, 
+                      include = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+library(readxl)
+library(naniar)
+library(lubridate)
+library(zoo)
+library(eeptools)
+library(plotly)
+library(knitr)
+jv_palette <- c("#330099","#CC0066","#FF6633", 
+                 "#0099CC", "#FF9900","#CC6633",
+                  "#FF3366", "#33CC99", "#33999")
+```
+
+
+```{r}
+covid_data <- read_xlsx("Input/mcchd_covid_data_20200402.xlsx")
+```
+
+
+```{r}
+covid_clean <- covid_data %>% 
+   mutate(DOB = ymd(DOB),
+          age = round(age_calc(DOB, units = "years"), digits = 1),
+          age_group = cut(age, breaks = c(0, 20, 30, 40, 50, 65, 110),
+                          labels = c("<20", "20-29", "30-39", "40-49",
+                                     "50-64", "65+"), right = FALSE)) %>% 
+   rename(gender = `GENDER (F/M)`,
+          healthcare_worker = `HEALTHCARE WORKER (Y/N)`,
+          symptoms = `SYMPTOMS? (Y/N)`,
+          symptom_type = `IF YES, TYPE OF SX.`,
+          symptom_onset = `DATE OF SX. ONSET`,
+          test_date = `TEST DATE`,
+          test_lab = LAB,
+          contact_with_case = `CONTACT TO CONFIRMED CASE (Y/N)`,
+          travel_hx = `TRAVEL HX. (Y/N)`,
+          hospitalized = `HOSPITALIZED (Y/N)`,
+          ventilated = `IF YES, VENTILATED?`,
+          discharge_date = `IF HOSPITALIZED, DISCHARGE DATE`,
+          chronic_conditions = `CHRONIC HEALTH CONDITIONS? (Y/N)`,
+          chronic_conditions_type = `IF YES, DESCRIBE:`,
+          number_contacts = `# OF CONTACTS`,
+          dob = DOB,
+          zipcode = ZIPCODE) %>% 
+   select(dob, age, age_group, gender:number_contacts) %>% 
+   mutate(symptom_cough = grepl("COUGH|MILD COUGH", symptom_type),
+          symptom_fever = grepl("FEVER", symptom_type),
+          symptom_fatigue = grepl("FATIGUE", symptom_type),
+          symptom_nv = grepl("NAUSEA|N/V", symptom_type),
+          symptom_sorethroat = grepl("SORE THROAT", symptom_type),
+          symptom_chills = grepl("CHILL", symptom_type),
+          symptom_sob = grepl("SOB", symptom_type),
+          symptom_lethargy = grepl("LETHARGY", symptom_type),
+          symptom_diarrhea = grepl("DIARRHEA", symptom_type),
+          symptom_sneezing = grepl("SNEEZING", symptom_type),
+          symptom_congestion = grepl("CONGESTION", symptom_type),
+          symptom_runny_nose = grepl("RUNNY NOSE", symptom_type),
+          symptom_body_aches = grepl("BODY ACHES", symptom_type),
+          symptom_headache = grepl("HEADACHE", symptom_type),
+          symptom_fever_chill = grepl("FEVER|CHILL", symptom_type),
+          symptom_fatigue_lethargy = grepl("FATIGUE|LETHARGY", symptom_type),
+          symptom_nv_diarrhea = grepl("NAUSEA|N/V|DIARRHEA", symptom_type),
+          symptom_aches = grepl("BODY ACHES|HEADACHE", symptom_type),
+          symptom_sinus_throat = grepl("CONGESTION|RUNNY NOSE|SNEEZING|SORE THROAT", symptom_type),
+          symptom_respiratory = grepl("COUGH|MILD COUGH|SOB", symptom_type)) %>% 
+   mutate(symptom_onset = ymd(symptom_onset),
+          discharge_date = ymd(discharge_date),
+          chronic_conditions_type = if_else(is.na(chronic_conditions_type), "NA",
+                                                  chronic_conditions_type),
+          number_contacts_categorical = cut(number_contacts, breaks = c(0, 5, 10, 50),
+                                            labels = c("0 to 5", "5 to 10", "10+"),
+                                            right = FALSE)) %>% 
+   mutate(daily_count = 1,
+          gender = factor(gender, levels = c("M", "F"),
+                          labels = c("Male", "Female")),
+          contact_with_case = factor(contact_with_case,
+                                     levels = c("Y", "N", "UNKNOWN"),
+                                     labels = c("Yes", "No", "Unknown")),
+          travel_hx = factor(travel_hx, levels = c("Y", "N"),
+                             labels = c("Yes", "No")),
+          hospitalized = factor(hospitalized, levels = c("Y", "N"),
+                             labels = c("Yes", "No")),
+          ventilated = factor(ventilated,
+                                     levels = c("Y", "N", "N/A"),
+                                     labels = c("Yes", "No", "N/A")),
+          chronic_conditions = factor(chronic_conditions, levels = c("Y", "N"),
+                             labels = c("Yes", "No")))
+
+
+#write_rds(covid_clean, "Output/covid_data_clean.rds")
+```
+

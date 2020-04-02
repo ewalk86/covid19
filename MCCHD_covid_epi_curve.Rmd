@@ -1,0 +1,107 @@
+---
+title: "MCCHD Covid-19 Epi Curve"
+author: "Ethan Walker, University of Montanta"
+date: "Started 2 April 2020, Updated 2 April 2020"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, 
+                      include = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 8, fig.height = 6)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+library(readxl)
+library(naniar)
+library(lubridate)
+library(zoo)
+library(eeptools)
+library(plotly)
+library(knitr)
+jv_palette <- c("#330099","#CC0066","#FF6633", 
+                 "#0099CC", "#FF9900","#CC6633",
+                  "#FF3366", "#33CC99", "#33999")
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", 
+               "#0072B2", "#D55E00", "#CC79A7")
+```
+
+
+```{r}
+covid_data <- read_rds("Output/covid_data_clean.rds")
+```
+
+
+```{r}
+covid_plot_age <- covid_data %>% 
+   ggplot() +
+     geom_col(aes(symptom_onset, daily_count, fill = age_group), color = "black") +
+     labs(title = "MCCHD COVID-19", fill = "Age group",
+          subtitle = "Number of infections by date of symptom onset") +
+     scale_x_date(date_breaks = "2 days") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 25, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "white"),
+           axis.title.x = element_blank(),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) +
+           scale_fill_manual(values = cbPalette)
+covid_plot_age
+```
+
+
+```{r}
+covid_plot_gender <- covid_data %>% 
+   ggplot() +
+     geom_col(aes(symptom_onset, daily_count, fill = gender), color = "black") +
+     labs(title = "MCCHD COVID-19", fill = "Gender",
+          subtitle = "Number of infections by date of symptom onset") +
+     scale_x_date(date_breaks = "2 days") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 25, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "white"),
+           axis.title.x = element_blank(),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) +
+           scale_fill_manual(values = cbPalette)
+covid_plot_gender
+```
+
+
+
+```{r, eval=FALSE, include=FALSE}
+summary_count <- covid_data %>% 
+   select(-age, -zipcode) %>% 
+   group_by(gender) %>% 
+   mutate_if(is.logical, as.numeric) %>% 
+   summarise_if(is.numeric, sum, na.rm = TRUE) 
+summary_count
+
+
+summary_means <- covid_data %>% 
+   select(gender, age, number_contacts) %>% 
+   group_by(gender) %>% 
+   summarize_all(mean, na.rm = TRUE)
+summary_means
+```
+

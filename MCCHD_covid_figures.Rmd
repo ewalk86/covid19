@@ -1,0 +1,150 @@
+---
+title: "MCCHD Covid-19 Plots and Figures"
+author: "Ethan Walker, University of Montanta"
+date: "Started 2 April 2020, Updated 2 April 2020"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, 
+                      include = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 8, fig.height = 6)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+library(readxl)
+library(naniar)
+library(lubridate)
+library(zoo)
+library(eeptools)
+library(plotly)
+library(knitr)
+library(plotrix)
+jv_palette <- c("#330099","#CC0066","#FF6633", 
+                 "#0099CC", "#FF9900","#CC6633",
+                  "#FF3366", "#33CC99", "#33999")
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", 
+               "#0072B2", "#D55E00", "#CC79A7")
+```
+
+
+```{r}
+covid_data <- read_rds("Output/covid_data_clean.rds")
+```
+
+
+```{r}
+epi_curve_function <- function(data = covid_data, plot_fill, var_label) {
+
+covid_epi_curve <- data %>% 
+   rename(new_var = plot_fill) %>% 
+   ggplot() +
+     geom_col(aes(symptom_onset, daily_count, fill = new_var), color = "black") +
+     labs(title = "MCCHD COVID-19 infections by date of symptom onset", fill = "",
+          subtitle = var_label) +
+     scale_x_date(date_breaks = "2 days") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 16, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 25, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "white"),
+           axis.title.x = element_blank(),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) +
+           scale_fill_manual(values = cbPalette)
+covid_epi_curve
+
+}
+
+epi_curve_function(plot_fill = "gender", var_label = "Gender")
+epi_curve_function(plot_fill = "age_group", var_label = "Age group")
+epi_curve_function(plot_fill = "contact_with_case", var_label = "Hx contact with a Covid case")
+epi_curve_function(plot_fill = "travel_hx", var_label = "Hx travel")
+epi_curve_function(plot_fill = "hospitalized", var_label = "Hospitalized")
+epi_curve_function(plot_fill = "ventilated", var_label = "Ventilated")
+epi_curve_function(plot_fill = "chronic_conditions", var_label = "Chronic conditions")
+epi_curve_function(plot_fill = "chronic_conditions_type", var_label = "Chronic conditions type")
+epi_curve_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts")
+epi_curve_function(plot_fill = "symptom_fever_chill", var_label = "Fever/chills")
+epi_curve_function(plot_fill = "symptom_fatigue_lethargy", var_label = "Fatigue/lethargy")
+epi_curve_function(plot_fill = "symptom_nv_diarrhea", var_label = "Nausea/vomiting/diarrhea")
+epi_curve_function(plot_fill = "symptom_aches", var_label = "Head/body aches")
+epi_curve_function(plot_fill = "symptom_sinus_throat", var_label = "Sinus/throat symptoms")
+epi_curve_function(plot_fill = "symptom_respiratory", var_label = "Respiratory symptoms")
+```
+
+
+```{r}
+piechart_function <- function(data = covid_data, plot_fill, var_label) {
+
+chart_data <- data %>% 
+   rename(chart_var = plot_fill) %>% 
+   mutate(total_n = n()) %>% 
+   group_by(chart_var, total_n) %>% 
+   mutate(group_n = n()) %>% 
+   distinct(group_n) %>% 
+   mutate(group_percent = group_n/total_n*100) %>% 
+   ungroup()
+   
+covid_piechart <- chart_data %>% 
+   ggplot(aes("", group_n, fill = chart_var)) +
+     geom_bar(stat = "identity", color = "white", width = 1) +
+     coord_polar("y") +
+     geom_text(aes(label = paste0(round(group_percent), "%")), 
+               position = position_stack(vjust = 0.5),
+               color = "white", size = 6) +
+     labs(title = "MCCHD COVID-19 infections", fill = "",
+          subtitle = var_label) + 
+     theme_void() +
+     theme(title = element_text(size = 16, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black")) +
+           scale_fill_manual(values = cbPalette)
+covid_piechart
+
+}
+
+
+piechart_function(plot_fill = "gender", var_label = "Gender")
+piechart_function(plot_fill = "age_group", var_label = "Age group")
+piechart_function(plot_fill = "contact_with_case", var_label = "Hx contact with a Covid case")
+piechart_function(plot_fill = "travel_hx", var_label = "Hx travel")
+piechart_function(plot_fill = "hospitalized", var_label = "Hospitalized")
+piechart_function(plot_fill = "ventilated", var_label = "Ventilated")
+piechart_function(plot_fill = "chronic_conditions", var_label = "Chronic conditions")
+piechart_function(plot_fill = "chronic_conditions_type", var_label = "Chronic conditions type")
+piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts")
+piechart_function(plot_fill = "symptom_fever_chill", var_label = "Fever/chills")
+piechart_function(plot_fill = "symptom_fatigue_lethargy", var_label = "Fatigue/lethargy")
+piechart_function(plot_fill = "symptom_nv_diarrhea", var_label = "Nausea/vomiting/diarrhea")
+piechart_function(plot_fill = "symptom_aches", var_label = "Head/body aches")
+piechart_function(plot_fill = "symptom_sinus_throat", var_label = "Sinus/throat symptoms")
+piechart_function(plot_fill = "symptom_respiratory", var_label = "Respiratory symptoms")
+```
+
+
+```{r, eval=FALSE, include=FALSE}
+pie_data <- covid_data %>% 
+   mutate(total_n = n()) %>% 
+   group_by(age_group) %>% 
+   mutate(group_n = n(),
+          group_percent = round((group_n/total_n)*100), digits = 1) %>% 
+   group_by(age_group, group_percent) %>% 
+   distinct(group_n) %>% 
+   unite(age_group_labels, c("age_group", "group_percent"), sep = ": ") %>% 
+   ungroup()
+
+pie3D(pie_data$group_n, labels = pie_data$age_group_labels, main = "MCCHD Covid19 Cases", 
+      explode=0.1, radius=.9, labelcex = 1.2,  start=0.7)
+```
+
