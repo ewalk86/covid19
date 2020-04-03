@@ -1,7 +1,7 @@
 ---
-title: "MCCHD Covid-19 Plots and Figures"
+title: "MCCHD Covid-19 secondary plots and figures"
 author: "Ethan Walker, University of Montanta"
-date: "Started 2 April 2020, Updated 2 April 2020"
+date: "Started 2 April 2020, Updated 3 April 2020"
 output:
   pdf_document: default
   html_document:
@@ -131,6 +131,7 @@ piechart_function(plot_fill = "symptom_aches", var_label = "Head/body aches")
 piechart_function(plot_fill = "symptom_sinus_throat", var_label = "Sinus/throat symptoms")
 piechart_function(plot_fill = "symptom_respiratory", var_label = "Respiratory symptoms")
 ```
+
 
 
 ```{r, eval=FALSE, include=FALSE}

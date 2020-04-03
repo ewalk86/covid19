@@ -1,7 +1,7 @@
 ---
-title: "MCCHD Covid-19 Epi Curve"
+title: "MCCHD Covid-19 Figures"
 author: "Ethan Walker, University of Montanta"
-date: "Started 2 April 2020, Updated 2 April 2020"
+date: "Started 2 April 2020, Updated 3 April 2020"
 output:
   pdf_document: default
   html_document:
@@ -23,6 +23,9 @@ library(zoo)
 library(eeptools)
 library(plotly)
 library(knitr)
+library(gganimate)
+library(gapminder)
+library(ggthemes)
 jv_palette <- c("#330099","#CC0066","#FF6633", 
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
@@ -88,20 +91,171 @@ covid_plot_gender
 ```
 
 
+```{r}
+#Symptoms and gender
+covid_plot <- covid_data %>% 
+   pivot_longer(cols = c(symptom_fever_chill:symptom_respiratory),
+                names_to = "variable", values_to = "values") %>% 
+   group_by(variable, gender) %>% 
+   mutate(values = as.numeric(values),
+          values = sum(values)) %>% 
+   distinct(variable, .keep_all = TRUE) %>% 
+   ungroup() %>% 
+   arrange(gender, values) %>% 
+   mutate(variable = factor(variable,
+                            labels = c("Head/body aches", "Fatigue/lethargy",
+                                       "Fever/chills", "Nausea/Vomiting/Diarrhea",
+                                       "Cough/SOB", "Sinus/throat"))) %>% 
+   ggplot(aes(x = variable, y = values, fill = gender)) +   
+     geom_bar(stat = "identity", width = .6) +   
+     labs(title = "Cases with symptoms, by gender", y = "Count", x = "", fill = "") +
+     scale_y_continuous(breaks = c(seq(0, 12, 2)), labels = c(seq(0, 12, 2))) +
+     coord_flip() +
+     theme_minimal() +
+     theme(plot.title = element_text(hjust = .5),
+           strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 25, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "white"),
+           axis.title.x = element_blank(),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) + 
+     scale_fill_manual(values = cbPalette)
+covid_plot
 
-```{r, eval=FALSE, include=FALSE}
-summary_count <- covid_data %>% 
-   select(-age, -zipcode) %>% 
-   group_by(gender) %>% 
-   mutate_if(is.logical, as.numeric) %>% 
-   summarise_if(is.numeric, sum, na.rm = TRUE) 
-summary_count
+
+#Symptoms and age group
+covid_plot <- covid_data %>% 
+   pivot_longer(cols = c(symptom_fever_chill:symptom_respiratory),
+                names_to = "variable", values_to = "values") %>% 
+   group_by(variable, age_group) %>% 
+   mutate(values = as.numeric(values),
+          values = sum(values)) %>% 
+   distinct(variable, .keep_all = TRUE) %>% 
+   ungroup() %>% 
+   arrange(age_group, values) %>% 
+   mutate(variable = factor(variable,
+                            labels = c("Head/body aches", "Fatigue/lethargy",
+                                       "Fever/chills", "Nausea/Vomiting/Diarrhea",
+                                       "Cough/SOB", "Sinus/throat"))) %>% 
+   ggplot(aes(x = variable, y = values, fill = age_group)) +   
+     geom_bar(stat = "identity", width = .6) +   
+     labs(title = "Cases with symptoms, by age group", y = "Count", x = "", fill = "") +
+     scale_y_continuous(breaks = c(seq(0, 12, 2)), labels = c(seq(0, 12, 2))) +
+     coord_flip() +
+     theme_minimal() +
+     theme(plot.title = element_text(hjust = .5),
+           strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 25, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "white"),
+           axis.title.x = element_blank(),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) + 
+     scale_fill_manual(values = cbPalette)
+covid_plot
+```
 
 
-summary_means <- covid_data %>% 
-   select(gender, age, number_contacts) %>% 
-   group_by(gender) %>% 
-   summarize_all(mean, na.rm = TRUE)
-summary_means
+```{r}
+# Travel hx and previous contact with case
+
+covid_plot <- covid_data %>% 
+   ggplot(aes(x=travel_hx, y=contact_with_case)) + 
+     geom_count(color="cornflowerblue")  +
+     labs(x = "Travel history", y = "Contact with another COVID case",
+          size = "Cases") +
+     scale_size(range = c(5,20), breaks = seq(0,20,1)) +
+     coord_fixed() +
+     theme_minimal() +
+     theme(panel.grid = element_line(colour = "black", size = 1),
+           axis.text.x = element_text(size = 14, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 14, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "black"),
+           axis.title.x = element_text(size = 16, colour = "black"),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_blank())
+covid_plot
+
+
+# Hospitalized and ventilated
+
+covid_plot <- covid_data %>% 
+   ggplot(aes(x=hospitalized, y=ventilated)) + 
+     geom_count(color="cornflowerblue")  +
+     labs(x = "Hospitalized", y = "Ventilated", size = "Cases") +
+     scale_size(range = c(5,20), breaks = seq(0,20,2)) +
+     coord_fixed() +
+     theme_minimal() +
+     theme(panel.grid = element_line(colour = "black", size = 1),
+           axis.text.x = element_text(size = 14, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 14, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "black"),
+           axis.title.x = element_text(size = 16, colour = "black"),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_blank())
+covid_plot
+
+
+# Hospitalized and chronic conditions
+
+covid_plot <- covid_data %>% 
+   ggplot(aes(x=hospitalized, y=chronic_conditions)) + 
+     geom_count(color="cornflowerblue")  +
+     labs(x = "Hospitalized", y = "Chronic conditions", size = "Cases") +
+     scale_size(range = c(5,20), breaks = seq(0,20,2)) +
+     coord_fixed() +
+     theme_minimal() +
+     theme(panel.grid = element_line(colour = "black", size = 1),
+           axis.text.x = element_text(size = 14, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 14, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "black"),
+           axis.title.x = element_text(size = 16, colour = "black"),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_blank())
+covid_plot
+
+
+# Healthcare working and number of contacts
+
+covid_plot <- covid_data %>% 
+   ggplot(aes(x=healthcare_worker, y=number_contacts_categorical)) + 
+     geom_count(color="cornflowerblue")  +
+     labs(x = "Healthcare worker", y = "Number of contacts", size = "Cases") +
+     scale_size(range = c(5,20), breaks = seq(0,20,2)) +
+     coord_fixed() +
+     theme_minimal() +
+     theme(panel.grid = element_line(colour = "black", size = 1),
+           axis.text.x = element_text(size = 14, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 14, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "black"),
+           axis.title.x = element_text(size = 16, colour = "black"),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_blank())
+covid_plot
 ```
 
