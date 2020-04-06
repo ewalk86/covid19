@@ -26,6 +26,7 @@ library(knitr)
 library(gganimate)
 library(gapminder)
 library(ggthemes)
+library(incidence)
 jv_palette <- c("#330099","#CC0066","#FF6633", 
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
@@ -168,6 +169,46 @@ covid_plot <- covid_data %>%
 covid_plot
 ```
 
+
+```{r}
+covid_data_table <- covid_data %>% 
+   mutate(contact_with_case = as.character(contact_with_case),
+          contact_with_case = if_else(contact_with_case == "No",
+                                      "Unknown", contact_with_case))
+
+save_table <- data.frame(table(covid_data_table$travel_hx, covid_data_table$contact_with_case))
+
+plot_table <- save_table %>% 
+   mutate(Var1 = as.character(Var1),
+          Var2 = as.character(Var2)) %>% 
+   mutate(spread_method = if_else(Var1 == "Yes" & Var2 == "Yes", 
+                                  "Infected traveling", "Other"),
+          spread_method = if_else(Var1 == "No" & Var2 == "Yes", 
+                                  "Infected locally", spread_method),
+          spread_method = if_else(Var1 == "Yes" & Var2 == "Unknown", 
+                                  "Traveled/unknown contact", spread_method),
+          spread_method = if_else(Var1 == "No" & Var2 == "Unknown", 
+                                  "No travel/unknown contact", spread_method)) %>% 
+   mutate(total_n = sum(Freq),
+          group_percent = round(Freq/total_n*100, digits = 0))
+   
+
+covid_piechart <- plot_table %>% 
+   ggplot(aes("", Freq, fill = spread_method)) +
+     geom_bar(stat = "identity", color = "black", width = 1) +
+     coord_polar("y") +
+     geom_text(aes(label = paste0(group_percent, "%")), 
+               position = position_stack(vjust = 0.5),
+               color = "white", size = 6) +
+     labs(title = "MCCHD COVID-19 infections", fill = "",
+          subtitle = "Travel and local spread") + 
+     theme_void() +
+     theme(title = element_text(size = 16, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black")) +
+           scale_fill_manual(values = cbPalette)
+covid_piechart
+```
 
 ```{r}
 # Travel hx and previous contact with case

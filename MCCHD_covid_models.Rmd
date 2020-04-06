@@ -1,0 +1,54 @@
+---
+title: "MCCHD Covid-19 model fit and doubling time"
+author: "Ethan Walker, University of Montanta"
+date: "Started 6 April 2020, Updated 6 April 2020"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, 
+                      include = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 8, fig.height = 6)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+library(readxl)
+library(naniar)
+library(lubridate)
+library(zoo)
+library(eeptools)
+library(plotly)
+library(knitr)
+library(gganimate)
+library(gapminder)
+library(ggthemes)
+library(incidence)
+jv_palette <- c("#330099","#CC0066","#FF6633", 
+                 "#0099CC", "#FF9900","#CC6633",
+                  "#FF3366", "#33CC99", "#33999")
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", 
+               "#0072B2", "#D55E00", "#CC79A7")
+```
+
+
+```{r}
+covid_data <- read_rds("Output/covid_data_clean.rds")
+```
+
+
+
+```{r}
+# from incidence package
+# https://cran.r-project.org/web/packages/incidence/vignettes/overview.html
+
+plot_data <- incidence(covid_data$symptom_onset_date)
+
+plot(plot_data)
+
+fit(plot_data)
+```
+
