@@ -29,77 +29,91 @@ jv_palette <- c("#330099","#CC0066","#FF6633",
 
 
 ```{r}
-covid_data <- read_xlsx("Input/mcchd_covid_data_20200402.xlsx")
+covid_data <- read_xlsx("Input/mcchd_covid_data_20200405.xlsx", skip = 1,
+                        col_names = c("dob", "gender", "zipcode", "healthcare_worker",
+                                      "symptoms", "symptom_type", "symptom_onset_date",
+                                      "symptom_onset_comment", "test_date", "test_lab",
+                                      "release_date", "contact_with_case", "travel_hx",
+                                      "hospitalized", "ventilated", "discharge_date",
+                                      "chronic_conditions", "chronic_conditions_type",
+                                      "number_contacts", "patient_died", 
+                                      "patient_died_date", "contact_case_number"),
+                        col_types = c("date", "text", "text", "text",
+                                      "text", "text", "date",
+                                      "text", "date", "text",
+                                      "date", "text", "text",
+                                      "text", "text", "date",
+                                      "text", "text",
+                                      "text", "text", 
+                                      "date", "text"))
 ```
 
 
 ```{r}
 covid_clean <- covid_data %>% 
-   mutate(DOB = ymd(DOB),
-          age = round(age_calc(DOB, units = "years"), digits = 1),
+   rownames_to_column() %>% 
+   mutate(case_number = as.numeric(rowname),
+          dob = ymd(dob),
+          age = round(age_calc(dob, units = "years"), digits = 1),
           age_group = cut(age, breaks = c(0, 20, 30, 40, 50, 65, 110),
                           labels = c("<20", "20-29", "30-39", "40-49",
                                      "50-64", "65+"), right = FALSE)) %>% 
-   rename(gender = `GENDER (F/M)`,
-          healthcare_worker = `HEALTHCARE WORKER (Y/N)`,
-          symptoms = `SYMPTOMS? (Y/N)`,
-          symptom_type = `IF YES, TYPE OF SX.`,
-          symptom_onset = `DATE OF SX. ONSET`,
-          test_date = `TEST DATE`,
-          test_lab = LAB,
-          contact_with_case = `CONTACT TO CONFIRMED CASE (Y/N)`,
-          travel_hx = `TRAVEL HX. (Y/N)`,
-          hospitalized = `HOSPITALIZED (Y/N)`,
-          ventilated = `IF YES, VENTILATED?`,
-          discharge_date = `IF HOSPITALIZED, DISCHARGE DATE`,
-          chronic_conditions = `CHRONIC HEALTH CONDITIONS? (Y/N)`,
-          chronic_conditions_type = `IF YES, DESCRIBE:`,
-          number_contacts = `# OF CONTACTS`,
-          dob = DOB,
-          zipcode = ZIPCODE) %>% 
-   select(dob, age, age_group, gender:number_contacts) %>% 
-   mutate(symptom_cough = grepl("COUGH|MILD COUGH", symptom_type),
-          symptom_fever = grepl("FEVER", symptom_type),
-          symptom_fatigue = grepl("FATIGUE", symptom_type),
-          symptom_nv = grepl("NAUSEA|N/V", symptom_type),
-          symptom_sorethroat = grepl("SORE THROAT", symptom_type),
-          symptom_chills = grepl("CHILL", symptom_type),
-          symptom_sob = grepl("SOB", symptom_type),
-          symptom_lethargy = grepl("LETHARGY", symptom_type),
-          symptom_diarrhea = grepl("DIARRHEA", symptom_type),
-          symptom_sneezing = grepl("SNEEZING", symptom_type),
-          symptom_congestion = grepl("CONGESTION", symptom_type),
-          symptom_runny_nose = grepl("RUNNY NOSE", symptom_type),
-          symptom_body_aches = grepl("BODY ACHES", symptom_type),
-          symptom_headache = grepl("HEADACHE", symptom_type),
-          symptom_fever_chill = grepl("FEVER|CHILL", symptom_type),
-          symptom_fatigue_lethargy = grepl("FATIGUE|LETHARGY", symptom_type),
-          symptom_nv_diarrhea = grepl("NAUSEA|N/V|DIARRHEA", symptom_type),
-          symptom_aches = grepl("BODY ACHES|HEADACHE", symptom_type),
-          symptom_sinus_throat = grepl("CONGESTION|RUNNY NOSE|SNEEZING|SORE THROAT", symptom_type),
-          symptom_respiratory = grepl("COUGH|MILD COUGH|SOB", symptom_type)) %>% 
-   mutate(symptom_onset = ymd(symptom_onset),
+   select(case_number, dob, age, age_group, gender:contact_case_number) %>% 
+   mutate_if(is.character, tolower) %>% 
+   mutate(symptom_cough = grepl("COUGH|MILD COUGH", symptom_type, ignore.case = TRUE),
+          symptom_fever = grepl("FEVER", symptom_type, ignore.case = TRUE),
+          symptom_fatigue = grepl("FATIGUE", symptom_type, ignore.case = TRUE),
+          symptom_nv = grepl("NAUSEA|N/V", symptom_type, ignore.case = TRUE),
+          symptom_sorethroat = grepl("SORE THROAT", symptom_type, ignore.case = TRUE),
+          symptom_chills = grepl("CHILL", symptom_type, ignore.case = TRUE),
+          symptom_sob = grepl("SOB", symptom_type, ignore.case = TRUE),
+          symptom_lethargy = grepl("LETHARGY", symptom_type, ignore.case = TRUE),
+          symptom_diarrhea = grepl("DIARRHEA", symptom_type, ignore.case = TRUE),
+          symptom_sneezing = grepl("SNEEZING", symptom_type, ignore.case = TRUE),
+          symptom_congestion = grepl("CONGESTION", symptom_type, ignore.case = TRUE),
+          symptom_runny_nose = grepl("RUNNY NOSE", symptom_type, ignore.case = TRUE),
+          symptom_body_aches = grepl("BODY ACHES", symptom_type, ignore.case = TRUE),
+          symptom_headache = grepl("HEADACHE|HA", symptom_type, ignore.case = TRUE),
+          symptom_chest_pain = grepl("CHEST PAIN|CHEST TIGHTNESS", symptom_type, ignore.case = TRUE),
+          symptom_taste_smell = grepl("TASTE|SMELL", symptom_type, ignore.case = TRUE),
+          symptom_fever_chill = grepl("FEVER|CHILL|NIGHT SWEAT", symptom_type, ignore.case = TRUE),
+          symptom_fatigue_lethargy = grepl("FATIGUE|LETHARGY", symptom_type, ignore.case = TRUE),
+          symptom_nv_diarrhea = grepl("NAUSEA|N/V|DIARRHEA", symptom_type, ignore.case = TRUE),
+          symptom_aches = grepl("BODY ACHES|HEADACHE|MYALGIA|HA", symptom_type, ignore.case = TRUE),
+          symptom_sinus_throat = grepl("CONGESTION|RUNNY NOSE|SNEEZING|SORE THROAT|RHINORRHEA|SCRATCHY THROAT", 
+                                       symptom_type, ignore.case = TRUE),
+          symptom_respiratory = grepl("COUGH|MILD COUGH|SOB|COLD SX", symptom_type, ignore.case = TRUE)) %>% 
+   separate(healthcare_worker, c("healthcare_worker", "healthcare_worker_comment"), sep = " ") %>% 
+   separate(travel_hx, c("travel_hx", "travel_hx_comment"), sep = " ") %>% 
+   separate(number_contacts, c("number_contacts", "number_contacts_comment"), sep = " ") %>% 
+   separate(ventilated, c("ventilated", "ventilated_comment"), sep = "o, ") %>% 
+   mutate(symptom_onset_date = ymd(symptom_onset_date),
+          release_date = ymd(release_date),
           discharge_date = ymd(discharge_date),
-          chronic_conditions_type = if_else(is.na(chronic_conditions_type), "NA",
-                                                  chronic_conditions_type),
+          patient_died_date = ymd(patient_died_date),
+          number_contacts = as.numeric(number_contacts),
           number_contacts_categorical = cut(number_contacts, breaks = c(0, 5, 10, 50),
                                             labels = c("0 to 5", "5 to 10", "10+"),
                                             right = FALSE)) %>% 
    mutate(daily_count = 1,
-          gender = factor(gender, levels = c("M", "F"),
+          gender = factor(gender, levels = c("m", "f"),
                           labels = c("Male", "Female")),
           contact_with_case = factor(contact_with_case,
-                                     levels = c("Y", "N", "UNKNOWN"),
+                                     levels = c("y", "n", "unknown"),
                                      labels = c("Yes", "No", "Unknown")),
-          travel_hx = factor(travel_hx, levels = c("Y", "N"),
+          healthcare_worker = factor(healthcare_worker,
+                                     levels = c("y", "n"),
+                                     labels = c("Yes", "No")),
+          travel_hx = factor(travel_hx, levels = c("y", "n"),
                              labels = c("Yes", "No")),
-          hospitalized = factor(hospitalized, levels = c("Y", "N"),
+          hospitalized = factor(hospitalized, levels = c("y", "n"),
                              labels = c("Yes", "No")),
           ventilated = factor(ventilated,
-                                     levels = c("Y", "N", "N/A"),
+                                     levels = c("y", "n", "n/a"),
                                      labels = c("Yes", "No", "N/A")),
-          chronic_conditions = factor(chronic_conditions, levels = c("Y", "N"),
-                             labels = c("Yes", "No")))
+          chronic_conditions = factor(chronic_conditions, levels = c("y", "n"),
+                             labels = c("Yes", "No"))) %>% 
+   replace_with_na(replace = list(ventilated = "N/A"))
 
 
 #write_rds(covid_clean, "Output/covid_data_clean.rds")

@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 Figures"
 author: "Ethan Walker, University of Montanta"
-date: "Started 2 April 2020, Updated 3 April 2020"
+date: "Started 2 April 2020, Updated 6 April 2020"
 output:
   pdf_document: default
   html_document:
@@ -42,7 +42,7 @@ covid_data <- read_rds("Output/covid_data_clean.rds")
 ```{r}
 covid_plot_age <- covid_data %>% 
    ggplot() +
-     geom_col(aes(symptom_onset, daily_count, fill = age_group), color = "black") +
+     geom_col(aes(symptom_onset_date, daily_count, fill = age_group), color = "black") +
      labs(title = "MCCHD COVID-19", fill = "Age group",
           subtitle = "Number of infections by date of symptom onset") +
      scale_x_date(date_breaks = "2 days") +
@@ -68,7 +68,7 @@ covid_plot_age
 ```{r}
 covid_plot_gender <- covid_data %>% 
    ggplot() +
-     geom_col(aes(symptom_onset, daily_count, fill = gender), color = "black") +
+     geom_col(aes(symptom_onset_date, daily_count, fill = gender), color = "black") +
      labs(title = "MCCHD COVID-19", fill = "Gender",
           subtitle = "Number of infections by date of symptom onset") +
      scale_x_date(date_breaks = "2 days") +
@@ -109,7 +109,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x = variable, y = values, fill = gender)) +   
      geom_bar(stat = "identity", width = .6) +   
      labs(title = "Cases with symptoms, by gender", y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 12, 2)), labels = c(seq(0, 12, 2))) +
+     scale_y_continuous(breaks = c(seq(0, 20, 2)), labels = c(seq(0, 20, 2))) +
      coord_flip() +
      theme_minimal() +
      theme(plot.title = element_text(hjust = .5),
@@ -147,7 +147,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x = variable, y = values, fill = age_group)) +   
      geom_bar(stat = "identity", width = .6) +   
      labs(title = "Cases with symptoms, by age group", y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 12, 2)), labels = c(seq(0, 12, 2))) +
+     scale_y_continuous(breaks = c(seq(0, 20, 2)), labels = c(seq(0, 20, 2))) +
      coord_flip() +
      theme_minimal() +
      theme(plot.title = element_text(hjust = .5),
@@ -177,7 +177,7 @@ covid_plot <- covid_data %>%
      geom_count(color="cornflowerblue")  +
      labs(x = "Travel history", y = "Contact with another COVID case",
           size = "Cases") +
-     scale_size(range = c(5,20), breaks = seq(0,20,1)) +
+     scale_size(range = c(5,20), breaks = seq(0,20,2)) +
      coord_fixed() +
      theme_minimal() +
      theme(panel.grid = element_line(colour = "black", size = 1),
@@ -199,7 +199,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x=hospitalized, y=ventilated)) + 
      geom_count(color="cornflowerblue")  +
      labs(x = "Hospitalized", y = "Ventilated", size = "Cases") +
-     scale_size(range = c(5,20), breaks = seq(0,20,2)) +
+     scale_size(range = c(5,20), breaks = seq(0,20,4)) +
      coord_fixed() +
      theme_minimal() +
      theme(panel.grid = element_line(colour = "black", size = 1),
@@ -221,7 +221,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x=hospitalized, y=chronic_conditions)) + 
      geom_count(color="cornflowerblue")  +
      labs(x = "Hospitalized", y = "Chronic conditions", size = "Cases") +
-     scale_size(range = c(5,20), breaks = seq(0,20,2)) +
+     scale_size(range = c(5,20), breaks = seq(0,20,4)) +
      coord_fixed() +
      theme_minimal() +
      theme(panel.grid = element_line(colour = "black", size = 1),
@@ -243,7 +243,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x=healthcare_worker, y=number_contacts_categorical)) + 
      geom_count(color="cornflowerblue")  +
      labs(x = "Healthcare worker", y = "Number of contacts", size = "Cases") +
-     scale_size(range = c(5,20), breaks = seq(0,20,2)) +
+     scale_size(range = c(5,20), breaks = seq(0,20,4)) +
      coord_fixed() +
      theme_minimal() +
      theme(panel.grid = element_line(colour = "black", size = 1),
