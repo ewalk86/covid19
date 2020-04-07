@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 2 April 2020"
+date: "Started 2 April 2020, Updated 7 April 2020"
 output:
   pdf_document: default
   html_document:
@@ -29,7 +29,7 @@ jv_palette <- c("#330099","#CC0066","#FF6633",
 
 
 ```{r}
-covid_data <- read_xlsx("Input/mcchd_covid_data_20200405.xlsx", skip = 1,
+covid_data_initial <- read_xlsx("Input/mcchd_covid_data_20200405.xlsx", skip = 1,
                         col_names = c("dob", "gender", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
                                       "symptom_onset_comment", "test_date", "test_lab",
@@ -46,11 +46,32 @@ covid_data <- read_xlsx("Input/mcchd_covid_data_20200405.xlsx", skip = 1,
                                       "text", "text",
                                       "text", "text", 
                                       "date", "text"))
+
+
+covid_data_initial <- read_xlsx("Input/mcchd_covid_data_20200406.xlsx", skip = 1,
+                        col_names = c("dob", "gender", "zipcode", "healthcare_worker",
+                                      "symptoms", "symptom_type", "symptom_onset_date",
+                                      "symptom_onset_comment", "test_lab",
+                                      "release_date", "contact_with_case", "travel_hx",
+                                      "hospitalized", "ventilated", "discharge_date",
+                                      "chronic_conditions", "chronic_conditions_type",
+                                      "number_contacts", "patient_died", 
+                                      "patient_died_date", "contact_case_number",
+                                      "community_spread"),
+                        col_types = c("date", "text", "text", "text",
+                                      "text", "text", "date",
+                                      "text", "text",
+                                      "date", "text", "text",
+                                      "text", "text", "date",
+                                      "text", "text",
+                                      "text", "text", 
+                                      "date", "text",
+                                      "text"))
 ```
 
 
 ```{r}
-covid_clean <- covid_data %>% 
+covid_clean <- covid_data_initial %>% 
    rownames_to_column() %>% 
    mutate(case_number = as.numeric(rowname),
           dob = ymd(dob),
@@ -95,7 +116,7 @@ covid_clean <- covid_data %>%
           number_contacts_categorical = cut(number_contacts, breaks = c(0, 5, 10, 50),
                                             labels = c("0 to 5", "5 to 10", "10+"),
                                             right = FALSE)) %>% 
-   mutate(daily_count = 1,
+   mutate(case = 1,
           gender = factor(gender, levels = c("m", "f"),
                           labels = c("Male", "Female")),
           contact_with_case = factor(contact_with_case,
@@ -113,7 +134,19 @@ covid_clean <- covid_data %>%
                                      labels = c("Yes", "No", "N/A")),
           chronic_conditions = factor(chronic_conditions, levels = c("y", "n"),
                              labels = c("Yes", "No"))) %>% 
-   replace_with_na(replace = list(ventilated = "N/A"))
+   replace_with_na(replace = list(ventilated = "N/A")) %>% 
+   mutate(symptom_test_diff = as.duration(interval(symptom_onset_date, test_date)),
+          symptom_test_diff = as.numeric(symptom_test_diff)/86400,
+          mean_symptom_test_diff = mean(symptom_test_diff, na.rm = TRUE),
+          symptom_onset_date_new = as.POSIXct(symptom_onset_date),
+          symptom_onset_date_new = if_else(is.na(symptom_onset_date_new), 
+                                       test_date - mean_symptom_test_diff*86400,
+                                       symptom_onset_date_new),
+          symptom_onset_date_indicator = if_else(is.na(symptom_onset_date),
+                                                 1, 0)) %>% 
+   separate(symptom_onset_date_new, c("symptom_onset_date_new", "trash"), sep = " ") %>% 
+   mutate(symptom_onset_date_new = ymd(symptom_onset_date_new)) %>% 
+   select(-trash)
 
 
 #write_rds(covid_clean, "Output/covid_data_clean.rds")

@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 secondary plots and figures"
 author: "Ethan Walker, University of Montanta"
-date: "Started 2 April 2020, Updated 6 April 2020"
+date: "Started 2 April 2020, Updated 7 April 2020"
 output:
   powerpoint_presentation: default
   html_document:
@@ -43,7 +43,7 @@ epi_curve_function <- function(data = covid_data, plot_fill, var_label) {
 covid_epi_curve <- data %>% 
    rename(new_var = plot_fill) %>% 
    ggplot() +
-     geom_col(aes(symptom_onset_date, daily_count, fill = new_var), color = "black") +
+     geom_col(aes(symptom_onset_date, case, fill = new_var), color = "black") +
      labs(title = "MCCHD COVID-19 infections by date of symptom onset", fill = "",
           subtitle = var_label) +
      scale_x_date(date_breaks = "2 days") +

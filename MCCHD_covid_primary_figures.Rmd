@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 Figures"
 author: "Ethan Walker, University of Montanta"
-date: "Started 2 April 2020, Updated 6 April 2020"
+date: "Started 2 April 2020, Updated 7 April 2020"
 output:
   powerpoint_presentation: default
   html_document:
@@ -43,7 +43,7 @@ covid_data <- read_rds("Output/covid_data_clean.rds")
 ```{r}
 covid_plot_age <- covid_data %>% 
    ggplot() +
-     geom_col(aes(symptom_onset_date, daily_count, fill = age_group), color = "black") +
+     geom_col(aes(symptom_onset_date, case, fill = age_group), color = "black") +
      labs(title = "MCCHD COVID-19", fill = "Age group",
           subtitle = "Number of infections by date of symptom onset") +
      scale_x_date(date_breaks = "2 days") +
@@ -69,7 +69,7 @@ covid_plot_age
 ```{r}
 covid_plot_gender <- covid_data %>% 
    ggplot() +
-     geom_col(aes(symptom_onset_date, daily_count, fill = gender), color = "black") +
+     geom_col(aes(symptom_onset_date, case, fill = gender), color = "black") +
      labs(title = "MCCHD COVID-19", fill = "Gender",
           subtitle = "Number of infections by date of symptom onset") +
      scale_x_date(date_breaks = "2 days") +
