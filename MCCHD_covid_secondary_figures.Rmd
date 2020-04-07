@@ -3,7 +3,7 @@ title: "MCCHD Covid-19 secondary plots and figures"
 author: "Ethan Walker, University of Montanta"
 date: "Started 2 April 2020, Updated 6 April 2020"
 output:
-  pdf_document: default
+  powerpoint_presentation: default
   html_document:
     df_print: paged
 ---
@@ -65,23 +65,67 @@ covid_epi_curve <- data %>%
 covid_epi_curve
 
 }
+```
 
+```{r}
 epi_curve_function(plot_fill = "gender", var_label = "Gender")
+```
+
+```{r}
 epi_curve_function(plot_fill = "age_group", var_label = "Age group")
+```
+
+```{r}
 epi_curve_function(plot_fill = "contact_with_case", var_label = "Hx contact with a Covid case")
+```
+
+```{r}
 epi_curve_function(plot_fill = "travel_hx", var_label = "Hx travel")
+```
+
+```{r}
 epi_curve_function(plot_fill = "hospitalized", var_label = "Hospitalized")
+```
+
+```{r}
 epi_curve_function(plot_fill = "ventilated", var_label = "Ventilated")
+```
+
+```{r}
 epi_curve_function(plot_fill = "chronic_conditions", var_label = "Chronic conditions")
+```
+
+```{r}
 epi_curve_function(plot_fill = "chronic_conditions_type", var_label = "Chronic conditions type")
+```
+
+```{r}
 epi_curve_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts")
+```
+
+```{r}
 epi_curve_function(plot_fill = "symptom_fever_chill", var_label = "Fever/chills")
+```
+
+```{r}
 epi_curve_function(plot_fill = "symptom_fatigue_lethargy", var_label = "Fatigue/lethargy")
+```
+```{r}
 epi_curve_function(plot_fill = "symptom_nv_diarrhea", var_label = "Nausea/vomiting/diarrhea")
+```
+
+```{r}
 epi_curve_function(plot_fill = "symptom_aches", var_label = "Head/body aches")
+```
+
+```{r}
 epi_curve_function(plot_fill = "symptom_sinus_throat", var_label = "Sinus/throat symptoms")
+```
+
+```{r}
 epi_curve_function(plot_fill = "symptom_respiratory", var_label = "Respiratory symptoms")
 ```
+
 
 
 ```{r}
@@ -113,25 +157,162 @@ covid_piechart <- chart_data %>%
 covid_piechart
 
 }
+```
 
-
+```{r}
 piechart_function(plot_fill = "gender", var_label = "Gender")
+```
+
+```{r}
 piechart_function(plot_fill = "age_group", var_label = "Age group")
+```
+
+```{r}
 piechart_function(plot_fill = "contact_with_case", var_label = "Hx contact with a Covid case")
+```
+
+```{r}
 piechart_function(plot_fill = "travel_hx", var_label = "Hx travel")
+```
+
+```{r}
 piechart_function(plot_fill = "hospitalized", var_label = "Hospitalized")
+```
+
+```{r}
 piechart_function(plot_fill = "ventilated", var_label = "Ventilated")
+```
+```{r}
 piechart_function(plot_fill = "chronic_conditions", var_label = "Chronic conditions")
+```
+
+```{r}
 piechart_function(plot_fill = "chronic_conditions_type", var_label = "Chronic conditions type")
+```
+
+```{r}
 piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts")
+```
+```{r}
 piechart_function(plot_fill = "symptom_fever_chill", var_label = "Fever/chills")
+```
+
+```{r}
 piechart_function(plot_fill = "symptom_fatigue_lethargy", var_label = "Fatigue/lethargy")
+```
+
+```{r}
 piechart_function(plot_fill = "symptom_nv_diarrhea", var_label = "Nausea/vomiting/diarrhea")
+```
+
+```{r}
 piechart_function(plot_fill = "symptom_aches", var_label = "Head/body aches")
+```
+
+```{r}
 piechart_function(plot_fill = "symptom_sinus_throat", var_label = "Sinus/throat symptoms")
+```
+
+```{r}
 piechart_function(plot_fill = "symptom_respiratory", var_label = "Respiratory symptoms")
 ```
 
+
+```{r}
+# Travel hx and previous contact with case
+
+covid_plot <- covid_data %>% 
+   ggplot(aes(x=travel_hx, y=contact_with_case)) + 
+     geom_count(color="cornflowerblue")  +
+     labs(x = "Travel history", y = "Contact with another COVID case",
+          size = "Cases") +
+     scale_size(range = c(5,20), breaks = seq(0,20,2)) +
+     coord_fixed() +
+     theme_minimal() +
+     theme(panel.grid = element_line(colour = "black", size = 1),
+           axis.text.x = element_text(size = 14, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 14, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "black"),
+           axis.title.x = element_text(size = 16, colour = "black"),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_blank())
+covid_plot
+```
+
+
+```{r}
+# Hospitalized and ventilated
+
+covid_plot <- covid_data %>% 
+   ggplot(aes(x=hospitalized, y=ventilated)) + 
+     geom_count(color="cornflowerblue")  +
+     labs(x = "Hospitalized", y = "Ventilated", size = "Cases") +
+     scale_size(range = c(5,20), breaks = seq(0,20,4)) +
+     coord_fixed() +
+     theme_minimal() +
+     theme(panel.grid = element_line(colour = "black", size = 1),
+           axis.text.x = element_text(size = 14, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 14, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "black"),
+           axis.title.x = element_text(size = 16, colour = "black"),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_blank())
+covid_plot
+```
+
+
+```{r}
+# Hospitalized and chronic conditions
+
+covid_plot <- covid_data %>% 
+   ggplot(aes(x=hospitalized, y=chronic_conditions)) + 
+     geom_count(color="cornflowerblue")  +
+     labs(x = "Hospitalized", y = "Chronic conditions", size = "Cases") +
+     scale_size(range = c(5,20), breaks = seq(0,20,4)) +
+     coord_fixed() +
+     theme_minimal() +
+     theme(panel.grid = element_line(colour = "black", size = 1),
+           axis.text.x = element_text(size = 14, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 14, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "black"),
+           axis.title.x = element_text(size = 16, colour = "black"),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_blank())
+covid_plot
+```
+
+
+```{r}
+# Healthcare working and number of contacts
+
+covid_plot <- covid_data %>% 
+   ggplot(aes(x=healthcare_worker, y=number_contacts_categorical)) + 
+     geom_count(color="cornflowerblue")  +
+     labs(x = "Healthcare worker", y = "Number of contacts", size = "Cases") +
+     scale_size(range = c(5,20), breaks = seq(0,20,4)) +
+     coord_fixed() +
+     theme_minimal() +
+     theme(panel.grid = element_line(colour = "black", size = 1),
+           axis.text.x = element_text(size = 14, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 14, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "black"),
+           axis.title.x = element_text(size = 16, colour = "black"),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_blank())
+covid_plot
+```
 
 
 ```{r, eval=FALSE, include=FALSE}
