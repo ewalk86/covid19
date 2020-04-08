@@ -43,7 +43,7 @@ epi_curve_function <- function(data = covid_data, plot_fill, var_label) {
 covid_epi_curve <- data %>% 
    rename(new_var = plot_fill) %>% 
    ggplot() +
-     geom_col(aes(symptom_onset_date, case, fill = new_var), color = "black") +
+     geom_col(aes(symptom_onset_date_new, case, fill = new_var), color = "black") +
      labs(title = "MCCHD COVID-19 infections by date of symptom onset", fill = "",
           subtitle = var_label) +
      scale_x_date(date_breaks = "2 days") +

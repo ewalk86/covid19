@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 Figures"
 author: "Ethan Walker, University of Montanta"
-date: "Started 2 April 2020, Updated 7 April 2020"
+date: "Started 2 April 2020, Updated 8 April 2020"
 output:
   powerpoint_presentation: default
   html_document:
@@ -11,7 +11,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, eval = TRUE, 
                       include = TRUE, warning = FALSE, message = FALSE,
-                      fig.width = 8, fig.height = 6)
+                      fig.width = 10, fig.height = 6)
 ```
 
 ```{r, message=FALSE}
@@ -21,17 +21,18 @@ library(naniar)
 library(lubridate)
 library(zoo)
 library(eeptools)
-library(plotly)
 library(knitr)
-library(gganimate)
-library(gapminder)
+library(incidence)
+library(EpiEstim)
+library(earlyR)
 library(ggthemes)
 library(incidence)
+library(knitr)
 jv_palette <- c("#330099","#CC0066","#FF6633", 
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
-cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", 
-               "#0072B2", "#D55E00", "#CC79A7")
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", 
+               "#0072B2", "#D55E00", "#CC79A7", "#999999")
 ```
 
 
@@ -40,12 +41,41 @@ covid_data <- read_rds("Output/covid_data_clean.rds")
 ```
 
 
+R = mean number of new cases each infected person give rise to.
+
+Interpret R and doubling time with caution due to small sample size.
+
 ```{r}
-covid_plot_age <- covid_data %>% 
+covid_incidence <- incidence(covid_data$symptom_onset_date_new)
+
+serial_interval_mean <- 4
+serial_interval_sd <- 4.75
+
+r_results <- get_R(covid_incidence, 
+                   si_mean = serial_interval_mean,
+                   si_sd = serial_interval_sd)
+#r_results
+
+fit_results <- incidence::fit(covid_incidence)
+
+doubling_time <- round(fit_results$info$doubling)
+
+par(mar=c(4.5,4.5,6,2))
+plot(r_results)
+title(main = paste0("Current R and doubling time for Missoula County:
+We consider this data unreliable due to the small sample size;
+      please interpret with caution!", "\n", 
+" Doubling time = ", doubling_time, " days."))
+```
+
+
+```{r}
+covid_plot_onset <- covid_data %>% 
    ggplot() +
-     geom_col(aes(symptom_onset_date, case, fill = age_group), color = "black") +
-     labs(title = "MCCHD COVID-19", fill = "Age group",
-          subtitle = "Number of infections by date of symptom onset") +
+     geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator), 
+              color = "black") +
+     labs(title = "Number of infections by date of symptom onset", 
+          fill = "Onset date method") +
      scale_x_date(date_breaks = "2 days") +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -61,17 +91,60 @@ covid_plot_age <- covid_data %>%
            axis.line.x = element_line(colour = "black", size = 1.2), 
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) +
-           scale_fill_manual(values = cbPalette)
-covid_plot_age
+           scale_fill_manual(values = cbPalette) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "red", 
+              size = 1.2) +
+   geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=18)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "red", 
+              size = 1.2) +
+   geom_text(aes(x = as.Date("2020-03-28"), label = "Stay at home order", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=18)) 
+covid_plot_onset %>% 
+   add_incidence_fit(fit_results)
+```
+
+
+```{r}
+covid_plot_age <- covid_data %>% 
+   ggplot() +
+     geom_col(aes(symptom_onset_date_new, case, fill = age_group), color = "black") +
+     labs(title = "Number of infections by date of symptom onset", 
+          fill = "Age group") +
+     scale_x_date(date_breaks = "2 days") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 25, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "white"),
+           axis.title.x = element_blank(),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) +
+           scale_fill_manual(values = cbPalette) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "red", 
+              size = 1.2) +
+   geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "red", 
+              size = 1.2) +
+   geom_text(aes(x = as.Date("2020-03-28"), label = "Stay at home order", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) 
+covid_plot_age %>% 
+   add_incidence_fit(fit_results)
 ```
 
 
 ```{r}
 covid_plot_gender <- covid_data %>% 
    ggplot() +
-     geom_col(aes(symptom_onset_date, case, fill = gender), color = "black") +
-     labs(title = "MCCHD COVID-19", fill = "Gender",
-          subtitle = "Number of infections by date of symptom onset") +
+     geom_col(aes(symptom_onset_date_new, case, fill = gender), color = "black") +
+     labs(title = "Number of infections by date of symptom onset", fill = "Gender") +
      scale_x_date(date_breaks = "2 days") +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -87,8 +160,17 @@ covid_plot_gender <- covid_data %>%
            axis.line.x = element_line(colour = "black", size = 1.2), 
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) +
-           scale_fill_manual(values = cbPalette)
-covid_plot_gender
+           scale_fill_manual(values = cbPalette) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "red", 
+              size = 1.2) +
+   geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+   geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "red", 
+              size = 1.2) +
+   geom_text(aes(x = as.Date("2020-03-28"), label = "Stay at home order", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14))
+covid_plot_gender %>% 
+   add_incidence_fit(fit_results)
 ```
 
 
@@ -185,9 +267,9 @@ plot_table <- save_table %>%
    mutate(Var1 = as.character(Var1),
           Var2 = as.character(Var2)) %>% 
    mutate(spread_method = if_else(Var1 == "Yes" & Var2 == "Yes", 
-                                  "Infected traveling", "Other"),
+                                  "Traveled/known contact with case", "Other"),
           spread_method = if_else(Var1 == "No" & Var2 == "Yes", 
-                                  "Infected locally", spread_method),
+                                  "No travel/known contact with case", spread_method),
           spread_method = if_else(Var1 == "Yes" & Var2 == "Unknown", 
                                   "Traveled/unknown contact", spread_method),
           spread_method = if_else(Var1 == "No" & Var2 == "Unknown", 
@@ -200,11 +282,11 @@ covid_piechart <- plot_table %>%
    ggplot(aes("", Freq, fill = spread_method)) +
      geom_bar(stat = "identity", color = "black", width = 1) +
      coord_polar("y") +
-     geom_text(aes(label = paste0(group_percent, "%")), 
+     geom_text(aes(label = Freq), 
                position = position_stack(vjust = 0.5),
                color = "white", size = 6) +
      labs(title = "MCCHD COVID-19 infections", fill = "",
-          subtitle = "Travel and local spread") + 
+          subtitle = "Travel and contact with known cases (n)") + 
      theme_void() +
      theme(title = element_text(size = 16, colour = "black"),
            legend.text = element_text(size = 16, colour = "black"),
@@ -239,11 +321,11 @@ covid_piechart <- plot_table %>%
    ggplot(aes("", Freq, fill = hospitalized)) +
      geom_bar(stat = "identity", color = "black", width = 1) +
      coord_polar("y") +
-     geom_text(aes(label = paste0(group_percent, "%")), 
+     geom_text(aes(label = Freq), 
                position = position_stack(vjust = 0.5),
                color = "white", size = 6) +
      labs(title = "MCCHD COVID-19 infections", fill = "",
-          subtitle = "Hospitalized cases with ventilators") + 
+          subtitle = "Hospitalized cases with ventilators (n)") + 
      theme_void() +
      theme(title = element_text(size = 16, colour = "black"),
            legend.text = element_text(size = 16, colour = "black"),
@@ -277,11 +359,11 @@ covid_piechart <- plot_table %>%
    ggplot(aes("", Freq, fill = hospitalized)) +
      geom_bar(stat = "identity", color = "black", width = 1) +
      coord_polar("y") +
-     geom_text(aes(label = paste0(group_percent, "%")), 
+     geom_text(aes(label = Freq), 
                position = position_stack(vjust = 0.5),
                color = "white", size = 6) +
      labs(title = "MCCHD COVID-19 infections", fill = "",
-          subtitle = "Hospitalized cases with chronic conditions") + 
+          subtitle = "Hospitalized cases with chronic conditions (n)") + 
      theme_void() +
      theme(title = element_text(size = 16, colour = "black"),
            legend.text = element_text(size = 16, colour = "black"),
@@ -301,14 +383,14 @@ chart_data <- data %>%
    group_by(chart_var, total_n) %>% 
    mutate(group_n = n()) %>% 
    distinct(group_n) %>% 
-   mutate(group_percent = group_n/total_n*100) %>% 
+   mutate(group_percent = round(group_n/total_n*100)) %>% 
    ungroup()
    
 covid_piechart <- chart_data %>% 
    ggplot(aes("", group_n, fill = chart_var)) +
      geom_bar(stat = "identity", color = "black", width = 1) +
      coord_polar("y") +
-     geom_text(aes(label = paste0(round(group_percent), "%")), 
+     geom_text(aes(label = group_n), 
                position = position_stack(vjust = 0.5),
                color = "white", size = 6) +
      labs(title = "MCCHD COVID-19 infections", fill = "",
@@ -324,13 +406,13 @@ covid_piechart
 ```
 
 ```{r}
-piechart_function(plot_fill = "gender", var_label = "Gender")
+piechart_function(plot_fill = "gender", var_label = "Gender (n)")
 ```
 
 ```{r}
-piechart_function(plot_fill = "age_group", var_label = "Age group")
+piechart_function(plot_fill = "age_group", var_label = "Age group (n)")
 ```
 
 ```{r}
-piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts")
+piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts (n)")
 ```

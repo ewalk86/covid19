@@ -143,7 +143,8 @@ covid_clean <- covid_data_initial %>%
                                        test_date - mean_symptom_test_diff*86400,
                                        symptom_onset_date_new),
           symptom_onset_date_indicator = if_else(is.na(symptom_onset_date),
-                                                 1, 0)) %>% 
+                                                 "Estimated from test date",
+                                                 "Estimated by self-report")) %>% 
    separate(symptom_onset_date_new, c("symptom_onset_date_new", "trash"), sep = " ") %>% 
    mutate(symptom_onset_date_new = ymd(symptom_onset_date_new)) %>% 
    select(-trash)
