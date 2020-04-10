@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 model fit and doubling time"
 author: "Ethan Walker, University of Montanta"
-date: "Started 6 April 2020, Updated 7 April 2020"
+date: "Started 6 April 2020, Updated 9 April 2020"
 output:
   pdf_document: default
   html_document:
@@ -25,10 +25,15 @@ library(knitr)
 library(incidence)
 library(EpiEstim)
 library(earlyR)
+library(projections)
+library(distcrete)
+library(epitrix)
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", 
                "#0072B2", "#D55E00", "#CC79A7")
 ```
 ## The following code is mostly revised from:
+
+https://www.repidemicsconsortium.org/projects/ 
 
 https://www.r-bloggers.com/covid-19-epidemiology-with-r/
 
@@ -110,6 +115,38 @@ plot(fit_results)
 plot(covid_incidence) %>% 
    add_incidence_fit(fit_results)
 ```
+
+Projecting future incidence based on existing incidence data and R-value
+```{r}
+# https://www.repidemicsconsortium.org/projections/
+
+# We create a serial interval distribution using distcrete:
+
+cv <- serial_interval_sd / serial_interval_mean
+params <- gamma_mucv2shapescale(serial_interval_mean, cv)
+#params
+
+si <- distcrete("gamma", shape = params$shape,
+                scale = params$scale,
+                interval = 1, w = 0)
+si
+
+plot(1:50, si$d(1:50), type = "h", lwd = 3, col = "navy",
+     main = "Serial interval", xlab = "Days after onset",
+     ylab = "Relative infectiousness")
+
+set.seed(1)
+covid_projection <- project(covid_incidence, R = 1.2, si = si, n_days = 60, n_sim = 1000)
+covid_projection
+
+plot(covid_projection)
+
+projected_cumulate <- cumulate(covid_projection)
+plot(projected_cumulate)
+plot(covid_incidence) %>% 
+  add_projections(projected_cumulate, boxplots = FALSE)
+```
+
 
 
 ```{r, eval=FALSE, include=FALSE, echo=FALSE}
