@@ -1,11 +1,10 @@
 ---
 title: "MCCHD Covid-19 Figures"
 author: "Ethan Walker, University of Montanta"
-date: "Started 2 April 2020, Updated 8 April 2020"
-output:
-  powerpoint_presentation: default
-  html_document:
-    df_print: paged
+date: "Data as of April 5, 2020"
+output: pdf_document
+header-includes:
+    - \usepackage[labelformat=empty]{caption}
 ---
 
 ```{r setup, include=FALSE}
@@ -28,6 +27,7 @@ library(earlyR)
 library(ggthemes)
 library(incidence)
 library(knitr)
+library(kableExtra)
 jv_palette <- c("#330099","#CC0066","#FF6633", 
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
@@ -37,13 +37,78 @@ cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442",
 
 
 ```{r}
-covid_data <- read_rds("Output/covid_data_clean.rds")
+output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/Output/")
+output_file <- c("covid_data_clean.rds")
+
+covid_data <- read_rds(paste0(output_path, output_file))
 ```
 
 
-R = mean number of new cases each infected person give rise to.
+```{r}
+age_group_summary <- covid_data %>% 
+   mutate(total_cases = n(),
+          age_group_pop = if_else(age_group2 == "<18", 119600*0.188, 119600*0.656),
+          age_group_pop = if_else(age_group2 == "65+", 119600*0.156, age_group_pop)) %>% 
+   group_by(age_group2, age_group_pop) %>% 
+   summarize("Number of Individuals" = n()) %>% 
+   ungroup() %>% 
+   mutate("Proportion of Cases (%)" = 
+          round(`Number of Individuals`/(sum(`Number of Individuals`))*100),
+          "Rate per 10,000 Population" = 
+          round(`Number of Individuals`*age_group_pop/10000)) %>% 
+   rename("Data Category" = age_group2) %>% 
+   select(-age_group_pop)
 
-Interpret R and doubling time with caution due to small sample size.
+gender_summary <- covid_data %>% 
+   mutate(total_cases = n(),
+          gender_pop = if_else(gender == "Female", 119600*0.499, 119600*0.501)) %>% 
+   group_by(gender, gender_pop) %>% 
+   summarize("Number of Individuals" = n()) %>% 
+   ungroup() %>% 
+   mutate("Proportion of Cases (%)" = 
+          round(`Number of Individuals`/(sum(`Number of Individuals`))*100),
+          "Rate per 10,000 Population" = 
+          round(`Number of Individuals`*gender_pop/10000)) %>% 
+   rename("Data Category" = gender) %>% 
+   select(-gender_pop)
+
+travel_summary <- covid_data %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(travel_hx) %>% 
+   summarize("Number of Individuals" = n()) %>% 
+   ungroup() %>% 
+   mutate("Proportion of Cases (%)" = 
+          round(`Number of Individuals`/(sum(`Number of Individuals`))*100),
+          "Rate per 10,000 Population" = "NA") %>% 
+   rename("Data Category" = travel_hx) 
+
+contact_summary <- covid_data %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(contact_with_case) %>% 
+   summarize("Number of Individuals" = n()) %>% 
+   ungroup() %>% 
+   mutate("Proportion of Cases (%)" = 
+          round(`Number of Individuals`/(sum(`Number of Individuals`))*100),
+          "Rate per 10,000 Population" = "NA") %>% 
+   rename("Data Category" = contact_with_case) %>% 
+   na.exclude()
+
+
+covid_summary <- rbind(age_group_summary, gender_summary,
+                       travel_summary, contact_summary)
+
+
+kable(covid_summary, 
+      caption = "Missoula County COVID-19 Cases") %>% 
+   kable_styling() %>% 
+   pack_rows("Age Group (Years)", 1, 2) %>% 
+   pack_rows("Gender", 3, 4) %>% 
+   pack_rows("Travel History", 5, 6) %>% 
+   pack_rows("Contact with Known Case", 7, 9)
+
+```
+
+\clearpage  
 
 ```{r}
 covid_incidence <- incidence(covid_data$symptom_onset_date_new)
@@ -68,6 +133,7 @@ We consider this data unreliable due to the small sample size;
 " Doubling time = ", doubling_time, " days."))
 ```
 
+\pagebreak  
 
 ```{r}
 covid_plot_onset <- covid_data %>% 
@@ -95,15 +161,16 @@ covid_plot_onset <- covid_data %>%
    geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "red", 
               size = 1.2) +
    geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=18)) +
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
    geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "red", 
               size = 1.2) +
    geom_text(aes(x = as.Date("2020-03-28"), label = "Stay at home order", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=18)) 
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) 
 covid_plot_onset %>% 
    add_incidence_fit(fit_results)
 ```
 
+\pagebreak  
 
 ```{r}
 covid_plot_age <- covid_data %>% 
@@ -139,6 +206,7 @@ covid_plot_age %>%
    add_incidence_fit(fit_results)
 ```
 
+\pagebreak  
 
 ```{r}
 covid_plot_gender <- covid_data %>% 
@@ -173,6 +241,7 @@ covid_plot_gender %>%
    add_incidence_fit(fit_results)
 ```
 
+\pagebreak  
 
 ```{r}
 #Symptoms and gender
@@ -213,6 +282,7 @@ covid_plot <- covid_data %>%
 covid_plot
 ```
 
+\pagebreak  
 
 ```{r}
 #Symptoms and age group
@@ -253,6 +323,7 @@ covid_plot <- covid_data %>%
 covid_plot
 ```
 
+\pagebreak  
 
 ```{r}
 # Travel and previous contact
@@ -295,6 +366,7 @@ covid_piechart <- plot_table %>%
 covid_piechart
 ```
 
+\pagebreak  
 
 ```{r}
 # Hospitalized and ventilated
@@ -334,6 +406,7 @@ covid_piechart <- plot_table %>%
 covid_piechart
 ```
 
+\pagebreak  
 
 ```{r}
 # Hospitalized and chronic conditions
@@ -372,6 +445,7 @@ covid_piechart <- plot_table %>%
 covid_piechart
 ```
 
+\pagebreak  
 
 ```{r}
 piechart_function <- function(data = covid_data, plot_fill, var_label) {
@@ -409,9 +483,13 @@ covid_piechart
 piechart_function(plot_fill = "gender", var_label = "Gender (n)")
 ```
 
+\pagebreak  
+
 ```{r}
 piechart_function(plot_fill = "age_group", var_label = "Age group (n)")
 ```
+
+\pagebreak  
 
 ```{r}
 piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts (n)")

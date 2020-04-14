@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 7 April 2020"
+date: "Started 2 April 2020, Updated 13 April 2020"
 output:
   pdf_document: default
   html_document:
@@ -27,9 +27,13 @@ jv_palette <- c("#330099","#CC0066","#FF6633",
                   "#FF3366", "#33CC99", "#33999")
 ```
 
-
+C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19
 ```{r}
-covid_data_initial <- read_xlsx("Input/mcchd_covid_data_20200405.xlsx", skip = 1,
+input_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/Input/")
+input_file <- c("mcchd_covid_data_20200405.xlsx")
+
+
+covid_data_initial <- read_xlsx(paste0(input_path, input_file), skip = 1,
                         col_names = c("dob", "gender", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
                                       "symptom_onset_comment", "test_date", "test_lab",
@@ -76,10 +80,12 @@ covid_clean <- covid_data_initial %>%
    mutate(case_number = as.numeric(rowname),
           dob = ymd(dob),
           age = round(age_calc(dob, units = "years"), digits = 1),
-          age_group = cut(age, breaks = c(0, 20, 30, 40, 50, 65, 110),
-                          labels = c("<20", "20-29", "30-39", "40-49",
-                                     "50-64", "65+"), right = FALSE)) %>% 
-   select(case_number, dob, age, age_group, gender:contact_case_number) %>% 
+          age_group = cut(age, breaks = c(0, 18, 30, 40, 50, 65, 110),
+                          labels = c("<18", "18-29", "30-39", "40-49",
+                                     "50-64", "65+"), right = FALSE),
+          age_group2 = cut(age, breaks = c(0, 18, 65, 110),
+                          labels = c("<18", "18-64", "65+"), right = FALSE)) %>% 
+   select(case_number, dob, age, age_group, age_group2, gender:contact_case_number) %>% 
    mutate_if(is.character, tolower) %>% 
    mutate(symptom_cough = grepl("COUGH|MILD COUGH", symptom_type, ignore.case = TRUE),
           symptom_fever = grepl("FEVER", symptom_type, ignore.case = TRUE),
@@ -148,8 +154,12 @@ covid_clean <- covid_data_initial %>%
    separate(symptom_onset_date_new, c("symptom_onset_date_new", "trash"), sep = " ") %>% 
    mutate(symptom_onset_date_new = ymd(symptom_onset_date_new)) %>% 
    select(-trash)
+```
 
+```{r}
+output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/Output/")
+output_file <- c("covid_data_clean.rds")
 
-#write_rds(covid_clean, "Output/covid_data_clean.rds")
+write_rds(covid_clean, paste0(output_path, output_file))
 ```
 
