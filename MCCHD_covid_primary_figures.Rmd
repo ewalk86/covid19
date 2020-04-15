@@ -1,5 +1,5 @@
 ---
-title: "MCCHD Covid-19 Figures"
+title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montanta"
 date: "Data as of April 12, 2020"
 output: pdf_document
@@ -44,67 +44,98 @@ covid_data <- read_rds(paste0(output_path, "Output/covid_data_clean.rds"))
 
 
 ```{r}
+overall_summary <- covid_data %>% 
+   mutate(total_cases = n()) %>% 
+   summarize("Number of Cases" = n()) %>% 
+   mutate("Proportion of Cases (%)" = 
+          round(`Number of Cases`/(sum(`Number of Cases`))*100),
+          "Incidence per 100,000 Population" = 
+          round(`Number of Cases`/119600*100000, digits = 1)) %>% 
+   mutate("Data Category" = "Total") %>%
+   na.exclude()
+
 age_group_summary <- covid_data %>% 
    mutate(total_cases = n(),
           age_group_pop = if_else(age_group2 == "<18", 119600*0.188, 119600*0.656),
           age_group_pop = if_else(age_group2 == "65+", 119600*0.156, age_group_pop)) %>% 
    group_by(age_group2, age_group_pop) %>% 
-   summarize("Number of Individuals" = n()) %>% 
+   summarize("Number of Cases" = n()) %>% 
    ungroup() %>% 
    mutate("Proportion of Cases (%)" = 
-          round(`Number of Individuals`/(sum(`Number of Individuals`))*100),
-          "Rate per 10,000 Population" = 
-          round(`Number of Individuals`*age_group_pop/10000)) %>% 
+          round(`Number of Cases`/(sum(`Number of Cases`))*100),
+          "Incidence per 100,000 Population" = 
+          round(`Number of Cases`/age_group_pop*100000, digits = 1)) %>% 
    rename("Data Category" = age_group2) %>% 
-   select(-age_group_pop)
+   select(-age_group_pop) %>% 
+   na.exclude()
 
 gender_summary <- covid_data %>% 
    mutate(total_cases = n(),
           gender_pop = if_else(gender == "Female", 119600*0.499, 119600*0.501)) %>% 
    group_by(gender, gender_pop) %>% 
-   summarize("Number of Individuals" = n()) %>% 
+   summarize("Number of Cases" = n()) %>% 
    ungroup() %>% 
    mutate("Proportion of Cases (%)" = 
-          round(`Number of Individuals`/(sum(`Number of Individuals`))*100),
-          "Rate per 10,000 Population" = 
-          round(`Number of Individuals`*gender_pop/10000)) %>% 
+          round(`Number of Cases`/(sum(`Number of Cases`))*100),
+          "Incidence per 100,000 Population" = 
+          round(`Number of Cases`/gender_pop*100000, digits = 1)) %>% 
    rename("Data Category" = gender) %>% 
-   select(-gender_pop)
+   select(-gender_pop) %>% 
+   na.exclude()
 
 travel_summary <- covid_data %>% 
    mutate(total_cases = n()) %>% 
    group_by(travel_hx) %>% 
-   summarize("Number of Individuals" = n()) %>% 
+   summarize("Number of Cases" = n()) %>% 
    ungroup() %>% 
    mutate("Proportion of Cases (%)" = 
-          round(`Number of Individuals`/(sum(`Number of Individuals`))*100),
-          "Rate per 10,000 Population" = "NA") %>% 
-   rename("Data Category" = travel_hx) 
+          round(`Number of Cases`/(sum(`Number of Cases`))*100),
+          "Incidence per 100,000 Population" = "NA") %>% 
+   rename("Data Category" = travel_hx) %>% 
+   na.exclude()
 
 contact_summary <- covid_data %>% 
    mutate(total_cases = n()) %>% 
    group_by(contact_with_case) %>% 
-   summarize("Number of Individuals" = n()) %>% 
+   summarize("Number of Cases" = n()) %>% 
    ungroup() %>% 
    mutate("Proportion of Cases (%)" = 
-          round(`Number of Individuals`/(sum(`Number of Individuals`))*100),
-          "Rate per 10,000 Population" = "NA") %>% 
+          round(`Number of Cases`/(sum(`Number of Cases`))*100),
+          "Incidence per 100,000 Population" = "NA") %>% 
    rename("Data Category" = contact_with_case) %>% 
    na.exclude()
 
+community_spread_summary <- covid_data %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(community_spread) %>% 
+   summarize("Number of Cases" = n()) %>% 
+   ungroup() %>% 
+   mutate("Proportion of Cases (%)" = 
+          round(`Number of Cases`/(sum(`Number of Cases`))*100),
+          "Incidence per 100,000 Population" = "NA") %>% 
+   rename("Data Category" = community_spread) %>% 
+   na.exclude()
 
-covid_summary <- rbind(age_group_summary, gender_summary,
-                       travel_summary, contact_summary)
+
+covid_summary <- rbind(overall_summary, age_group_summary, gender_summary,
+                       travel_summary, contact_summary,
+                       community_spread_summary) %>% 
+   select("Data Category", "Number of Cases", 
+          "Proportion of Cases (%)", "Incidence per 100,000 Population")
 
 
 kable(covid_summary, 
       caption = "Missoula County COVID-19 Cases") %>% 
    kable_styling() %>% 
-   pack_rows("Age Group (Years)", 1, 2) %>% 
-   pack_rows("Gender", 3, 4) %>% 
-   pack_rows("Travel History", 5, 6) %>% 
-   pack_rows("Contact with Known Case", 7, 9)
-
+   row_spec(0, bold = TRUE) %>% 
+   pack_rows("All Cases", 1, 1) %>% 
+   pack_rows("Age Group (Years)", 2, 3) %>% 
+   pack_rows("Gender", 4, 5) %>% 
+   pack_rows("Travel History", 6, 7) %>% 
+   pack_rows("Contact with Known Case", 8, 10) %>% 
+   pack_rows("Community Spread", 11, 12) %>% 
+   footnote(c("Travel History: case left Missoula County.",
+     "Community Spread: no history of travel and no known contact with a known case."))
 ```
 
 \clearpage  
@@ -326,7 +357,7 @@ covid_plot
 
 \pagebreak  
 
-```{r}
+```{r, include=FALSE, eval=FALSE}
 # Travel and previous contact
 covid_data_table <- covid_data %>% 
    mutate(contact_with_case = as.character(contact_with_case),
@@ -372,11 +403,18 @@ covid_piechart
 ```{r}
 # Hospitalized and ventilated
 covid_data_table <- covid_data %>% 
-   mutate(ventilated = as.character(ventilated),
-          ventilated = if_else(is.na(ventilated), "Not hospitalized", ventilated))
+   mutate(ventilated2 = as.character(ventilated)) %>% 
+   mutate(ventilated2 = if_else(hospitalized == "No" & ventilated2 == "No", 
+                               "NA", ventilated2)) %>% 
+   replace_with_na(replace = list(ventilated2 = "NA")) %>% 
+   mutate(ventilated2 = if_else(is.na(ventilated2) & hospitalized == "No", 
+                                "Not hospitalized", ventilated2)) %>% 
+   mutate(ventilated2 = if_else(is.na(ventilated2) & hospitalized == "Yes", 
+                               "No", ventilated2))
+   
 
 save_table <- data.frame(table(covid_data_table$hospitalized, 
-                               covid_data_table$ventilated)) %>% 
+                               covid_data_table$ventilated2)) %>% 
    filter(Freq > 0)
 
 plot_table <- save_table %>% 
@@ -479,6 +517,12 @@ covid_piechart
 
 }
 ```
+
+```{r}
+piechart_function(plot_fill = "community_spread", var_label = "Community Spread (n)")
+```
+
+\pagebreak  
 
 ```{r}
 piechart_function(plot_fill = "gender", var_label = "Gender (n)")

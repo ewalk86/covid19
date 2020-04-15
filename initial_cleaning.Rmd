@@ -124,7 +124,13 @@ covid_clean <- covid_data_initial %>%
                                      levels = c("y", "n", "n/a"),
                                      labels = c("Yes", "No", "N/A")),
           chronic_conditions = factor(chronic_conditions, levels = c("y", "n"),
-                             labels = c("Yes", "No"))) %>% 
+                             labels = c("Yes", "No")),
+          community_spread = factor(community_spread, levels = c("y", "n"),
+                             labels = c("Yes", "No")),
+          patient_died = factor(patient_died, levels = c("y", "n"),
+                             labels = c("Yes", "No")),
+          epi_linked = factor(epi_linked, levels = c("y", "n", "unknown"),
+                             labels = c("Yes", "No", "Unknown"))) %>% 
    replace_with_na(replace = list(ventilated = "N/A")) %>% 
    mutate(symptom_test_diff = as.duration(interval(symptom_onset_date, test_date)),
           symptom_test_diff = as.numeric(symptom_test_diff)/86400,
