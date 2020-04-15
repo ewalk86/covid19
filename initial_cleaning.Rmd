@@ -29,48 +29,29 @@ jv_palette <- c("#330099","#CC0066","#FF6633",
 
 C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19
 ```{r}
-input_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/Input/")
-input_file <- c("mcchd_covid_data_20200405.xlsx")
+input_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 
-covid_data_initial <- read_xlsx(paste0(input_path, input_file), skip = 1,
+covid_data_initial <- 
+   read_xlsx(paste0(input_path, "Input/mcchd_covid_data_20200412.xlsx"), skip = 1,
                         col_names = c("dob", "gender", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
-                                      "symptom_onset_comment", "test_date", "test_lab",
-                                      "release_date", "contact_with_case", "travel_hx",
-                                      "hospitalized", "ventilated", "discharge_date",
-                                      "chronic_conditions", "chronic_conditions_type",
-                                      "number_contacts", "patient_died", 
-                                      "patient_died_date", "contact_case_number"),
-                        col_types = c("date", "text", "text", "text",
-                                      "text", "text", "date",
-                                      "text", "date", "text",
-                                      "date", "text", "text",
-                                      "text", "text", "date",
-                                      "text", "text",
-                                      "text", "text", 
-                                      "date", "text"))
-
-
-covid_data_initial <- read_xlsx("Input/mcchd_covid_data_20200406.xlsx", skip = 1,
-                        col_names = c("dob", "gender", "zipcode", "healthcare_worker",
-                                      "symptoms", "symptom_type", "symptom_onset_date",
-                                      "symptom_onset_comment", "test_lab",
+                                      "test_date", "test_lab", "last_exposure_date", 
                                       "release_date", "contact_with_case", "travel_hx",
                                       "hospitalized", "ventilated", "discharge_date",
                                       "chronic_conditions", "chronic_conditions_type",
                                       "number_contacts", "patient_died", 
                                       "patient_died_date", "contact_case_number",
-                                      "community_spread"),
+                                      "community_spread", "epi_linked"),
                         col_types = c("date", "text", "text", "text",
                                       "text", "text", "date",
-                                      "text", "text",
+                                      "date", "text", "date",
                                       "date", "text", "text",
                                       "text", "text", "date",
                                       "text", "text",
                                       "text", "text", 
                                       "date", "text",
-                                      "text"))
+                                      "text", "text"))
 ```
 
 
@@ -85,39 +66,43 @@ covid_clean <- covid_data_initial %>%
                                      "50-64", "65+"), right = FALSE),
           age_group2 = cut(age, breaks = c(0, 18, 65, 110),
                           labels = c("<18", "18-64", "65+"), right = FALSE)) %>% 
-   select(case_number, dob, age, age_group, age_group2, gender:contact_case_number) %>% 
+   select(case_number, dob, age, age_group, age_group2, gender:epi_linked) %>% 
    mutate_if(is.character, tolower) %>% 
    mutate(symptom_cough = grepl("COUGH|MILD COUGH", symptom_type, ignore.case = TRUE),
           symptom_fever = grepl("FEVER", symptom_type, ignore.case = TRUE),
           symptom_fatigue = grepl("FATIGUE", symptom_type, ignore.case = TRUE),
-          symptom_nv = grepl("NAUSEA|N/V", symptom_type, ignore.case = TRUE),
+          symptom_nv = grepl("NAUSEA|N/V|N/V/D", symptom_type, ignore.case = TRUE),
           symptom_sorethroat = grepl("SORE THROAT", symptom_type, ignore.case = TRUE),
           symptom_chills = grepl("CHILL", symptom_type, ignore.case = TRUE),
           symptom_sob = grepl("SOB", symptom_type, ignore.case = TRUE),
           symptom_lethargy = grepl("LETHARGY", symptom_type, ignore.case = TRUE),
-          symptom_diarrhea = grepl("DIARRHEA", symptom_type, ignore.case = TRUE),
+          symptom_diarrhea = grepl("DIARRHEA|N/V/D", symptom_type, ignore.case = TRUE),
           symptom_sneezing = grepl("SNEEZING", symptom_type, ignore.case = TRUE),
           symptom_congestion = grepl("CONGESTION", symptom_type, ignore.case = TRUE),
           symptom_runny_nose = grepl("RUNNY NOSE", symptom_type, ignore.case = TRUE),
-          symptom_body_aches = grepl("BODY ACHES", symptom_type, ignore.case = TRUE),
-          symptom_headache = grepl("HEADACHE|HA", symptom_type, ignore.case = TRUE),
+          symptom_body_aches = grepl("BODY ACHES|ACHES", symptom_type, ignore.case = TRUE),
+          symptom_headache = grepl("HEADACHE|HA|H/A", symptom_type, ignore.case = TRUE),
           symptom_chest_pain = grepl("CHEST PAIN|CHEST TIGHTNESS", symptom_type, ignore.case = TRUE),
           symptom_taste_smell = grepl("TASTE|SMELL", symptom_type, ignore.case = TRUE),
           symptom_fever_chill = grepl("FEVER|CHILL|NIGHT SWEAT", symptom_type, ignore.case = TRUE),
           symptom_fatigue_lethargy = grepl("FATIGUE|LETHARGY", symptom_type, ignore.case = TRUE),
-          symptom_nv_diarrhea = grepl("NAUSEA|N/V|DIARRHEA", symptom_type, ignore.case = TRUE),
-          symptom_aches = grepl("BODY ACHES|HEADACHE|MYALGIA|HA", symptom_type, ignore.case = TRUE),
-          symptom_sinus_throat = grepl("CONGESTION|RUNNY NOSE|SNEEZING|SORE THROAT|RHINORRHEA|SCRATCHY THROAT", 
+          symptom_nv_diarrhea = grepl("NAUSEA|N/V|DIARRHEA|N/V/D", symptom_type, ignore.case = TRUE),
+          symptom_aches = grepl("BODY ACHES|HEADACHE|MYALGIA|HA|H/A|ACHES", symptom_type, ignore.case = TRUE),
+          symptom_sinus_throat = grepl("CONGESTION|RUNNY NOSE|SNEEZING|SORE THROAT|RHINORRHEA|SCRATCHY THROAT|THROAT", 
                                        symptom_type, ignore.case = TRUE),
           symptom_respiratory = grepl("COUGH|MILD COUGH|SOB|COLD SX", symptom_type, ignore.case = TRUE)) %>% 
    separate(healthcare_worker, c("healthcare_worker", "healthcare_worker_comment"), sep = " ") %>% 
    separate(travel_hx, c("travel_hx", "travel_hx_comment"), sep = " ") %>% 
-   separate(number_contacts, c("number_contacts", "number_contacts_comment"), sep = " ") %>% 
+   separate(hospitalized, c("hospitalized", "hospitalized_comment"), sep = " ") %>% 
    separate(ventilated, c("ventilated", "ventilated_comment"), sep = "o, ") %>% 
+   replace_with_na(replace = list(number_contacts = "UNKNOWN")) %>% 
+   replace_with_na(replace = list(epi_linked = "UNKNOWN")) %>% 
    mutate(symptom_onset_date = ymd(symptom_onset_date),
           release_date = ymd(release_date),
           discharge_date = ymd(discharge_date),
           patient_died_date = ymd(patient_died_date),
+          test_date = ymd(test_date),
+          last_exposure_date = ymd(last_exposure_date),
           number_contacts = as.numeric(number_contacts),
           number_contacts_categorical = cut(number_contacts, breaks = c(0, 5, 10, 50),
                                             labels = c("0 to 5", "5 to 10", "10+"),
@@ -144,22 +129,18 @@ covid_clean <- covid_data_initial %>%
    mutate(symptom_test_diff = as.duration(interval(symptom_onset_date, test_date)),
           symptom_test_diff = as.numeric(symptom_test_diff)/86400,
           mean_symptom_test_diff = mean(symptom_test_diff, na.rm = TRUE),
-          symptom_onset_date_new = as.POSIXct(symptom_onset_date),
-          symptom_onset_date_new = if_else(is.na(symptom_onset_date_new), 
-                                       test_date - mean_symptom_test_diff*86400,
-                                       symptom_onset_date_new),
+          symptom_onset_date_new = if_else(is.na(symptom_onset_date), 
+                                       test_date - mean_symptom_test_diff,
+                                       symptom_onset_date),
+          symptom_onset_date_new = ymd(symptom_onset_date_new),
           symptom_onset_date_indicator = if_else(is.na(symptom_onset_date),
                                                  "Estimated from test date",
-                                                 "Estimated by self-report")) %>% 
-   separate(symptom_onset_date_new, c("symptom_onset_date_new", "trash"), sep = " ") %>% 
-   mutate(symptom_onset_date_new = ymd(symptom_onset_date_new)) %>% 
-   select(-trash)
+                                                 "Estimated by self-report")) 
 ```
 
 ```{r}
-output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/Output/")
-output_file <- c("covid_data_clean.rds")
+output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
-write_rds(covid_clean, paste0(output_path, output_file))
+write_rds(covid_clean, paste0(output_path, "Output/covid_data_clean.rds"))
 ```
 

@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 Figures"
 author: "Ethan Walker, University of Montanta"
-date: "Data as of April 5, 2020"
+date: "Data as of April 12, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty]{caption}
@@ -37,10 +37,9 @@ cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442",
 
 
 ```{r}
-output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/Output/")
-output_file <- c("covid_data_clean.rds")
+output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
-covid_data <- read_rds(paste0(output_path, output_file))
+covid_data <- read_rds(paste0(output_path, "Output/covid_data_clean.rds"))
 ```
 
 
@@ -246,7 +245,7 @@ covid_plot_gender %>%
 ```{r}
 #Symptoms and gender
 covid_plot <- covid_data %>% 
-   pivot_longer(cols = c(symptom_fever_chill:symptom_respiratory),
+   pivot_longer(cols = c(symptom_taste_smell:symptom_respiratory),
                 names_to = "variable", values_to = "values") %>% 
    group_by(variable, gender) %>% 
    mutate(values = as.numeric(values),
@@ -257,11 +256,12 @@ covid_plot <- covid_data %>%
    mutate(variable = factor(variable,
                             labels = c("Head/body aches", "Fatigue/lethargy",
                                        "Fever/chills", "Nausea/Vomiting/Diarrhea",
-                                       "Cough/SOB", "Sinus/throat"))) %>% 
+                                       "Cough/SOB", "Sinus/throat", 
+                                       "Taste/Smell Loss"))) %>% 
    ggplot(aes(x = variable, y = values, fill = gender)) +   
      geom_bar(stat = "identity", width = .6) +   
      labs(title = "Cases with symptoms, by gender", y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 20, 2)), labels = c(seq(0, 20, 2))) +
+     scale_y_continuous(breaks = c(seq(0, 30, 2)), labels = c(seq(0, 30, 2))) +
      coord_flip() +
      theme_minimal() +
      theme(plot.title = element_text(hjust = .5),
@@ -287,7 +287,7 @@ covid_plot
 ```{r}
 #Symptoms and age group
 covid_plot <- covid_data %>% 
-   pivot_longer(cols = c(symptom_fever_chill:symptom_respiratory),
+   pivot_longer(cols = c(symptom_taste_smell:symptom_respiratory),
                 names_to = "variable", values_to = "values") %>% 
    group_by(variable, age_group) %>% 
    mutate(values = as.numeric(values),
@@ -298,11 +298,12 @@ covid_plot <- covid_data %>%
    mutate(variable = factor(variable,
                             labels = c("Head/body aches", "Fatigue/lethargy",
                                        "Fever/chills", "Nausea/Vomiting/Diarrhea",
-                                       "Cough/SOB", "Sinus/throat"))) %>% 
+                                       "Cough/SOB", "Sinus/throat", 
+                                       "Taste/Smell Loss"))) %>% 
    ggplot(aes(x = variable, y = values, fill = age_group)) +   
      geom_bar(stat = "identity", width = .6) +   
      labs(title = "Cases with symptoms, by age group", y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 20, 2)), labels = c(seq(0, 20, 2))) +
+     scale_y_continuous(breaks = c(seq(0, 30, 2)), labels = c(seq(0, 30, 2))) +
      coord_flip() +
      theme_minimal() +
      theme(plot.title = element_text(hjust = .5),
