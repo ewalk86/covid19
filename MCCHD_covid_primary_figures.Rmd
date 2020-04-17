@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montanta"
-date: "Data as of April 12, 2020"
+date: "Data as of April 16, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty]{caption}

@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 13 April 2020"
+date: "Started 2 April 2020, Updated 17 April 2020"
 output:
   pdf_document: default
   html_document:
@@ -33,10 +33,10 @@ input_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "Input/mcchd_covid_data_20200412.xlsx"), skip = 1,
+   read_xlsx(paste0(input_path, "Input/mcchd_covid_data_20200416.xlsx"), skip = 1,
                         col_names = c("dob", "gender", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
-                                      "test_date", "test_lab", "last_exposure_date", 
+                                      "test_date", "test_results", "test_lab", "last_exposure_date", 
                                       "release_date", "contact_with_case", "travel_hx",
                                       "hospitalized", "ventilated", "discharge_date",
                                       "chronic_conditions", "chronic_conditions_type",
@@ -45,7 +45,7 @@ covid_data_initial <-
                                       "community_spread", "epi_linked"),
                         col_types = c("date", "text", "text", "text",
                                       "text", "text", "date",
-                                      "date", "text", "date",
+                                      "date", "text", "text", "date",
                                       "date", "text", "text",
                                       "text", "text", "date",
                                       "text", "text",
@@ -80,15 +80,15 @@ covid_clean <- covid_data_initial %>%
           symptom_sneezing = grepl("SNEEZING", symptom_type, ignore.case = TRUE),
           symptom_congestion = grepl("CONGESTION", symptom_type, ignore.case = TRUE),
           symptom_runny_nose = grepl("RUNNY NOSE", symptom_type, ignore.case = TRUE),
-          symptom_body_aches = grepl("BODY ACHES|ACHES", symptom_type, ignore.case = TRUE),
+          symptom_body_aches = grepl("BODY ACHES|ACHES|ACHINESS", symptom_type, ignore.case = TRUE),
           symptom_headache = grepl("HEADACHE|HA|H/A", symptom_type, ignore.case = TRUE),
           symptom_chest_pain = grepl("CHEST PAIN|CHEST TIGHTNESS", symptom_type, ignore.case = TRUE),
           symptom_taste_smell = grepl("TASTE|SMELL", symptom_type, ignore.case = TRUE),
-          symptom_fever_chill = grepl("FEVER|CHILL|NIGHT SWEAT", symptom_type, ignore.case = TRUE),
+          symptom_fever_chill = grepl("FEVER|CHILL|CHILLS|NIGHT SWEAT", symptom_type, ignore.case = TRUE),
           symptom_fatigue_lethargy = grepl("FATIGUE|LETHARGY", symptom_type, ignore.case = TRUE),
-          symptom_nv_diarrhea = grepl("NAUSEA|N/V|DIARRHEA|N/V/D", symptom_type, ignore.case = TRUE),
+          symptom_nv_diarrhea = grepl("NAUSEA|N/V|DIARRHEA|N/V/D|ABDOMINAL", symptom_type, ignore.case = TRUE),
           symptom_aches = grepl("BODY ACHES|HEADACHE|MYALGIA|HA|H/A|ACHES", symptom_type, ignore.case = TRUE),
-          symptom_sinus_throat = grepl("CONGESTION|RUNNY NOSE|SNEEZING|SORE THROAT|RHINORRHEA|SCRATCHY THROAT|THROAT", 
+          symptom_sinus_throat = grepl("CONGESTION|RUNNY NOSE|SNEEZING|SORE THROAT|RHINORRHEA|SCRATCHY THROAT|THROAT|SINUS", 
                                        symptom_type, ignore.case = TRUE),
           symptom_respiratory = grepl("COUGH|MILD COUGH|SOB|COLD SX", symptom_type, ignore.case = TRUE)) %>% 
    separate(healthcare_worker, c("healthcare_worker", "healthcare_worker_comment"), sep = " ") %>% 
