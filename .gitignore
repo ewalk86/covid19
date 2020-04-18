@@ -9,6 +9,11 @@
 *.tex
 *.pptx
 *.html
+*.png
+*.log
+*.txt
+montana_daily_script.log
+state_daily_results
 Input
 Output
 County_R.R
