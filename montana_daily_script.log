@@ -300,3 +300,330 @@ Warning message:
 package 'taskscheduleR' was built under R version 3.6.3 
 Default config will estimate R on weekly sliding windows.
     To change this change the t_start and t_end arguments. 
+-- Attaching packages --------------------------------------- tidyverse 1.3.0 --
+v ggplot2 3.3.0     v purrr   0.3.3
+v tibble  3.0.0     v dplyr   0.8.5
+v tidyr   1.0.2     v stringr 1.4.0
+v readr   1.3.1     v forcats 0.5.0
+-- Conflicts ------------------------------------------ tidyverse_conflicts() --
+x dplyr::filter() masks stats::filter()
+x dplyr::lag()    masks stats::lag()
+Warning messages:
+1: package 'ggplot2' was built under R version 3.6.3 
+2: package 'tibble' was built under R version 3.6.3 
+3: package 'tidyr' was built under R version 3.6.3 
+4: package 'dplyr' was built under R version 3.6.3 
+5: package 'forcats' was built under R version 3.6.3 
+Warning message:
+package 'naniar' was built under R version 3.6.3 
+
+Attaching package: 'lubridate'
+
+The following objects are masked from 'package:dplyr':
+
+    intersect, setdiff, union
+
+The following objects are masked from 'package:base':
+
+    date, intersect, setdiff, union
+
+Warning message:
+package 'lubridate' was built under R version 3.6.3 
+
+Attaching package: 'zoo'
+
+The following objects are masked from 'package:base':
+
+    as.Date, as.Date.numeric
+
+Warning message:
+package 'zoo' was built under R version 3.6.3 
+Warning message:
+package 'eeptools' was built under R version 3.6.3 
+Warning message:
+package 'knitr' was built under R version 3.6.3 
+Warning message:
+package 'incidence' was built under R version 3.6.3 
+Warning message:
+package 'EpiEstim' was built under R version 3.6.3 
+Warning message:
+package 'earlyR' was built under R version 3.6.3 
+Warning message:
+package 'projections' was built under R version 3.6.3 
+Warning message:
+package 'distcrete' was built under R version 3.6.3 
+Warning message:
+package 'epitrix' was built under R version 3.6.3 
+
+Attaching package: 'jsonlite'
+
+The following object is masked from 'package:purrr':
+
+    flatten
+
+Warning message:
+package 'jsonlite' was built under R version 3.6.3 
+Warning message:
+package 'httr' was built under R version 3.6.3 
+Warning message:
+package 'rlist' was built under R version 3.6.3 
+Warning message:
+package 'taskscheduleR' was built under R version 3.6.3 
+Warning message:
+Column `county` joining character vector and factor, coercing into character vector 
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+-- Attaching packages --------------------------------------- tidyverse 1.3.0 --
+v ggplot2 3.3.0     v purrr   0.3.3
+v tibble  3.0.0     v dplyr   0.8.5
+v tidyr   1.0.2     v stringr 1.4.0
+v readr   1.3.1     v forcats 0.5.0
+-- Conflicts ------------------------------------------ tidyverse_conflicts() --
+x dplyr::filter() masks stats::filter()
+x dplyr::lag()    masks stats::lag()
+Warning messages:
+1: package 'ggplot2' was built under R version 3.6.3 
+2: package 'tibble' was built under R version 3.6.3 
+3: package 'tidyr' was built under R version 3.6.3 
+4: package 'dplyr' was built under R version 3.6.3 
+5: package 'forcats' was built under R version 3.6.3 
+Warning message:
+package 'naniar' was built under R version 3.6.3 
+
+Attaching package: 'lubridate'
+
+The following objects are masked from 'package:dplyr':
+
+    intersect, setdiff, union
+
+The following objects are masked from 'package:base':
+
+    date, intersect, setdiff, union
+
+Warning message:
+package 'lubridate' was built under R version 3.6.3 
+
+Attaching package: 'zoo'
+
+The following objects are masked from 'package:base':
+
+    as.Date, as.Date.numeric
+
+Warning message:
+package 'zoo' was built under R version 3.6.3 
+Warning message:
+package 'eeptools' was built under R version 3.6.3 
+Warning message:
+package 'knitr' was built under R version 3.6.3 
+Warning message:
+package 'incidence' was built under R version 3.6.3 
+Warning message:
+package 'EpiEstim' was built under R version 3.6.3 
+Warning message:
+package 'earlyR' was built under R version 3.6.3 
+Warning message:
+package 'projections' was built under R version 3.6.3 
+Warning message:
+package 'distcrete' was built under R version 3.6.3 
+Warning message:
+package 'epitrix' was built under R version 3.6.3 
+
+Attaching package: 'jsonlite'
+
+The following object is masked from 'package:purrr':
+
+    flatten
+
+Warning message:
+package 'jsonlite' was built under R version 3.6.3 
+Warning message:
+package 'httr' was built under R version 3.6.3 
+Warning message:
+package 'rlist' was built under R version 3.6.3 
+Warning message:
+package 'taskscheduleR' was built under R version 3.6.3 
+Warning message:
+Column `county` joining character vector and factor, coercing into character vector 
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+-- Attaching packages --------------------------------------- tidyverse 1.3.0 --
+v ggplot2 3.3.0     v purrr   0.3.3
+v tibble  3.0.0     v dplyr   0.8.5
+v tidyr   1.0.2     v stringr 1.4.0
+v readr   1.3.1     v forcats 0.5.0
+-- Conflicts ------------------------------------------ tidyverse_conflicts() --
+x dplyr::filter() masks stats::filter()
+x dplyr::lag()    masks stats::lag()
+Warning messages:
+1: package 'ggplot2' was built under R version 3.6.3 
+2: package 'tibble' was built under R version 3.6.3 
+3: package 'tidyr' was built under R version 3.6.3 
+4: package 'dplyr' was built under R version 3.6.3 
+5: package 'forcats' was built under R version 3.6.3 
+Warning message:
+package 'naniar' was built under R version 3.6.3 
+
+Attaching package: 'lubridate'
+
+The following objects are masked from 'package:dplyr':
+
+    intersect, setdiff, union
+
+The following objects are masked from 'package:base':
+
+    date, intersect, setdiff, union
+
+Warning message:
+package 'lubridate' was built under R version 3.6.3 
+
+Attaching package: 'zoo'
+
+The following objects are masked from 'package:base':
+
+    as.Date, as.Date.numeric
+
+Warning message:
+package 'zoo' was built under R version 3.6.3 
+Warning message:
+package 'eeptools' was built under R version 3.6.3 
+Warning message:
+package 'knitr' was built under R version 3.6.3 
+Warning message:
+package 'incidence' was built under R version 3.6.3 
+Warning message:
+package 'EpiEstim' was built under R version 3.6.3 
+Warning message:
+package 'earlyR' was built under R version 3.6.3 
+Warning message:
+package 'projections' was built under R version 3.6.3 
+Warning message:
+package 'distcrete' was built under R version 3.6.3 
+Warning message:
+package 'epitrix' was built under R version 3.6.3 
+
+Attaching package: 'jsonlite'
+
+The following object is masked from 'package:purrr':
+
+    flatten
+
+Warning message:
+package 'jsonlite' was built under R version 3.6.3 
+Warning message:
+package 'httr' was built under R version 3.6.3 
+Warning message:
+package 'rlist' was built under R version 3.6.3 
+Warning message:
+package 'taskscheduleR' was built under R version 3.6.3 
+Warning message:
+Column `county` joining character vector and factor, coercing into character vector 
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
+Default config will estimate R on weekly sliding windows.
+    To change this change the t_start and t_end arguments. 
+Warning message:
+In estimate_R_func(incid = incid, method = method, si_sample = si_sample,  :
+  You're estimating R too early in the epidemic to get the desired
+            posterior CV.
+Saving 7 x 7 in image
