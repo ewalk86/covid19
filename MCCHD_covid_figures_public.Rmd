@@ -1,6 +1,6 @@
 ---
 title: "Missoula County COVID-19 Cases"
-date: "Data as of April 16, 2020"
+date: "Data as of April 20, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty]{caption}
@@ -139,26 +139,36 @@ kable(covid_summary,
 
 \clearpage  
 
-```{r}
+```{r, fig.height=5, fig.width=10}
+total_cases <- sum(covid_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_10 <- format(Sys.Date() - 10, "%d %b %Y")
+
 covid_plot_onset <- covid_data %>% 
    ggplot() +
      geom_col(aes(symptom_onset_date_new, case), 
-              color = "black", fill = "#E69F00") +
-     labs(title = "Number of cases by date of symptom onset") +
-     scale_x_date(date_breaks = "2 days") +
+              fill = "steelblue") +
+     labs(title = paste0("COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020", 
+                         " (Total cases = ", total_cases, ")"),
+          subtitle = paste0("Data current as of ", date_today, 
+                            ". Cases after ", date_10, " may not yet be reported.")) +
+     ylab("Number of Cases") +
+     xlab("Symptom Onset Date") +
+     scale_x_date(date_breaks = "1 day", date_labels = "%d-%b") +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 18, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
            panel.grid = element_blank(),
-           axis.text.x = element_text(size = 14, colour = "black", 
-                                     angle = 25, vjust = 0.75, hjust = 0.9),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black"),
-           axis.text.y = element_text(size = 16, colour = "black"),
-           axis.title.y = element_text(size = 16, colour = "white"),
-           axis.title.x = element_blank(),
-           axis.line.x = element_line(colour = "black", size = 1.2), 
-           axis.line.y = element_line(colour = "black", size = 1.2), 
-           axis.ticks = element_line(colour = "black")) 
+           panel.grid.major.y = element_line(colour = "grey"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) 
 covid_plot_onset
 ```
