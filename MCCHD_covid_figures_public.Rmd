@@ -113,37 +113,6 @@ stand_inc <- county_state_joined %>%
 ```
 
 
-```{r, fig.width = 8, fig.height = 6}
-covid_stand_inc <- county_state_joined %>% 
-   filter(region == "Missoula County") %>% 
-   ggplot() +
-     geom_col(aes(age_group, group_inc), fill = "steelblue") +
-     labs(title = "COVID-19 Cases in Missoula County by Age Group",
-          fill = "") +
-     ylab("Cases per 100,000 Population") +
-     xlab("Age Group (years)") +
-     theme_minimal() +
-     theme(title = element_text(size = 16, colour = "black"),
-           panel.grid = element_blank(),
-           panel.grid.major.y = element_line(colour = "grey"),
-           axis.text.x = element_text(size = 14, colour = "black", vjust = 0.4),
-           axis.text.y = element_text(size = 14, colour = "black"),
-           axis.title.y = element_text(size = 14, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 14, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           axis.line.x = element_blank(), 
-           axis.line.y = element_blank(), 
-           axis.ticks = element_blank()) +
-     scale_fill_manual(values = cbPalette) 
-
-#covid_stand_inc
-
-#ggsave("county_cases_age.jpg", width = 8, height = 6)
-```
-
-\pagebreak  
-
 ```{r}
 overall_summary <- covid_data %>% 
    mutate(total_cases = n()) %>% 
@@ -224,18 +193,17 @@ covid_summary <- rbind(overall_summary, age_group_summary, gender_summary,
    select("Data Category", "Number of Cases", 
           "Proportion of Cases (%)", "Incidence per 100,000 Population")
 
-kable(covid_summary, caption = "Missoula County COVID-19 Cases", 
+kable(covid_summary,
       format = "latex", align = "c") %>% 
    kable_styling(font_size = 10) %>% 
    row_spec(0, bold = TRUE, font_size = 10) %>% 
    pack_rows("All Cases", 1, 1) %>% 
    pack_rows("Age Group (Years)", 2, 3) %>% 
    pack_rows("Gender", 4, 5) %>% 
-   pack_rows("Travel History", 6, 7) %>% 
-   pack_rows("Contact with Known Case", 8, 10) %>% 
-   pack_rows("Community Spread", 11, 12) %>% 
-   footnote(c("Cases are still under investigation. Some categories may not add up to total number of cases.",
-     "Travel History: case left Missoula County.",
+   pack_rows("Travel History", 6, 8) %>% 
+   pack_rows("Contact with Known Case", 9, 11) %>% 
+   pack_rows("Community Spread", 12, 13) %>% 
+   footnote(c("Travel History: case left Missoula County.",
      "Community Spread: no history of travel and no known contact with a known case."))
 ```
 
@@ -259,6 +227,37 @@ kable(covid_summary) %>%
 
 \clearpage  
 
+```{r, fig.width = 8, fig.height = 6}
+covid_incidence <- county_state_joined %>% 
+   filter(region == "Missoula County") %>% 
+   ggplot() +
+     geom_col(aes(age_group, group_inc), fill = "steelblue") +
+     labs(title = "COVID-19 Incidence in Missoula County by Age Group",
+          fill = "") +
+     ylab("Incidence per 100,000 Population") +
+     xlab("Age Group (years)") +
+     theme_minimal() +
+     theme(title = element_text(size = 16, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "grey"),
+           axis.text.x = element_text(size = 14, colour = "black", vjust = 0.4),
+           axis.text.y = element_text(size = 14, colour = "black"),
+           axis.title.y = element_text(size = 14, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 14, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) +
+     scale_fill_manual(values = cbPalette) 
+
+#covid_incidence
+
+#ggsave("county_incidence_age.jpg", width = 8, height = 6)
+```
+
+\pagebreak  
+
 ```{r, fig.height=5, fig.width=10}
 total_cases <- sum(covid_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
@@ -266,10 +265,10 @@ date_10 <- format(Sys.Date() - 10, "%d %b %Y")
 
 covid_plot_onset <- covid_data %>% 
    ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 10, xmax = Sys.Date(), ymin=0, ymax=Inf),
+     geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray85", alpha = 0.05) +
-     geom_label(aes(x = Sys.Date()-5, y = 4.5, 
-                    label = "Cases in shaded range \n may not yet be reported.")) +
+     geom_label(aes(x = Sys.Date()-6, y = 4.5, 
+                    label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
      geom_col(aes(symptom_onset_date_new, case), 
               fill = "steelblue") +
      labs(title = "COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020",

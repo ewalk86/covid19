@@ -133,6 +133,7 @@ covid_clean <- covid_data_initial %>%
                              labels = c("Yes", "No")),
           community_spread = if_else(travel_hx == "No" & contact_with_case == "No",
                                      "Yes", "No"),
+          community_spread = factor(community_spread, levels = c("Yes", "No")),
           patient_died = factor(patient_died, levels = c("y", "n"),
                              labels = c("Yes", "No")),
           epi_linked = factor(epi_linked, levels = c("y", "n", "unknown"),
@@ -147,7 +148,10 @@ covid_clean <- covid_data_initial %>%
           symptom_onset_date_new = ymd(symptom_onset_date_new),
           symptom_onset_date_indicator = if_else(is.na(symptom_onset_date),
                                                  "Estimated from test date",
-                                                 "Estimated by self-report")) 
+                                                 "Estimated by self-report"),
+          travel_hx = as.character(travel_hx),
+          travel_hx = if_else(is.na(travel_hx), "Unknown", travel_hx),
+          travel_hx = factor(travel_hx, levels = c("Yes", "No", "Unknown")))
 ```
 
 ```{r}
