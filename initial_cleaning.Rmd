@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 20 April 2020"
+date: "Started 2 April 2020, Updated 21 April 2020"
 output:
   pdf_document: default
   html_document:
@@ -33,7 +33,7 @@ input_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "Input/mcchd_covid_data_20200417.xlsx"), skip = 1,
+   read_xlsx(paste0(input_path, "Input/mcchd_covid_data_20200419.xlsx"), skip = 1,
                         col_names = c("dob", "gender", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
                                       "test_date", "test_results", "test_lab", "last_exposure_date", 
@@ -62,12 +62,17 @@ covid_clean <- covid_data_initial %>%
    mutate(case_number = as.numeric(rowname),
           dob = ymd(dob),
           age = round(age_calc(dob, units = "years"), digits = 1),
-          age_group = cut(age, breaks = c(0, 18, 30, 40, 50, 65, 110),
-                          labels = c("<18", "18-29", "30-39", "40-49",
-                                     "50-64", "65+"), right = FALSE),
+          age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 110),
+                          labels = c("0-9, 0.1", "10-19, 0.12", "20-29, 0.19", 
+                                     "30-39, 0.14", "40-49, 0.12", "50-59, 0.11", 
+                                     "60-69, 0.11", "70-79, 0.07", "80+, 0.03"), right = FALSE),
           age_group2 = cut(age, breaks = c(0, 18, 65, 110),
                           labels = c("<18", "18-64", "65+"), right = FALSE)) %>% 
-   select(case_number, dob, age, age_group, age_group2, gender:epi_linked) %>% 
+   separate(age_group, c("age_group", "age_group_percent"), sep = ", ") %>% 
+   mutate(age_group_percent = as.numeric(age_group_percent),
+          county_pop = as.numeric(119000)) %>% 
+   select(case_number, dob, age, age_group, age_group_percent, age_group2, 
+          county_pop, gender:epi_linked) %>% 
    mutate_if(is.character, tolower) %>% 
    mutate(symptom_cough = grepl("COUGH|MILD COUGH", symptom_type, ignore.case = TRUE),
           symptom_fever = grepl("FEVER", symptom_type, ignore.case = TRUE),
@@ -126,8 +131,8 @@ covid_clean <- covid_data_initial %>%
                                      labels = c("Yes", "No", "N/A")),
           chronic_conditions = factor(chronic_conditions, levels = c("y", "n"),
                              labels = c("Yes", "No")),
-          community_spread = factor(community_spread, levels = c("y", "n"),
-                             labels = c("Yes", "No")),
+          community_spread = if_else(travel_hx == "No" & contact_with_case == "No",
+                                     "Yes", "No"),
           patient_died = factor(patient_died, levels = c("y", "n"),
                              labels = c("Yes", "No")),
           epi_linked = factor(epi_linked, levels = c("y", "n", "unknown"),

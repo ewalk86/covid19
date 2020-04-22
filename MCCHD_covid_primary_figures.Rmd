@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montanta"
-date: "Data as of April 20, 2020"
+date: "Data as of April 19, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty]{caption}
@@ -10,7 +10,7 @@ header-includes:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, eval = TRUE, 
                       include = TRUE, warning = FALSE, message = FALSE,
-                      fig.width = 10, fig.height = 6)
+                      fig.height = 7, fig.width = 10)
 ```
 
 ```{r, message=FALSE}
@@ -40,8 +40,107 @@ cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442",
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 covid_data <- read_rds(paste0(output_path, "Output/covid_data_clean.rds"))
+state_data <- read_rds(paste0(output_path, "Output/state_data_clean.rds")) %>% 
+   select(-age_group) %>% 
+   rename(age_group = age_group2)
+
+us_pop_data <- as.data.frame(c("0-9, 0.12", "10-19, 0.13", "20-29, 0.14", 
+                 "30-39, 0.13", "40-49, 0.12", "50-59, 0.13", 
+                 "60-69, 0.12", "70-79, 0.07", "80+, 0.04")) %>% 
+   rename(age_group = 1) %>% 
+   separate(age_group, c("age_group", "age_group_percent_us"), sep = ", ") %>% 
+   mutate(age_group_percent_us = as.numeric(age_group_percent_us),
+          us_pop = as.numeric(327167000))
 ```
 
+
+```{r}
+county_joined <- covid_data %>% 
+   select(case, age_group, age_group_percent, county_pop) %>% 
+   rename(region_pop = county_pop) %>% 
+   left_join(us_pop_data, by = "age_group") %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(age_group) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group_percent*region_pop,
+          us_group_pop = age_group_percent_us*us_pop,
+          group_inc = group_cases/group_pop*100000,
+          stand_inc_group = group_inc*us_group_pop/100000) %>% 
+   ungroup() %>% 
+   distinct(age_group, .keep_all = TRUE) %>% 
+   mutate(region = "Missoula County",
+          stand_inc_sum = sum(stand_inc_group),
+          stand_inc = stand_inc_sum/us_pop*100000) %>% 
+   select(region, age_group, group_cases, group_prop, group_inc, 
+          stand_inc, stand_inc_sum, stand_inc_group, region_pop, age_group_percent) %>% 
+   arrange(age_group)
+   
+
+
+state_joined <- state_data %>% 
+   select(case, age_group, age_group2_percent, state_pop) %>% 
+   rename(region_pop = state_pop,
+          age_group_percent = age_group2_percent) %>% 
+   left_join(us_pop_data, by = "age_group") %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(age_group) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group_percent*region_pop,
+          us_group_pop = age_group_percent_us*us_pop,
+          group_inc = group_cases/group_pop*100000,
+          stand_inc_group = group_inc*us_group_pop/100000) %>% 
+   ungroup() %>% 
+   distinct(age_group, .keep_all = TRUE) %>% 
+   mutate(region = "Montana",
+          stand_inc_sum = sum(stand_inc_group),
+          stand_inc = stand_inc_sum/us_pop*100000) %>% 
+   select(region, age_group, group_cases, group_prop, group_inc, 
+          stand_inc, stand_inc_sum, stand_inc_group, region_pop, age_group_percent) %>% 
+   arrange(age_group)
+
+
+county_state_joined <- rbind(county_joined, state_joined)
+
+stand_inc <- county_state_joined %>% 
+   distinct(region, .keep_all = TRUE) %>% 
+   select(region, stand_inc) %>% 
+   rename(Region = region,
+          "Incidence per 100,000 Population" = stand_inc)
+```
+
+
+```{r, fig.width = 10, fig.height = 6}
+covid_stand_inc <- county_state_joined %>% 
+   ggplot() +
+     geom_col(aes(age_group, group_inc, fill = region), position = "dodge") +
+     labs(title = "COVID-19 Incidence in Missoula County by Age Group",
+          fill = "") +
+     ylab("Incidence per 100,000 Population") +
+     xlab("Age Group (years)") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "grey"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 25, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) +
+     scale_fill_manual(values = cbPalette) 
+
+covid_stand_inc
+```
+
+\pagebreak  
 
 ```{r}
 overall_summary <- covid_data %>% 
@@ -124,6 +223,12 @@ covid_summary <- rbind(overall_summary, age_group_summary, gender_summary,
           "Proportion of Cases (%)", "Incidence per 100,000 Population")
 
 
+kable(stand_inc, digits = 1,
+      caption = "Age-standardized Incidence") %>% 
+   kable_styling() %>% 
+   footnote(c("Standardized to US population age distribution"))
+
+
 kable(covid_summary, 
       caption = "Missoula County COVID-19 Cases") %>% 
    kable_styling() %>% 
@@ -189,7 +294,46 @@ plot(r_results)
 
 \pagebreak  
 
-```{r}
+```{r, fig.width = 10, fig.height = 6}
+total_cases <- sum(covid_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_10 <- format(Sys.Date() - 10, "%d %b %Y")
+
+covid_plot_r <- county_r_clean %>% 
+   ggplot() +
+     geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+     labs(title = paste0("COVID-19 R-value in Missoula County, 2020", 
+                         " (Total cases = ", total_cases, ")"),
+          subtitle = paste0("Data current as of ", date_today, 
+                            ". Cases after ", date_10, " may not yet be reported.")) +
+     ylab("Rolling 7-day mean R-value") +
+     xlab(" ") +
+     scale_x_date(date_breaks = "1 day", date_labels = "%d-%b") +
+     scale_y_continuous(breaks = seq(0, 5, 0.25), labels = seq(0, 5, 0.25)) +
+     geom_hline(yintercept = 1, size = 1.2, color = "black") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "grey"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) 
+
+covid_plot_r
+```
+
+\pagebreak  
+
+```{r, fig.width = 10, fig.height = 6}
 total_cases <- sum(covid_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
 date_10 <- format(Sys.Date() - 10, "%d %b %Y")
@@ -197,13 +341,11 @@ date_10 <- format(Sys.Date() - 10, "%d %b %Y")
 covid_plot_onset <- covid_data %>% 
    ggplot() +
      geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
-     geom_line(data = county_r_clean, aes(dates, mean_r, color = label), size = 1.5) +
      labs(title = paste0("COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020", 
                          " (Total cases = ", total_cases, ")"),
           subtitle = paste0("Data current as of ", date_today, 
                             ". Cases after ", date_10, " may not yet be reported."),
-          fill = "Onset date method",
-          color = "") +
+          fill = "Onset date method") +
      ylab("Number of Cases") +
      xlab("Symptom Onset Date") +
      scale_x_date(date_breaks = "1 day", date_labels = "%d-%b") +
@@ -224,7 +366,6 @@ covid_plot_onset <- covid_data %>%
            axis.line.y = element_blank(), 
            axis.ticks = element_blank()) +
      scale_fill_manual(values = cbPalette) +
-     scale_color_manual(values = c("black")) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
@@ -239,7 +380,7 @@ covid_plot_onset
 
 \pagebreak  
 
-```{r}
+```{r, fig.width = 10, fig.height = 6}
 total_cases <- sum(covid_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
 date_10 <- format(Sys.Date() - 10, "%d %b %Y")
@@ -247,13 +388,11 @@ date_10 <- format(Sys.Date() - 10, "%d %b %Y")
 covid_plot_onset <- covid_data %>% 
    ggplot() +
      geom_col(aes(symptom_onset_date_new, case, fill = age_group)) +
-     geom_line(data = county_r_clean, aes(dates, mean_r, color = label), size = 1.5) +
      labs(title = paste0("COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020", 
                          " (Total cases = ", total_cases, ")"),
           subtitle = paste0("Data current as of ", date_today, 
                             ". Cases after ", date_10, " may not yet be reported."),
-          fill = "Age group",
-          color = "") +
+          fill = "Age group") +
      ylab("Number of Cases") +
      xlab("Symptom Onset Date") +
      scale_x_date(date_breaks = "1 day", date_labels = "%d-%b") +
@@ -274,7 +413,6 @@ covid_plot_onset <- covid_data %>%
            axis.line.y = element_blank(), 
            axis.ticks = element_blank()) +
      scale_fill_manual(values = cbPalette) +
-     scale_color_manual(values = c("black")) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
@@ -289,7 +427,7 @@ covid_plot_onset
 
 \pagebreak  
 
-```{r}
+```{r, fig.width = 10, fig.height = 6}
 total_cases <- sum(covid_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
 date_10 <- format(Sys.Date() - 10, "%d %b %Y")
@@ -297,13 +435,11 @@ date_10 <- format(Sys.Date() - 10, "%d %b %Y")
 covid_plot_onset <- covid_data %>% 
    ggplot() +
      geom_col(aes(symptom_onset_date_new, case, fill = gender)) +
-     geom_line(data = county_r_clean, aes(dates, mean_r, color = label), size = 1.5) +
      labs(title = paste0("COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020", 
                          " (Total cases = ", total_cases, ")"),
           subtitle = paste0("Data current as of ", date_today, 
                             ". Cases after ", date_10, " may not yet be reported."),
-          fill = "Gender",
-          color = "") +
+          fill = "Gender") +
      ylab("Number of Cases") +
      xlab("Symptom Onset Date") +
      scale_x_date(date_breaks = "1 day", date_labels = "%d-%b") +
@@ -324,7 +460,6 @@ covid_plot_onset <- covid_data %>%
            axis.line.y = element_blank(), 
            axis.ticks = element_blank()) +
      scale_fill_manual(values = cbPalette) +
-     scale_color_manual(values = c("black")) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,

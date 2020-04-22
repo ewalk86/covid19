@@ -1,6 +1,6 @@
 # Pull daily updated State of Montana covid data, estimate R, save results/plots
 # Ethan Walker
-# 20 April 2020
+# 21 April 2020
 
 library(tidyverse)
 library(readxl)

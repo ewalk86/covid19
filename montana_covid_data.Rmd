@@ -1,7 +1,7 @@
 ---
 title: "State of Montana Covid-19 R-values"
 author: "Ethan Walker"
-date: "Data as of April 20, 2020"
+date: "Data as of April 21, 2020"
 output:
   pdf_document: default
   html_document:
@@ -87,7 +87,21 @@ state_data_clean <- state_data %>%
    mutate(dates = ymd(dates)) %>% 
    select(case_no, dates, county:mt_case) %>% 
    left_join(counties_regions, by = "county") %>% 
-   mutate(case = 1)
+   mutate(case = 1) %>% 
+   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99",
+                               "80+", age_group),
+          age_group2 = factor(age_group2, 
+                              labels = c("0-9, 0.12", "10-19, 0.13", "20-29, 0.13", 
+                                         "30-39, 0.13", "40-49, 0.11", "50-59, 0.13", 
+                                         "60-69, 0.14", "70-79, 0.08", "80+, 0.04"))) %>% 
+   separate(age_group2, c("age_group2", "age_group2_percent"), sep = ", ") %>% 
+   mutate(age_group2_percent = as.numeric(age_group2_percent),
+          state_pop = as.numeric(1062000))
+
+output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+
+#write_rds(state_data_clean, paste0(output_path, "Output/state_data_clean.rds"))
+   
 
 state_data_wide <- state_data_clean %>% 
    mutate(age_group = factor(age_group,

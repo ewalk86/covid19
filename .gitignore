@@ -12,8 +12,11 @@
 *.png
 *.log
 *.txt
+*.jpg
+*.jpeg
 montana_daily_script.log
 state_daily_results
 Input
 Output
 County_R.R
+MCCHD_covid_figures_public.Rmd
