@@ -236,8 +236,8 @@ kable(covid_summary, caption = "Missoula County COVID-19 Cases",
    pack_rows("Age Group (Years)", 2, 3) %>% 
    pack_rows("Gender", 4, 5) %>% 
    pack_rows("Travel History", 6, 8) %>% 
-   pack_rows("Contact with Known Case", 9, 11) %>% 
-   pack_rows("Community Spread", 12, 13) %>% 
+   pack_rows("Contact with Known Case", 9, 10) %>% 
+   pack_rows("Community Spread", 11, 12) %>% 
    footnote(c("Travel History: case left Missoula County.",
      "Community Spread: no history of travel and no known contact with a known case."))
 ```
