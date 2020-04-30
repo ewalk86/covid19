@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montanta"
-date: "Data as of April 19, 2020"
+date: "Data as of April 28, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -137,6 +137,8 @@ covid_incidence <- county_state_joined %>%
      scale_fill_manual(values = cbPalette) 
 
 covid_incidence
+
+#ggsave("miss_vs_mt_inc.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -336,6 +338,8 @@ covid_plot_r <- county_r_clean %>%
            axis.ticks = element_blank()) 
 
 covid_plot_r
+
+#ggsave("covid_plot_r.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -348,7 +352,7 @@ date_12 <- format(Sys.Date() - 12, "%d %b %Y")
 covid_plot_onset <- covid_data %>% 
    ggplot() +
      geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
-               fill = "gray85", alpha = 0.05) +
+               fill = "gray80", alpha = 0.05) +
      geom_label(aes(x = Sys.Date()-6, y = 4.5, 
                     label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
      geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
@@ -392,6 +396,8 @@ covid_plot_onset <- covid_data %>%
                  y = 3.5), colour = "black", angle = 90, text = element_text(size=14))
 
 covid_plot_onset
+
+#ggsave("epi_curve_onset.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -400,7 +406,7 @@ covid_plot_onset
 covid_plot_onset <- covid_data %>% 
    ggplot() +
      geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
-               fill = "gray85", alpha = 0.05) +
+               fill = "gray80", alpha = 0.05) +
      geom_label(aes(x = Sys.Date()-6, y = 4.5, 
                     label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
      geom_col(aes(symptom_onset_date_new, case, fill = age_group)) +
@@ -443,6 +449,8 @@ covid_plot_onset <- covid_data %>%
                  y = 3.5), colour = "black", angle = 90, text = element_text(size=14))
 
 covid_plot_onset
+
+#ggsave("epi_curve_age.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -451,7 +459,7 @@ covid_plot_onset
 covid_plot_onset <- covid_data %>% 
    ggplot() +
      geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
-               fill = "gray85", alpha = 0.05) +
+               fill = "gray80", alpha = 0.05) +
      geom_label(aes(x = Sys.Date()-6, y = 4.5, 
                     label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
      geom_col(aes(symptom_onset_date_new, case, fill = gender)) +
@@ -495,6 +503,8 @@ covid_plot_onset <- covid_data %>%
                  y = 3.5), colour = "black", angle = 90, text = element_text(size=14))
 
 covid_plot_onset
+
+#ggsave("epi_curve_gender.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -513,7 +523,7 @@ covid_plot <- covid_data %>%
    mutate(variable = factor(variable,
                             labels = c("Head/body aches", "Fatigue/lethargy",
                                        "Fever/chills", "Nausea/Vomiting/Diarrhea",
-                                       "Cough/SOB", "Sinus/throat", 
+                                       "Cough/Short of breath", "Sinus/throat", 
                                        "Taste/Smell Loss"))) %>% 
    ggplot(aes(x = variable, y = values, fill = gender)) +   
      geom_bar(stat = "identity", width = .6) +   
@@ -537,6 +547,8 @@ covid_plot <- covid_data %>%
            axis.ticks = element_line(colour = "black")) + 
      scale_fill_manual(values = cbPalette)
 covid_plot
+
+#ggsave("symptoms_plot_gender.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -555,7 +567,7 @@ covid_plot <- covid_data %>%
    mutate(variable = factor(variable,
                             labels = c("Head/body aches", "Fatigue/lethargy",
                                        "Fever/chills", "Nausea/Vomiting/Diarrhea",
-                                       "Cough/SOB", "Sinus/throat", 
+                                       "Cough/Short of breath", "Sinus/throat", 
                                        "Taste/Smell Loss"))) %>% 
    ggplot(aes(x = variable, y = values, fill = age_group)) +   
      geom_bar(stat = "identity", width = .6) +   
@@ -579,6 +591,8 @@ covid_plot <- covid_data %>%
            axis.ticks = element_line(colour = "black")) + 
      scale_fill_manual(values = cbPalette)
 covid_plot
+
+#ggsave("symptoms_plot_age.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -669,6 +683,8 @@ covid_piechart <- plot_table %>%
            legend.title = element_text(size = 16, colour = "black")) +
            scale_fill_manual(values = cbPalette)
 covid_piechart
+
+#ggsave("piechart_hosp_vent.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -708,6 +724,8 @@ covid_piechart <- plot_table %>%
            legend.title = element_text(size = 16, colour = "black")) +
            scale_fill_manual(values = cbPalette)
 covid_piechart
+
+#ggsave("piechart_hosp_chronic.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -746,22 +764,30 @@ covid_piechart
 
 ```{r}
 piechart_function(plot_fill = "community_spread", var_label = "Community Spread (n)")
+
+#ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
 
 ```{r}
 piechart_function(plot_fill = "gender", var_label = "Gender (n)")
+
+#ggsave("piechart_gender.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
 
 ```{r}
 piechart_function(plot_fill = "age_group", var_label = "Age group (n)")
+
+#ggsave("piechart_age.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
 
 ```{r}
 piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts (n)")
+
+#ggsave("piechart_contacts.jpg", width = 10, height = 5)
 ```
