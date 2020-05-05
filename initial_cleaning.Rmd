@@ -33,11 +33,11 @@ input_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "Input/mcchd_covid_data_20200428.xlsx"), 
-             range = "A2:Y500", 
+   read_xlsx(paste0(input_path, "Input/mcchd_covid_data_20200505.xlsx"), 
+             range = "D2:AA500", 
                         col_names = c("dob", "gender", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
-                                      "test_date", "test_results", "test_lab", "last_exposure_date", 
+                                      "test_date", "test_lab", "last_exposure_date", 
                                       "release_date", "contact_with_case", "travel_hx",
                                       "hospitalized", "ventilated", "discharge_date",
                                       "chronic_conditions", "chronic_conditions_type",
@@ -46,7 +46,7 @@ covid_data_initial <-
                                       "community_spread", "epi_linked"),
                         col_types = c("date", "text", "text", "text",
                                       "text", "text", "date",
-                                      "date", "text", "text", "date",
+                                      "date", "text", "date",
                                       "date", "text", "text",
                                       "text", "text", "date",
                                       "text", "text",

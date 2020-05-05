@@ -247,7 +247,7 @@ state_r_plot <- state_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #state_r_plot
-ggsave("C:/R/covid19/state_daily_results/state_r_plot.png")
+ggsave("C:/R/covid19/state_daily_results/state_r_plot.png", width = 10, height = 5)
 
 state_inc_plot <- state_data_clean %>% 
    ggplot() +
@@ -276,7 +276,7 @@ state_inc_plot <- state_data_clean %>%
          axis.ticks = element_blank()) 
 #state_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/state_inc_plot.png")
+ggsave("C:/R/covid19/state_daily_results/state_inc_plot.png", width = 10, height = 5)
 
 
 
@@ -343,7 +343,7 @@ reg1_r_plot <- reg1_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg1_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg1_r_plot.png")
+ggsave("C:/R/covid19/state_daily_results/reg1_r_plot.png", width = 10, height = 5)
 
 reg1_inc_plot <- reg1_data_clean %>% 
    ggplot() +
@@ -372,7 +372,7 @@ reg1_inc_plot <- reg1_data_clean %>%
          axis.ticks = element_blank()) 
 #reg1_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg1_inc_plot.png")
+ggsave("C:/R/covid19/state_daily_results/reg1_inc_plot.png", width = 10, height = 5)
 
 
 
@@ -440,7 +440,7 @@ reg2_r_plot <- reg2_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg2_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg2_r_plot.png")
+ggsave("C:/R/covid19/state_daily_results/reg2_r_plot.png", width = 10, height = 5)
 
 reg2_inc_plot <- reg2_data_clean %>% 
    ggplot() +
@@ -469,7 +469,7 @@ reg2_inc_plot <- reg2_data_clean %>%
          axis.ticks = element_blank()) 
 #reg2_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg2_inc_plot.png")
+ggsave("C:/R/covid19/state_daily_results/reg2_inc_plot.png", width = 10, height = 5)
 
 
 ## Reg3 results
@@ -535,7 +535,7 @@ reg3_r_plot <- reg3_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg3_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg3_r_plot.png")
+ggsave("C:/R/covid19/state_daily_results/reg3_r_plot.png", width = 10, height = 5)
 
 reg3_inc_plot <- reg3_data_clean %>% 
    ggplot() +
@@ -564,7 +564,7 @@ reg3_inc_plot <- reg3_data_clean %>%
          axis.ticks = element_blank()) 
 #reg3_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg3_inc_plot.png")
+ggsave("C:/R/covid19/state_daily_results/reg3_inc_plot.png", width = 10, height = 5)
 
 
 ## Reg4 results
@@ -630,7 +630,7 @@ reg4_r_plot <- reg4_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg4_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg4_r_plot.png")
+ggsave("C:/R/covid19/state_daily_results/reg4_r_plot.png", width = 10, height = 5)
 
 reg4_inc_plot <- reg4_data_clean %>% 
    ggplot() +
@@ -659,7 +659,7 @@ reg4_inc_plot <- reg4_data_clean %>%
          axis.ticks = element_blank()) 
 #reg4_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg4_inc_plot.png")
+ggsave("C:/R/covid19/state_daily_results/reg4_inc_plot.png", width = 10, height = 5)
 
 
 ## Reg5 results
@@ -726,7 +726,7 @@ reg5_r_plot <- reg5_r_clean %>%
    scale_color_manual(values = c("black")) 
 #reg5_r_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg5_r_plot.png")
+ggsave("C:/R/covid19/state_daily_results/reg5_r_plot.png", width = 10, height = 5)
 
 reg5_inc_plot <- reg5_data_clean %>% 
    ggplot() +
@@ -755,7 +755,7 @@ reg5_inc_plot <- reg5_data_clean %>%
          axis.ticks = element_blank()) 
 #reg5_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg5_inc_plot.png")
+ggsave("C:/R/covid19/state_daily_results/reg5_inc_plot.png", width = 10, height = 5)
 
 
 
