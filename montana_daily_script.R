@@ -19,6 +19,7 @@ library(jsonlite)
 library(httr)
 library(rlist)
 library(Rsftp)
+library(sftp)
 
 
 # Query and prep data
@@ -774,6 +775,17 @@ write_csv(all_regions_r, "C:/R/covid19/state_daily_results/all_regions_r.csv", n
 # username = 'celftp'
 # password  = 'celftp'
 # remotepath = '/celFtpFiles/covid19/Rt/incoming/'
+
+sftp_con <- sftp_connect(server = "elbastion.dbs.umt.edu",
+                         folder = "/celFtpFiles/covid19/Rt/incoming",
+                         username = "celftp",
+                         password = "celftp")
+
+sftp_upload(file = "all_regions_r.csv", 
+            fromfolder = "C:/R/covid19/state_daily_results/",
+            sftp_connection = sftp_con)
+
+
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
            "/celFtpFiles/covid19/Rt/incoming/all_regions_r.csv",

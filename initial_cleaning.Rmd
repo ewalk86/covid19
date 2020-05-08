@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 21 April 2020"
+date: "Started 2 April 2020, Updated 8 May 2020"
 output:
   pdf_document: default
   html_document:
@@ -27,13 +27,13 @@ jv_palette <- c("#330099","#CC0066","#FF6633",
                   "#FF3366", "#33CC99", "#33999")
 ```
 
-C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19
+
 ```{r}
-input_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "Input/mcchd_covid_data_20200505.xlsx"), 
+   read_xlsx(paste0(input_path, "COVID data 5.07.20.xlsx"), 
              range = "D2:AA500", 
                         col_names = c("dob", "gender", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
@@ -137,8 +137,8 @@ covid_clean <- covid_data_initial %>%
           community_spread = factor(community_spread, levels = c("Yes", "No")),
           patient_died = factor(patient_died, levels = c("y", "n"),
                              labels = c("Yes", "No")),
-          epi_linked = factor(epi_linked, levels = c("y", "n", "unknown"),
-                             labels = c("Yes", "No", "Unknown"))) %>% 
+          epi_linked = factor(epi_linked, levels = c("y", "n"),
+                             labels = c("Yes", "No"))) %>% 
    replace_with_na(replace = list(ventilated = "N/A")) %>% 
    mutate(symptom_test_diff = as.duration(interval(symptom_onset_date, test_date)),
           symptom_test_diff = as.numeric(symptom_test_diff)/86400,
