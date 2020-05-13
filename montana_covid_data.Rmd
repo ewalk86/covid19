@@ -1,7 +1,7 @@
 ---
-title: "State of Montana Covid-19 R-values"
+title: "State of Montana Covid-19 Data"
 author: "Ethan Walker"
-date: "Data as of 8 May 2020"
+date: "Data as of 13 May 2020"
 output:
   pdf_document: default
   html_document:
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = FALSE, eval = TRUE,
 
 ```{r, message=FALSE}
 library(tidyverse)
-library(plyr)
+#library(plyr)
 library(readxl)
 library(naniar)
 library(lubridate)
@@ -54,28 +54,28 @@ state_data <- as.data.frame(json_data$features$attributes)
 reg1 <- as.data.frame(c("Carter", "Custer", "Daniels", "Dawson", "Fallon", "Garfield", "McCone",
           "Phillips", "Powder River", "Prairie", "Richland", "Roosevelt", "Rosebud",
           "Sheridan", "Treasure", "Valley", "Wibaux")) %>% 
-   rename(county = 1) %>% 
+   rename_at(1, ~"county") %>% 
    mutate(region = 1)
 
 reg2 <- as.data.frame(c("Blaine", "Cascade", "Chouteau", "Glacier", "Hill", "Liberty", "Pondera",
           "Teton", "Toole")) %>% 
-   rename(county = 1) %>% 
+   rename_at(1, ~"county") %>% 
    mutate(region = 2)
 
 reg3 <- as.data.frame(c("Big Horn", "Carbon", "Fergus", "Golden Valley", "Judith Basin",
           "Musselshell", "Petroleum", "Stillwater", "Sweet Grass", "Wheatland",
           "Yellowstone")) %>% 
-   rename(county = 1) %>% 
+   rename_at(1, ~"county") %>% 
    mutate(region = 3)
 
 reg4 <- as.data.frame(c("Beaverhead", "Broadwater", "Deer Lodge", "Gallatin", "Granite", "Jefferson",
           "Lewis and Clark", "Madison", "Meagher", "Park", "Powell", "Silver Bow")) %>% 
-   rename(county = 1) %>% 
+   rename_at(1, ~"county") %>% 
    mutate(region = 4)
 
 reg5 <- as.data.frame(c("Flathead", "Lake", "Lincoln", "Mineral", "Missoula", 
           "Ravalli", "Sanders")) %>% 
-   rename(county = 1) %>% 
+   rename_at(1, ~"county") %>% 
    mutate(region = 5)
 
 counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
@@ -91,13 +91,17 @@ state_data_clean <- state_data %>%
    mutate(case = 1) %>% 
    mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99",
                                "80+", age_group),
-          age_group2 = factor(age_group2, 
-                              labels = c("0-9, 0.12", "10-19, 0.13", "20-29, 0.13", 
-                                         "30-39, 0.13", "40-49, 0.11", "50-59, 0.13", 
-                                         "60-69, 0.14", "70-79, 0.08", "80+, 0.04"))) %>% 
-   separate(age_group2, c("age_group2", "age_group2_percent"), sep = ", ") %>% 
-   mutate(age_group2_percent = as.numeric(age_group2_percent),
-          state_pop = as.numeric(1062000))
+          age_group_new = factor(age_group2, 
+                              levels = c("0-9", "10-19", "20-29", 
+                                         "30-39", "40-49", "50-59", 
+                                         "60-69", "70-79", "80+"),
+                              labels = c("0 to 9, 0.12", "10 to 19, 0.13", "20 to 29, 0.13", 
+                                         "30 to 39, 0.13", "40 to 49, 0.11", "50 to 59, 0.13", 
+                                         "60 to 69, 0.14", "70 to 79, 0.08", "80+, 0.04"))) %>% 
+   separate(age_group_new, c("age_group_new", "age_group_new_percent"), sep = ",") %>% 
+   mutate(age_group_new_percent = as.numeric(age_group_new_percent),
+          state_pop = as.numeric(1062000)) %>% 
+   select(-age_group2)
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
@@ -116,17 +120,17 @@ county_incidence <- incidence(county_data$dates,
                               last_date = Sys.Date(),
                               standard = FALSE)
 county_dates <- as.data.frame(county_incidence$dates) %>% 
-   rename(dates = 1)
+   rename_at(1, ~"dates")
 county_cases <- county_incidence$counts
 
 county_data_new <<- county_dates %>% 
    left_join(county_data, by = "dates") %>% 
-   mutate(case2 = case) %>% 
+   mutate(case_new = case) %>% 
    group_by(dates) %>% 
    pivot_wider(names_from = "hospitalization", values_from = "case") %>% 
    select(-"NA") %>% 
    group_by(dates) %>% 
-   pivot_wider(names_from = "outcome", values_from = "case2") %>% 
+   pivot_wider(names_from = "outcome", values_from = "case_new") %>% 
    select(-"NA") %>% 
    group_by(dates) %>% 
    mutate_at(vars(one_of("N")), sum, na.rm = TRUE) %>% 
@@ -140,8 +144,8 @@ county_data_new <<- county_dates %>%
    ungroup() %>% 
    fill(county, .direction = c("downup")) %>% 
    fill(region, .direction = c("downup")) %>% 
-   select(-case_no, -age_group, -sex, -mt_case, -age_group2,
-          -age_group2_percent, -state_pop)
+   select(-case_no, -age_group, -sex, -mt_case, -age_group_new,
+          -age_group_new_percent, -state_pop)
 
 
 
@@ -226,39 +230,26 @@ granite_county <- county_function("Granite")
 powell_county <- county_function("Powell")
 mineral_county <- county_function("Mineral")
 sanders_county <- county_function("Sanders")
+```
 
 
+```{r}
+state_hosp <- state_data_clean %>% 
+   group_by(age_group_new) %>% 
+   mutate(age_group_n = sum(case)) %>% 
+   mutate(hosp = if_else(hospitalization == "Y" | hospitalization == "P", 1, 0),
+          hosp_n = sum(hosp, na.rm = TRUE),
+          hosp_perc = round(hosp_n/age_group_n*100, digits = 2)) %>% 
+   ungroup() %>% 
+   distinct(age_group_new, .keep_all = TRUE) %>% 
+   select(age_group_new, age_group_n, hosp_n, hosp_perc) %>% 
+   rename(age_group = age_group_new) %>% 
+   arrange(age_group)
+#state_hosp
 
+output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
-
-
-
-reg1 <- as.data.frame(c("Carter", "Custer", "Daniels", "Dawson", "Fallon", "Garfield", "McCone",
-          "Phillips", "Powder River", "Prairie", "Richland", "Roosevelt", "Rosebud",
-          "Sheridan", "Treasure", "Valley", "Wibaux")) %>% 
-   rename(county = 1) %>% 
-   mutate(region = 1)
-
-reg2 <- as.data.frame(c("Blaine", "Cascade", "Chouteau", "Glacier", "Hill", "Liberty", "Pondera",
-          "Teton", "Toole")) %>% 
-   rename(county = 1) %>% 
-   mutate(region = 2)
-
-reg3 <- as.data.frame(c("Big Horn", "Carbon", "Fergus", "Golden Valley", "Judith Basin",
-          "Musselshell", "Petroleum", "Stillwater", "Sweet Grass", "Wheatland",
-          "Yellowstone")) %>% 
-   rename(county = 1) %>% 
-   mutate(region = 3)
-
-reg4 <- as.data.frame(c("Beaverhead", "Broadwater", "Deer Lodge", "Gallatin", "Granite", "Jefferson",
-          "Lewis and Clark", "Madison", "Meagher", "Park", "Powell", "Silver Bow")) %>% 
-   rename(county = 1) %>% 
-   mutate(region = 4)
-
-reg5 <- as.data.frame(c("Flathead", "Lake", "Lincoln", "Mineral", "Missoula", 
-          "Ravalli", "Sanders")) %>% 
-   rename(county = 1) %>% 
-   mutate(region = 5)
+write_csv(state_hosp, paste0(output_path, "Output/state_hosp.csv"))
 ```
 
  
