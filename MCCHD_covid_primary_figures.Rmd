@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montanta"
-date: "Data as of May 7, 2020"
+date: "Data as of May 14, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -42,11 +42,11 @@ output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 covid_data <- read_rds(paste0(output_path, "Output/covid_data_clean.rds"))
 state_data <- read_rds(paste0(output_path, "Output/state_data_clean.rds")) %>% 
    select(-age_group) %>% 
-   rename(age_group = age_group2)
+   rename(age_group = age_group_new)
 
-us_pop_data <- as.data.frame(c("0-9, 0.12", "10-19, 0.13", "20-29, 0.14", 
-                 "30-39, 0.13", "40-49, 0.12", "50-59, 0.13", 
-                 "60-69, 0.12", "70-79, 0.07", "80+, 0.04")) %>% 
+us_pop_data <- as.data.frame(c("0 to 9, 0.12", "10 to 19, 0.13", "20 to 29, 0.14", 
+                 "30 to 39, 0.13", "40 to 49, 0.12", "50 to 59, 0.13", 
+                 "60 to 69, 0.12", "70 to 79, 0.07", "80+, 0.04")) %>% 
    rename(age_group = 1) %>% 
    separate(age_group, c("age_group", "age_group_percent_us"), sep = ", ") %>% 
    mutate(age_group_percent_us = as.numeric(age_group_percent_us),
@@ -79,9 +79,9 @@ county_joined <- covid_data %>%
 
 
 state_joined <- state_data %>% 
-   select(case, age_group, age_group2_percent, state_pop) %>% 
+   select(case, age_group, age_group_new_percent, state_pop) %>% 
    rename(region_pop = state_pop,
-          age_group_percent = age_group2_percent) %>% 
+          age_group_percent = age_group_new_percent) %>% 
    left_join(us_pop_data, by = "age_group") %>% 
    mutate(total_cases = n()) %>% 
    group_by(age_group) %>% 
@@ -111,7 +111,7 @@ stand_inc <- county_state_joined %>%
 ```
 
 
-```{r, fig.width = 10, fig.height = 6}
+```{r, fig.width = 12, fig.height = 6}
 covid_incidence <- county_state_joined %>% 
    ggplot() +
      geom_col(aes(age_group, group_inc, fill = region), position = "dodge") +
@@ -124,7 +124,8 @@ covid_incidence <- county_state_joined %>%
            title = element_text(size = 12, colour = "black"),
            panel.grid = element_blank(),
            panel.grid.major.y = element_line(colour = "grey"),
-           axis.text.x = element_text(size = 12, colour = "black", vjust = 0.4),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                      vjust = 0.4, angle = 20),
            axis.text.y = element_text(size = 12, colour = "black"),
            legend.text = element_text(size = 12, colour = "black"),
            axis.title.y = element_text(size = 12, colour = "black",
@@ -304,7 +305,7 @@ covid_plot_r <- county_r_clean %>%
    ggplot() +
      geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray85", alpha = 0.05) +
-     geom_label(aes(x = Sys.Date()-6, y = 2.5, 
+     geom_label(aes(x = Sys.Date()-7, y = 2.5, 
                     label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
      geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
      labs(title = "COVID-19 R-value in Missoula County, 2020",
@@ -344,7 +345,7 @@ covid_plot_r
 
 \pagebreak  
 
-```{r, fig.width = 10, fig.height = 6}
+```{r, fig.width = 10, fig.height = 5}
 total_cases <- sum(covid_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
 date_12 <- format(Sys.Date() - 12, "%d %b %Y")
@@ -353,7 +354,7 @@ covid_plot_onset <- covid_data %>%
    ggplot() +
      geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
-     geom_label(aes(x = Sys.Date()-6, y = 4.5, 
+     geom_label(aes(x = Sys.Date()-7, y = 4.5, 
                     label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
      geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
      labs(title = "COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020",
@@ -363,10 +364,10 @@ covid_plot_onset <- covid_data %>%
      xlab("Symptom Onset Date") +
      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "1 day"),
+                                    by = "2 days"),
                   labels = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "1 day"),
+                                    by = "2 days"),
                   date_labels = "%d-%b") +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -407,7 +408,7 @@ covid_plot_onset <- covid_data %>%
    ggplot() +
      geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
-     geom_label(aes(x = Sys.Date()-6, y = 4.5, 
+     geom_label(aes(x = Sys.Date()-8, y = 4.5, 
                     label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
      geom_col(aes(symptom_onset_date_new, case, fill = age_group)) +
      labs(title = "COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020",
@@ -417,10 +418,10 @@ covid_plot_onset <- covid_data %>%
      xlab("Symptom Onset Date") +
      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "1 day"),
+                                    by = "2 days"),
                   labels = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "1 day"),
+                                    by = "2 days"),
                   date_labels = "%d-%b") +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -460,7 +461,7 @@ covid_plot_onset <- covid_data %>%
    ggplot() +
      geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
-     geom_label(aes(x = Sys.Date()-6, y = 4.5, 
+     geom_label(aes(x = Sys.Date()-7, y = 4.5, 
                     label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
      geom_col(aes(symptom_onset_date_new, case, fill = gender)) +
      labs(title = "COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020",
@@ -470,10 +471,10 @@ covid_plot_onset <- covid_data %>%
      xlab("Symptom Onset Date") +
      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "1 day"),
+                                    by = "2 days"),
                   labels = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "1 day"),
+                                    by = "2 days"),
                   date_labels = "%d-%b") +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),

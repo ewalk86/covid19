@@ -44,11 +44,11 @@ output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 covid_data <- read_rds(paste0(output_path, "Output/covid_data_clean.rds"))
 state_data <- read_rds(paste0(output_path, "Output/state_data_clean.rds")) %>% 
    select(-age_group) %>% 
-   rename(age_group = age_group2)
+   rename(age_group = age_group_new)
 
-us_pop_data <- as.data.frame(c("0-9, 0.12", "10-19, 0.13", "20-29, 0.14", 
-                 "30-39, 0.13", "40-49, 0.12", "50-59, 0.13", 
-                 "60-69, 0.12", "70-79, 0.07", "80+, 0.04")) %>% 
+us_pop_data <- as.data.frame(c("0 to 9, 0.12", "10 to 19, 0.13", "20 to 29, 0.14", 
+                 "30 to 39, 0.13", "40 to 49, 0.12", "50 to 59, 0.13", 
+                 "60 to 69, 0.12", "70 to 79, 0.07", "80+, 0.04")) %>% 
    rename(age_group = 1) %>% 
    separate(age_group, c("age_group", "age_group_percent_us"), sep = ", ") %>% 
    mutate(age_group_percent_us = as.numeric(age_group_percent_us),
@@ -81,9 +81,9 @@ county_joined <- covid_data %>%
 
 
 state_joined <- state_data %>% 
-   select(case, age_group, age_group2_percent, state_pop) %>% 
+   select(case, age_group, age_group_new_percent, state_pop) %>% 
    rename(region_pop = state_pop,
-          age_group_percent = age_group2_percent) %>% 
+          age_group_percent = age_group_new_percent) %>% 
    left_join(us_pop_data, by = "age_group") %>% 
    mutate(total_cases = n()) %>% 
    group_by(age_group) %>% 
@@ -270,7 +270,7 @@ covid_plot_onset <- covid_data %>%
    ggplot() +
      geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
-     geom_label(aes(x = Sys.Date()-6, y = 4.5, 
+     geom_label(aes(x = Sys.Date()-7, y = 4.5, 
                     label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
      geom_col(aes(symptom_onset_date_new, case), 
               fill = "steelblue") +
@@ -280,10 +280,10 @@ covid_plot_onset <- covid_data %>%
      xlab("Symptom Onset Date") +
      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "1 day"),
+                                    by = "2 days"),
                   labels = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "1 day"),
+                                    by = "2 days"),
                   date_labels = "%d-%b") +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
