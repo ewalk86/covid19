@@ -101,11 +101,16 @@ state_data_clean <- state_data %>%
    separate(age_group_new, c("age_group_new", "age_group_new_percent"), sep = ",") %>% 
    mutate(age_group_new_percent = as.numeric(age_group_new_percent),
           state_pop = as.numeric(1062000)) %>% 
-   select(-age_group2)
+   select(-age_group2) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Y", "N", "P", "U"),
+                                   labels = c("Hosp: Yes", "Hosp: No", 
+                                              "Hosp: Past", "Hosp: Unknown")))
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
-#write_rds(state_data_clean, paste0(output_path, "Output/state_data_clean.rds"))
+write_rds(state_data_clean, paste0(output_path, "Output/state_data_clean.rds"))
+write_csv(state_data_clean, paste0(output_path, "Output/state_data_clean.csv"), na = " ")
   
 ```
 
@@ -133,10 +138,10 @@ county_data_new <<- county_dates %>%
    pivot_wider(names_from = "outcome", values_from = "case_new") %>% 
    select(-"NA") %>% 
    group_by(dates) %>% 
-   mutate_at(vars(one_of("N")), sum, na.rm = TRUE) %>% 
-   mutate_at(vars(one_of("Y")), sum, na.rm = TRUE) %>% 
-   mutate_at(vars(one_of("U")), sum, na.rm = TRUE) %>% 
-   mutate_at(vars(one_of("P")), sum, na.rm = TRUE) %>% 
+   mutate_at(vars(one_of("Hosp: No")), sum, na.rm = TRUE) %>% 
+   mutate_at(vars(one_of("Hosp: Yes")), sum, na.rm = TRUE) %>% 
+   mutate_at(vars(one_of("Hosp: Unkown")), sum, na.rm = TRUE) %>% 
+   mutate_at(vars(one_of("Hosp: Past")), sum, na.rm = TRUE) %>% 
    mutate_at(vars(one_of("Active")), sum, na.rm = TRUE) %>% 
    mutate_at(vars(one_of("Deceased")), sum, na.rm = TRUE) %>% 
    mutate_at(vars(one_of("Recovered")), sum, na.rm = TRUE) %>% 
@@ -235,14 +240,16 @@ sanders_county <- county_function("Sanders")
 
 ```{r}
 state_hosp <- state_data_clean %>% 
+   filter(mt_case != "N" & mt_case != "X") %>% 
    group_by(age_group_new) %>% 
-   mutate(age_group_n = sum(case)) %>% 
-   mutate(hosp = if_else(hospitalization == "Y" | hospitalization == "P", 1, 0),
-          hosp_n = sum(hosp, na.rm = TRUE),
-          hosp_perc = round(hosp_n/age_group_n*100, digits = 2)) %>% 
+   mutate(age_group_cases = sum(case)) %>% 
+   mutate(hosp = if_else(hospitalization == "Hosp: Yes" | hospitalization == "Hosp: Past", 1, 0),
+          hosp_yes = sum(hosp, na.rm = TRUE),
+          hosp_no = age_group_cases - hosp_yes,
+          hosp_percent = round(hosp_yes/age_group_cases*100, digits = 2)) %>% 
    ungroup() %>% 
    distinct(age_group_new, .keep_all = TRUE) %>% 
-   select(age_group_new, age_group_n, hosp_n, hosp_perc) %>% 
+   select(age_group_new, age_group_cases, hosp_yes, hosp_no, hosp_percent) %>% 
    rename(age_group = age_group_new) %>% 
    arrange(age_group)
 #state_hosp
@@ -263,7 +270,7 @@ state_data_wide <- state_data_clean %>%
                                         "80 to 89 yrs", "90 to 99 yrs")),
           sex = factor(sex, labels = c("Female", "Male")),
           hospitalization = factor(hospitalization,
-                                   labels = c("Hosp: No", "Hosp: Possible",
+                                   labels = c("Hosp: No", "Hosp: Past",
                                               "Hosp: Unknown", "Hosp: Yes"))) %>% 
    mutate(case = 1) %>% 
    pivot_wider(names_from = "age_group", values_from = "case") %>% 

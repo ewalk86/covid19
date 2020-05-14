@@ -1,6 +1,6 @@
 # Pull daily updated State of Montana covid data, estimate R, save results/plots
 # Ethan Walker
-# 13 May 2020
+# 14 May 2020
 
 library(tidyverse)
 library(readxl)
@@ -85,21 +85,26 @@ state_data_clean <- state_data %>%
    separate(age_group_new, c("age_group_new", "age_group_new_percent"), sep = ",") %>% 
    mutate(age_group_new_percent = as.numeric(age_group_new_percent),
           state_pop = as.numeric(1062000)) %>% 
-   select(-age_group2, -age_group_new, -age_group_new_percent, -state_pop)
+   select(-age_group2, -age_group_new, -age_group_new_percent, -state_pop) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Y", "N", "P", "U"),
+                                   labels = c("Hosp: Yes", "Hosp: No", 
+                                              "Hosp: Past", "Hosp: Unknown")))
 
 state_data_wide <- state_data_clean %>% 
-   mutate(age_group = factor(age_group,
-                             labels = c("<10 yrs", "10 to 19 yrs",
-                                        "20 to 29 yrs", "30 to 39 yrs",
-                                        "40 to 49 yrs", "50 to 59 yrs",
-                                        "60 to 69 yrs", "70 to 79 yrs",
-                                        "80 to 89 yrs", "90 to 99 yrs")),
-          sex = factor(sex, labels = c("Female", "Male")),
-          hospitalization = factor(hospitalization,
-                                   labels = c("Hosp: No", "Hosp: Previous",
-                                              "Hosp: Unknown", "Hosp: Yes"))) %>% 
+   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99",
+                               "80+", age_group),
+          age_group_new = factor(age_group2, 
+                                 levels = c("0-9", "10-19", "20-29", 
+                                            "30-39", "40-49", "50-59", 
+                                            "60-69", "70-79", "80+"),
+                                 labels = c("0 to 9", "10 to 19", "20 to 29", 
+                                            "30 to 39", "40 to 49", "50 to 59", 
+                                            "60 to 69", "70 to 79", "80+")),
+          sex = factor(sex, labels = c("Female", "Male"))) %>% 
+   select(-age_group, -age_group2) %>% 
    mutate(case = 1) %>% 
-   pivot_wider(names_from = "age_group", values_from = "case") %>% 
+   pivot_wider(names_from = "age_group_new", values_from = "case") %>% 
    mutate(case = 1) %>% 
    pivot_wider(names_from = "sex", values_from = "case") %>% 
    mutate(case = 1) %>% 
@@ -110,74 +115,74 @@ state_data_wide <- state_data_clean %>%
 state_wide_date <- state_data_wide %>% 
    mutate(region = "state") %>% 
    group_by(dates) %>% 
-   mutate_at(c(6:52), sum, na.rm = TRUE) %>% 
+   mutate_at(c(6:51), sum, na.rm = TRUE) %>% 
    mutate(case = 1,
           daily_cases = sum(case)) %>% 
    arrange(dates) %>% 
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, `70 to 79 yrs`:Fergus)
+   select(region, dates, daily_cases, cumulative_cases, `70 to 79`:Fergus)
 
 reg1_wide_date <- state_data_wide %>% 
    filter(region == 1) %>% 
    group_by(dates) %>% 
-   mutate_at(c(6:52), sum, na.rm = TRUE) %>% 
+   mutate_at(c(6:51), sum, na.rm = TRUE) %>% 
    mutate(case = 1,
           daily_cases = sum(case)) %>% 
    arrange(dates) %>% 
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, `70 to 79 yrs`:Fergus)
+   select(region, dates, daily_cases, cumulative_cases, `70 to 79`:Fergus)
 
 reg2_wide_date <- state_data_wide %>% 
    filter(region == 2) %>% 
    group_by(dates) %>% 
-   mutate_at(c(6:52), sum, na.rm = TRUE) %>% 
+   mutate_at(c(6:51), sum, na.rm = TRUE) %>% 
    mutate(case = 1,
           daily_cases = sum(case)) %>% 
    arrange(dates) %>% 
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, `70 to 79 yrs`:Fergus)
+   select(region, dates, daily_cases, cumulative_cases, `70 to 79`:Fergus)
 
 reg3_wide_date <- state_data_wide %>% 
    filter(region == 3) %>% 
    group_by(dates) %>% 
-   mutate_at(c(6:52), sum, na.rm = TRUE) %>% 
+   mutate_at(c(6:51), sum, na.rm = TRUE) %>% 
    mutate(case = 1,
           daily_cases = sum(case)) %>% 
    arrange(dates) %>% 
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, `70 to 79 yrs`:Fergus)
+   select(region, dates, daily_cases, cumulative_cases, `70 to 79`:Fergus)
 
 reg4_wide_date <- state_data_wide %>% 
    filter(region == 4) %>% 
    group_by(dates) %>% 
-   mutate_at(c(6:52), sum, na.rm = TRUE) %>% 
+   mutate_at(c(6:51), sum, na.rm = TRUE) %>% 
    mutate(case = 1,
           daily_cases = sum(case)) %>% 
    arrange(dates) %>% 
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, `70 to 79 yrs`:Fergus)
+   select(region, dates, daily_cases, cumulative_cases, `70 to 79`:Fergus)
 
 reg5_wide_date <- state_data_wide %>% 
    filter(region == 5) %>% 
    group_by(dates) %>% 
-   mutate_at(c(6:52), sum, na.rm = TRUE) %>% 
+   mutate_at(c(6:51), sum, na.rm = TRUE) %>% 
    mutate(case = 1,
           daily_cases = sum(case)) %>% 
    arrange(dates) %>% 
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, `70 to 79 yrs`:Fergus)
+   select(region, dates, daily_cases, cumulative_cases, `70 to 79`:Fergus)
 
 all_data_wide <- rbind(state_wide_date, reg1_wide_date, reg2_wide_date,
                        reg3_wide_date, reg4_wide_date, reg5_wide_date)
@@ -220,10 +225,10 @@ county_function <- function(county_name, data = state_data_clean){
       pivot_wider(names_from = "outcome", values_from = "case_new") %>% 
       select(-"NA") %>% 
       group_by(dates) %>% 
-      mutate_at(vars(one_of("N")), sum, na.rm = TRUE) %>% 
-      mutate_at(vars(one_of("Y")), sum, na.rm = TRUE) %>% 
-      mutate_at(vars(one_of("U")), sum, na.rm = TRUE) %>% 
-      mutate_at(vars(one_of("P")), sum, na.rm = TRUE) %>% 
+      mutate_at(vars(one_of("Hosp: No")), sum, na.rm = TRUE) %>% 
+      mutate_at(vars(one_of("Hosp: Yes")), sum, na.rm = TRUE) %>% 
+      mutate_at(vars(one_of("Hosp: Unkown")), sum, na.rm = TRUE) %>% 
+      mutate_at(vars(one_of("Hosp: Past")), sum, na.rm = TRUE) %>% 
       mutate_at(vars(one_of("Active")), sum, na.rm = TRUE) %>% 
       mutate_at(vars(one_of("Deceased")), sum, na.rm = TRUE) %>% 
       mutate_at(vars(one_of("Recovered")), sum, na.rm = TRUE) %>% 
@@ -287,7 +292,7 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          lake_county, lincoln_county,
                                          ravalli_county) 
 
-write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_combined.csv", na = " ")
+write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_combined.csv")
 
 
 #################### Run and save state hospitalization data
@@ -306,23 +311,26 @@ state_hosp_data <- state_data %>%
                                  levels = c("0-9", "10-19", "20-29", 
                                             "30-39", "40-49", "50-59", 
                                             "60-69", "70-79", "80+"),
-                                 labels = c("0 to 9, 0.12", "10 to 19, 0.13", "20 to 29, 0.13", 
-                                            "30 to 39, 0.13", "40 to 49, 0.11", "50 to 59, 0.13", 
-                                            "60 to 69, 0.14", "70 to 79, 0.08", "80+, 0.04"))) %>% 
-   separate(age_group_new, c("age_group_new", "age_group_new_percent"), sep = ",") %>% 
-   mutate(age_group_new_percent = as.numeric(age_group_new_percent),
-          state_pop = as.numeric(1062000)) %>% 
-   select(-age_group2)
+                                 labels = c("0 to 9", "10 to 19", "20 to 29", 
+                                            "30 to 39", "40 to 49", "50 to 59", 
+                                            "60 to 69", "70 to 79", "80+"))) %>% 
+   select(-age_group2, -age_group) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Y", "N", "P", "U"),
+                                   labels = c("Hosp: Yes", "Hosp: No", 
+                                              "Hosp: Past", "Hosp: Unknown")))
 
 state_hosp <- state_hosp_data %>% 
+   filter(mt_case != "N" & mt_case != "X") %>% 
    group_by(age_group_new) %>% 
-   mutate(age_group_n = sum(case)) %>% 
-   mutate(hosp = if_else(hospitalization == "Y" | hospitalization == "P", 1, 0),
-          hosp_n = sum(hosp, na.rm = TRUE),
-          hosp_perc = round(hosp_n/age_group_n*100, digits = 2)) %>% 
+   mutate(age_group_cases = sum(case)) %>% 
+   mutate(hosp = if_else(hospitalization == "Hosp: Yes" | hospitalization == "Hosp: Past", 1, 0),
+          hosp_yes = sum(hosp, na.rm = TRUE),
+          hosp_no = age_group_cases - hosp_yes,
+          hosp_percent = round(hosp_yes/age_group_cases*100, digits = 2)) %>% 
    ungroup() %>% 
    distinct(age_group_new, .keep_all = TRUE) %>% 
-   select(age_group_new, age_group_n, hosp_n, hosp_perc) %>% 
+   select(age_group_new, age_group_cases, hosp_yes, hosp_no, hosp_percent) %>% 
    rename(age_group = age_group_new) %>% 
    arrange(age_group)
 
