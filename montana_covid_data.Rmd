@@ -984,5 +984,152 @@ json_data <- fromJSON(text_data)
 county_data <- as.data.frame(json_data$features$attributes) 
 ```
 
+```{r}
+serial_interval_mean <- 4
+serial_interval_sd <- 4.75
+
+
+## State results
+state_incidence <- incidence(state_data_clean$dates)
+
+state_n <- as.data.frame(state_incidence$dates)
+
+time_var <- nrow(state_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
+state_results1wk <- estimate_R(state_incidence, method="parametric_si", 
+                               config = make_config(list(mean_si = serial_interval_mean, 
+                                                         std_si = serial_interval_sd)))
+
+state_results2wk <- estimate_R(state_incidence, method="parametric_si", 
+                               config = make_config(list(mean_si = serial_interval_mean, 
+                                                         std_si = serial_interval_sd,
+                                                         t_start =  time_start,
+                                                         t_end = time_end)))
+estimate_R_plots(state_results2wk, what = "R")
+
+# Rolling 1 week R
+colomns <- c(1:4, 8)
+state_r <- (state_results1wk$R[,colomns]) %>% 
+   mutate(region = "state") %>% 
+   rename(mean_r = `Mean(R)`,
+          sd_r = `Std(R)`,
+          median_r = `Median(R)`)
+
+state_dates <- as.data.frame(state_results1wk$dates)
+state_i <- as.data.frame(state_results1wk$I)
+state_cil <- as.data.frame(state_results1wk$R$`Quantile.0.025(R)`)
+state_cih <- as.data.frame(state_results1wk$R$`Quantile.0.975(R)`)
+state_dates_new <- cbind(state_dates, state_i) %>% 
+   rename(dates = 1,
+          incidence = 2) %>% 
+   mutate(dates = ymd(dates))
+state_dates_new <- state_dates_new[-(1:7), 1:2]
+state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+state_r_clean <- cbind(state_r, state_dates_new) 
+
+
+total_cases <- sum(state_data_clean$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_10 <- format(Sys.Date() - 10, "%d %b %Y")
+
+
+state_r_plot <- state_r_clean %>% 
+   ggplot() +
+     geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+     geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+     geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
+     labs(title = "COVID-19 Rolling 7-day R-values, State of Montana, 2020",
+          subtitle = paste0("Data current as of ", date_today),
+          color = "") +
+     ylab("R-value") +
+     xlab("") +
+     geom_hline(yintercept = 1, color = "black", size = 1.2) +
+     scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
+     scale_y_continuous(breaks = seq(0, 5, 0.25), labels = seq(0, 5, 0.25)) +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "grey"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) +
+     scale_color_manual(values = c("black")) 
+state_r_plot
+
+
+ggsave("state_r_1wk.png")
+
+
+# Rolling 2 week R
+colomns <- c(1:4, 8)
+state_r <- (state_results2wk$R[,colomns]) %>% 
+   mutate(region = "state") %>% 
+   rename(mean_r = `Mean(R)`,
+          sd_r = `Std(R)`,
+          median_r = `Median(R)`)
+
+state_dates <- as.data.frame(state_results2wk$dates)
+state_i <- as.data.frame(state_results2wk$I)
+state_cil <- as.data.frame(state_results2wk$R$`Quantile.0.025(R)`)
+state_cih <- as.data.frame(state_results2wk$R$`Quantile.0.975(R)`)
+state_dates_new <- cbind(state_dates, state_i) %>% 
+   rename(dates = 1,
+          incidence = 2) %>% 
+   mutate(dates = ymd(dates))
+state_dates_new <- state_dates_new[-(1:14), 1:2]
+state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+state_r_clean <- cbind(state_r, state_dates_new) 
+
+
+state_r_plot <- state_r_clean %>% 
+   ggplot() +
+     geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+     geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+     geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
+     labs(title = "COVID-19 Rolling 14-day R-values, State of Montana, 2020",
+          subtitle = paste0("Data current as of ", date_today),
+          color = "") +
+     ylab("R-value") +
+     xlab("") +
+     geom_hline(yintercept = 1, color = "black", size = 1.2) +
+     scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
+     scale_y_continuous(breaks = seq(0, 5, 0.25), labels = seq(0, 5, 0.25)) +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "grey"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) +
+     scale_color_manual(values = c("black")) 
+state_r_plot
+
+
+ggsave("state_r_2wk.png")
+```
 
 
