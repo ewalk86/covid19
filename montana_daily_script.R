@@ -360,12 +360,17 @@ state_r <- (state_results$R[,colomns]) %>%
 
 state_dates <- as.data.frame(state_results$dates)
 state_i <- as.data.frame(state_results$I)
+state_cil <- as.data.frame(state_results$R$`Quantile.0.025(R)`)
+state_cih <- as.data.frame(state_results$R$`Quantile.0.975(R)`)
 state_dates_new <- cbind(state_dates, state_i) %>% 
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
 state_dates_new <- state_dates_new[-(1:7), 1:2]
-state_r_clean <- cbind(state_r, state_dates_new) 
+state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+state_r_clean <- cbind(state_r, state_dates_new)
 
 
 total_cases <- sum(state_data_clean$case)
@@ -376,6 +381,8 @@ date_10 <- format(Sys.Date() - 10, "%d %b %Y")
 state_r_plot <- state_r_clean %>% 
    ggplot() +
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
    labs(title = "COVID-19 Rolling 7-day R-values, State of Montana, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
@@ -383,7 +390,7 @@ state_r_plot <- state_r_clean %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "black", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 5, 0.25), labels = seq(0, 5, 0.25)) +
+   scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 12, colour = "black"),
@@ -402,7 +409,7 @@ state_r_plot <- state_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #state_r_plot
-ggsave("C:/R/covid19/state_daily_results/state_r_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/state_r_plot.png", width = 10, height = 8)
 
 state_inc_plot <- state_data_clean %>% 
    ggplot() +
@@ -431,7 +438,7 @@ state_inc_plot <- state_data_clean %>%
          axis.ticks = element_blank()) 
 #state_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/state_inc_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/state_inc_plot.png", width = 10, height = 8)
 
 
 
@@ -457,11 +464,16 @@ reg1_r <- (reg1_results$R[,colomns]) %>%
 
 reg1_dates <- as.data.frame(reg1_results$dates)
 reg1_i <- as.data.frame(reg1_results$I)
+reg1_cil <- as.data.frame(reg1_results$R$`Quantile.0.025(R)`)
+reg1_cih <- as.data.frame(reg1_results$R$`Quantile.0.975(R)`)
 reg1_dates_new <- cbind(reg1_dates, reg1_i) %>% 
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
 reg1_dates_new <- reg1_dates_new[-(1:7), 1:2]
+reg1_dates_new <- cbind(reg1_dates_new, reg1_cil, reg1_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
 reg1_r_clean <- cbind(reg1_r, reg1_dates_new)
 
 reg1_data_clean <- state_data_clean %>% 
@@ -472,6 +484,8 @@ total_cases <- sum(reg1_data_clean$case)
 reg1_r_plot <- reg1_r_clean %>% 
    ggplot() +
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
    labs(title = "COVID-19 Rolling 7-day R-values, Montana Region 1, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
@@ -479,7 +493,7 @@ reg1_r_plot <- reg1_r_clean %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "black", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 20, 2), labels = seq(0, 20, 2)) +
+   #scale_y_continuous(breaks = seq(0, 20, 2), labels = seq(0, 20, 2)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 12, colour = "black"),
@@ -498,7 +512,7 @@ reg1_r_plot <- reg1_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg1_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg1_r_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/reg1_r_plot.png", width = 10, height = 8)
 
 reg1_inc_plot <- reg1_data_clean %>% 
    ggplot() +
@@ -527,7 +541,7 @@ reg1_inc_plot <- reg1_data_clean %>%
          axis.ticks = element_blank()) 
 #reg1_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg1_inc_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/reg1_inc_plot.png", width = 10, height = 8)
 
 
 
@@ -553,11 +567,16 @@ reg2_r <- (reg2_results$R[,colomns]) %>%
 
 reg2_dates <- as.data.frame(reg2_results$dates)
 reg2_i <- as.data.frame(reg2_results$I)
+reg2_cil <- as.data.frame(reg2_results$R$`Quantile.0.025(R)`)
+reg2_cih <- as.data.frame(reg2_results$R$`Quantile.0.975(R)`)
 reg2_dates_new <- cbind(reg2_dates, reg2_i) %>% 
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
 reg2_dates_new <- reg2_dates_new[-(1:7), 1:2]
+reg2_dates_new <- cbind(reg2_dates_new, reg2_cil, reg2_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
 reg2_r_clean <- cbind(reg2_r, reg2_dates_new)
 
 
@@ -569,6 +588,8 @@ total_cases <- sum(reg2_data_clean$case)
 reg2_r_plot <- reg2_r_clean %>% 
    ggplot() +
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
    labs(title = "COVID-19 Rolling 7-day R-values, Montana Region 2, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
@@ -576,7 +597,7 @@ reg2_r_plot <- reg2_r_clean %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "black", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 10, 0.25), labels = seq(0, 10, 0.25)) +
+   scale_y_continuous(breaks = seq(0, 15, 0.5), labels = seq(0, 15, 0.5)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 12, colour = "black"),
@@ -595,7 +616,7 @@ reg2_r_plot <- reg2_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg2_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg2_r_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/reg2_r_plot.png", width = 10, height = 8)
 
 reg2_inc_plot <- reg2_data_clean %>% 
    ggplot() +
@@ -624,7 +645,7 @@ reg2_inc_plot <- reg2_data_clean %>%
          axis.ticks = element_blank()) 
 #reg2_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg2_inc_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/reg2_inc_plot.png", width = 10, height = 8)
 
 
 ## Reg3 results
@@ -648,11 +669,16 @@ reg3_r <- (reg3_results$R[,colomns]) %>%
 
 reg3_dates <- as.data.frame(reg3_results$dates)
 reg3_i <- as.data.frame(reg3_results$I)
+reg3_cil <- as.data.frame(reg3_results$R$`Quantile.0.025(R)`)
+reg3_cih <- as.data.frame(reg3_results$R$`Quantile.0.975(R)`)
 reg3_dates_new <- cbind(reg3_dates, reg3_i) %>% 
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
 reg3_dates_new <- reg3_dates_new[-(1:7), 1:2]
+reg3_dates_new <- cbind(reg3_dates_new, reg3_cil, reg3_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
 reg3_r_clean <- cbind(reg3_r, reg3_dates_new)
 
 
@@ -664,6 +690,8 @@ total_cases <- sum(reg3_data_clean$case)
 reg3_r_plot <- reg3_r_clean %>% 
    ggplot() +
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
    labs(title = "COVID-19 Rolling 7-day R-values, Montana Region 3, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
@@ -671,7 +699,7 @@ reg3_r_plot <- reg3_r_clean %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "black", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 10, 0.25), labels = seq(0, 10, 0.25)) +
+   scale_y_continuous(breaks = seq(0, 15, 0.5), labels = seq(0, 15, 0.5)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 12, colour = "black"),
@@ -690,7 +718,7 @@ reg3_r_plot <- reg3_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg3_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg3_r_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/reg3_r_plot.png", width = 10, height = 8)
 
 reg3_inc_plot <- reg3_data_clean %>% 
    ggplot() +
@@ -719,7 +747,7 @@ reg3_inc_plot <- reg3_data_clean %>%
          axis.ticks = element_blank()) 
 #reg3_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg3_inc_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/reg3_inc_plot.png", width = 10, height = 8)
 
 
 ## Reg4 results
@@ -743,11 +771,16 @@ reg4_r <- (reg4_results$R[,colomns]) %>%
 
 reg4_dates <- as.data.frame(reg4_results$dates)
 reg4_i <- as.data.frame(reg4_results$I)
+reg4_cil <- as.data.frame(reg4_results$R$`Quantile.0.025(R)`)
+reg4_cih <- as.data.frame(reg4_results$R$`Quantile.0.975(R)`)
 reg4_dates_new <- cbind(reg4_dates, reg4_i) %>% 
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
 reg4_dates_new <- reg4_dates_new[-(1:7), 1:2]
+reg4_dates_new <- cbind(reg4_dates_new, reg4_cil, reg4_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
 reg4_r_clean <- cbind(reg4_r, reg4_dates_new)
 
 
@@ -759,6 +792,8 @@ total_cases <- sum(reg4_data_clean$case)
 reg4_r_plot <- reg4_r_clean %>% 
    ggplot() +
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
    labs(title = "COVID-19 Rolling 7-day R-values, Montana Region 4, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
@@ -766,7 +801,7 @@ reg4_r_plot <- reg4_r_clean %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "black", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 10, 0.25), labels = seq(0, 10, 0.25)) +
+   scale_y_continuous(breaks = seq(0, 15, 0.5), labels = seq(0, 15, 0.5)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 12, colour = "black"),
@@ -785,7 +820,7 @@ reg4_r_plot <- reg4_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg4_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg4_r_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/reg4_r_plot.png", width = 10, height = 8)
 
 reg4_inc_plot <- reg4_data_clean %>% 
    ggplot() +
@@ -814,7 +849,7 @@ reg4_inc_plot <- reg4_data_clean %>%
          axis.ticks = element_blank()) 
 #reg4_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg4_inc_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/reg4_inc_plot.png", width = 10, height = 8)
 
 
 ## Reg5 results
@@ -838,11 +873,16 @@ reg5_r <- (reg5_results$R[,colomns]) %>%
 
 reg5_dates <- as.data.frame(reg5_results$dates)
 reg5_i <- as.data.frame(reg5_results$I)
+reg5_cil <- as.data.frame(reg5_results$R$`Quantile.0.025(R)`)
+reg5_cih <- as.data.frame(reg5_results$R$`Quantile.0.975(R)`)
 reg5_dates_new <- cbind(reg5_dates, reg5_i) %>% 
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
 reg5_dates_new <- reg5_dates_new[-(1:7), 1:2]
+reg5_dates_new <- cbind(reg5_dates_new, reg5_cil, reg5_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
 reg5_r_clean <- cbind(reg5_r, reg5_dates_new)
 
 
@@ -854,6 +894,8 @@ total_cases <- sum(reg5_data_clean$case)
 reg5_r_plot <- reg5_r_clean %>% 
    ggplot() +
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
    labs(title = "COVID-19 Rolling 7-day R-values, Montana Region 5, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
@@ -861,7 +903,7 @@ reg5_r_plot <- reg5_r_clean %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "black", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 10, 0.25), labels = seq(0, 10, 0.25)) +
+   scale_y_continuous(breaks = seq(0, 20, 1), labels = seq(0, 20, 1)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 12, colour = "black"),
@@ -881,7 +923,7 @@ reg5_r_plot <- reg5_r_clean %>%
    scale_color_manual(values = c("black")) 
 #reg5_r_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg5_r_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/reg5_r_plot.png", width = 10, height = 8)
 
 reg5_inc_plot <- reg5_data_clean %>% 
    ggplot() +
@@ -910,7 +952,7 @@ reg5_inc_plot <- reg5_data_clean %>%
          axis.ticks = element_blank()) 
 #reg5_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg5_inc_plot.png", width = 10, height = 5)
+ggsave("C:/R/covid19/state_daily_results/reg5_inc_plot.png", width = 10, height = 8)
 
 
 
