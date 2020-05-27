@@ -997,7 +997,8 @@ serial_interval_sd <- 4.75
 
 
 ## State results
-state_incidence <- incidence(state_data_clean$dates)
+date_today <- Sys.Date()
+state_incidence <- incidence(state_data_clean$dates, last_date = date_today)
 
 state_n <- as.data.frame(state_incidence$dates)
 

@@ -343,7 +343,8 @@ serial_interval_sd <- 4.75
 
 
 ## State results
-state_incidence <- incidence(state_data_clean$dates)
+current_date <- format(Sys.Date(), "%Y-%m-%d")
+state_incidence <- incidence(state_data_clean$dates, last_date = current_date)
 
 state_results <- estimate_R(state_incidence, method="parametric_si", 
                             config = make_config(list(mean_si = serial_interval_mean, 
@@ -446,7 +447,7 @@ ggsave("C:/R/covid19/state_daily_results/state_inc_plot.png", width = 10, height
 reg1_data <- state_data_clean %>% 
    filter(region == 1)
 
-reg1_incidence <- incidence(reg1_data$dates)
+reg1_incidence <- incidence(reg1_data$dates, last_date = current_date)
 
 reg1_results <- estimate_R(reg1_incidence, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
@@ -549,7 +550,7 @@ ggsave("C:/R/covid19/state_daily_results/reg1_inc_plot.png", width = 10, height 
 reg2_data <- state_data_clean %>% 
    filter(region == 2)
 
-reg2_incidence <- incidence(reg2_data$dates)
+reg2_incidence <- incidence(reg2_data$dates, last_date = current_date)
 
 reg2_results <- estimate_R(reg2_incidence, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
@@ -597,7 +598,7 @@ reg2_r_plot <- reg2_r_clean %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "black", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 15, 0.5), labels = seq(0, 15, 0.5)) +
+   #scale_y_continuous(breaks = seq(0, 15, 0.5), labels = seq(0, 15, 0.5)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 12, colour = "black"),
@@ -652,7 +653,7 @@ ggsave("C:/R/covid19/state_daily_results/reg2_inc_plot.png", width = 10, height 
 reg3_data <- state_data_clean %>% 
    filter(region == 3)
 
-reg3_incidence <- incidence(reg3_data$dates)
+reg3_incidence <- incidence(reg3_data$dates, last_date = current_date)
 
 reg3_results <- estimate_R(reg3_incidence, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
@@ -699,7 +700,7 @@ reg3_r_plot <- reg3_r_clean %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "black", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 15, 0.5), labels = seq(0, 15, 0.5)) +
+   #scale_y_continuous(breaks = seq(0, 15, 0.5), labels = seq(0, 15, 0.5)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 12, colour = "black"),
@@ -754,7 +755,7 @@ ggsave("C:/R/covid19/state_daily_results/reg3_inc_plot.png", width = 10, height 
 reg4_data <- state_data_clean %>% 
    filter(region == 4)
 
-reg4_incidence <- incidence(reg4_data$dates)
+reg4_incidence <- incidence(reg4_data$dates, last_date = current_date)
 
 reg4_results <- estimate_R(reg4_incidence, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
@@ -801,7 +802,7 @@ reg4_r_plot <- reg4_r_clean %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "black", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 15, 0.5), labels = seq(0, 15, 0.5)) +
+   #scale_y_continuous(breaks = seq(0, 15, 0.5), labels = seq(0, 15, 0.5)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 12, colour = "black"),
@@ -856,7 +857,7 @@ ggsave("C:/R/covid19/state_daily_results/reg4_inc_plot.png", width = 10, height 
 reg5_data <- state_data_clean %>% 
    filter(region == 5)
 
-reg5_incidence <- incidence(reg5_data$dates)
+reg5_incidence <- incidence(reg5_data$dates, last_date = current_date)
 
 reg5_results <- estimate_R(reg5_incidence, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
@@ -903,7 +904,7 @@ reg5_r_plot <- reg5_r_clean %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "black", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 20, 1), labels = seq(0, 20, 1)) +
+   #scale_y_continuous(breaks = seq(0, 20, 1), labels = seq(0, 20, 1)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 12, colour = "black"),
