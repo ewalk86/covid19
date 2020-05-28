@@ -343,12 +343,19 @@ serial_interval_sd <- 4.75
 
 
 ## State results
-current_date <- format(Sys.Date(), "%Y-%m-%d")
+current_date <- format(Sys.Date() - 1, "%Y-%m-%d")
 state_incidence <- incidence(state_data_clean$dates, last_date = current_date)
+
+state_n <- as.data.frame(state_incidence$dates)
+time_var <- nrow(state_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
 
 state_results <- estimate_R(state_incidence, method="parametric_si", 
                             config = make_config(list(mean_si = serial_interval_mean, 
-                                                      std_si = serial_interval_sd)))
+                                                      std_si = serial_interval_sd,
+                                                      t_start =  time_start,
+                                                      t_end = time_end)))
 
 #state_plot <- estimate_R_plots(state_results, what = "R")
 
@@ -367,7 +374,7 @@ state_dates_new <- cbind(state_dates, state_i) %>%
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
-state_dates_new <- state_dates_new[-(1:7), 1:2]
+state_dates_new <- state_dates_new[-(1:14), 1:2]
 state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
@@ -384,7 +391,7 @@ state_r_plot <- state_r_clean %>%
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
    geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
    geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 7-day R-values, State of Montana, 2020",
+   labs(title = "COVID-19 Rolling 14-day R-values, State of Montana, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
    ylab("R-value") +
@@ -449,9 +456,16 @@ reg1_data <- state_data_clean %>%
 
 reg1_incidence <- incidence(reg1_data$dates, last_date = current_date)
 
+reg1_n <- as.data.frame(reg1_incidence$dates)
+time_var <- nrow(reg1_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
 reg1_results <- estimate_R(reg1_incidence, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
-                                                     std_si = serial_interval_sd)))
+                                                     std_si = serial_interval_sd,
+                                                     t_start =  time_start,
+                                                     t_end = time_end)))
 
 #reg1_plot <- estimate_R_plots(reg1_results, what = "R")
 
@@ -471,7 +485,7 @@ reg1_dates_new <- cbind(reg1_dates, reg1_i) %>%
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
-reg1_dates_new <- reg1_dates_new[-(1:7), 1:2]
+reg1_dates_new <- reg1_dates_new[-(1:14), 1:2]
 reg1_dates_new <- cbind(reg1_dates_new, reg1_cil, reg1_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
@@ -487,7 +501,7 @@ reg1_r_plot <- reg1_r_clean %>%
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
    geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
    geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 7-day R-values, Montana Region 1, 2020",
+   labs(title = "COVID-19 Rolling 14-day R-values, Montana Region 1, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
    ylab("R-value") +
@@ -552,9 +566,16 @@ reg2_data <- state_data_clean %>%
 
 reg2_incidence <- incidence(reg2_data$dates, last_date = current_date)
 
+reg2_n <- as.data.frame(reg2_incidence$dates)
+time_var <- nrow(reg2_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
 reg2_results <- estimate_R(reg2_incidence, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
-                                                     std_si = serial_interval_sd)))
+                                                     std_si = serial_interval_sd,
+                                                     t_start =  time_start,
+                                                     t_end = time_end)))
 
 #reg2_plot <- estimate_R_plots(reg2_results, what = "R")
 
@@ -574,7 +595,7 @@ reg2_dates_new <- cbind(reg2_dates, reg2_i) %>%
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
-reg2_dates_new <- reg2_dates_new[-(1:7), 1:2]
+reg2_dates_new <- reg2_dates_new[-(1:14), 1:2]
 reg2_dates_new <- cbind(reg2_dates_new, reg2_cil, reg2_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
@@ -591,7 +612,7 @@ reg2_r_plot <- reg2_r_clean %>%
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
    geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
    geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 7-day R-values, Montana Region 2, 2020",
+   labs(title = "COVID-19 Rolling 14-day R-values, Montana Region 2, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
    ylab("R-value") +
@@ -655,9 +676,16 @@ reg3_data <- state_data_clean %>%
 
 reg3_incidence <- incidence(reg3_data$dates, last_date = current_date)
 
+reg3_n <- as.data.frame(reg3_incidence$dates)
+time_var <- nrow(reg3_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
 reg3_results <- estimate_R(reg3_incidence, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
-                                                     std_si = serial_interval_sd)))
+                                                     std_si = serial_interval_sd,
+                                                     t_start =  time_start,
+                                                     t_end = time_end)))
 
 #reg3_plot <- estimate_R_plots(reg3_results, what = "R")
 
@@ -676,7 +704,7 @@ reg3_dates_new <- cbind(reg3_dates, reg3_i) %>%
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
-reg3_dates_new <- reg3_dates_new[-(1:7), 1:2]
+reg3_dates_new <- reg3_dates_new[-(1:14), 1:2]
 reg3_dates_new <- cbind(reg3_dates_new, reg3_cil, reg3_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
@@ -693,7 +721,7 @@ reg3_r_plot <- reg3_r_clean %>%
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
    geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
    geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 7-day R-values, Montana Region 3, 2020",
+   labs(title = "COVID-19 Rolling 14-day R-values, Montana Region 3, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
    ylab("R-value") +
@@ -757,9 +785,16 @@ reg4_data <- state_data_clean %>%
 
 reg4_incidence <- incidence(reg4_data$dates, last_date = current_date)
 
+reg4_n <- as.data.frame(reg4_incidence$dates)
+time_var <- nrow(reg4_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
 reg4_results <- estimate_R(reg4_incidence, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
-                                                     std_si = serial_interval_sd)))
+                                                     std_si = serial_interval_sd,
+                                                     t_start =  time_start,
+                                                     t_end = time_end)))
 
 #reg4_plot <- estimate_R_plots(reg4_results, what = "R")
 
@@ -778,7 +813,7 @@ reg4_dates_new <- cbind(reg4_dates, reg4_i) %>%
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
-reg4_dates_new <- reg4_dates_new[-(1:7), 1:2]
+reg4_dates_new <- reg4_dates_new[-(1:14), 1:2]
 reg4_dates_new <- cbind(reg4_dates_new, reg4_cil, reg4_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
@@ -795,7 +830,7 @@ reg4_r_plot <- reg4_r_clean %>%
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
    geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
    geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 7-day R-values, Montana Region 4, 2020",
+   labs(title = "COVID-19 Rolling 14-day R-values, Montana Region 4, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
    ylab("R-value") +
@@ -859,9 +894,16 @@ reg5_data <- state_data_clean %>%
 
 reg5_incidence <- incidence(reg5_data$dates, last_date = current_date)
 
+reg5_n <- as.data.frame(reg5_incidence$dates)
+time_var <- nrow(reg5_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
 reg5_results <- estimate_R(reg5_incidence, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
-                                                     std_si = serial_interval_sd)))
+                                                     std_si = serial_interval_sd,
+                                                     t_start =  time_start,
+                                                     t_end = time_end)))
 
 #reg5_plot <- estimate_R_plots(reg5_results, what = "R")
 
@@ -880,7 +922,7 @@ reg5_dates_new <- cbind(reg5_dates, reg5_i) %>%
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
-reg5_dates_new <- reg5_dates_new[-(1:7), 1:2]
+reg5_dates_new <- reg5_dates_new[-(1:14), 1:2]
 reg5_dates_new <- cbind(reg5_dates_new, reg5_cil, reg5_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
@@ -897,7 +939,7 @@ reg5_r_plot <- reg5_r_clean %>%
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
    geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
    geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 7-day R-values, Montana Region 5, 2020",
+   labs(title = "COVID-19 Rolling 14-day R-values, Montana Region 5, 2020",
         subtitle = paste0("Data current as of ", date_today),
         color = "") +
    ylab("R-value") +
