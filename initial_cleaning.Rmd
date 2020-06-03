@@ -22,9 +22,6 @@ library(zoo)
 library(eeptools)
 library(plotly)
 library(knitr)
-jv_palette <- c("#330099","#CC0066","#FF6633", 
-                 "#0099CC", "#FF9900","#CC6633",
-                  "#FF3366", "#33CC99", "#33999")
 ```
 
 
@@ -33,9 +30,9 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 5.28.20.xlsx"), 
-             range = "D2:AA500", 
-                        col_names = c("dob", "gender", "zipcode", "healthcare_worker",
+   read_xlsx(paste0(input_path, "COVID data 6.2.20.xlsx"), 
+             range = "C2:AA500", 
+                        col_names = c("case_id", "age", "gender", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
                                       "test_date", "test_lab", "last_exposure_date", 
                                       "release_date", "contact_with_case", "travel_hx",
@@ -44,7 +41,7 @@ covid_data_initial <-
                                       "number_contacts", "patient_died", 
                                       "patient_died_date", "contact_case_number",
                                       "community_spread", "epi_linked"),
-                        col_types = c("date", "text", "text", "text",
+                        col_types = c("text", "text", "text", "text", "text",
                                       "text", "text", "date",
                                       "date", "text", "date",
                                       "date", "text", "text",
@@ -58,11 +55,8 @@ covid_data_initial <-
 
 ```{r}
 covid_clean <- covid_data_initial %>% 
-   filter(!is.na(dob)) %>% 
-   rownames_to_column() %>% 
-   mutate(case_number = as.numeric(rowname),
-          dob = ymd(dob),
-          age = round(age_calc(dob, units = "years"), digits = 1),
+   filter(!is.na(case_id)) %>% 
+   mutate(age = as.numeric(age),
           age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 110),
                           labels = c("0 to 9, 0.1", "10 to 19, 0.12", "20 to 29, 0.19", 
                                      "30 to 39, 0.14", "40 to 49, 0.12", "50 to 59, 0.11", 
@@ -72,7 +66,7 @@ covid_clean <- covid_data_initial %>%
    separate(age_group, c("age_group", "age_group_percent"), sep = ", ") %>% 
    mutate(age_group_percent = as.numeric(age_group_percent),
           county_pop = as.numeric(119000)) %>% 
-   select(case_number, dob, age, age_group, age_group_percent, age_group2, 
+   select(case_id, age, age_group, age_group_percent, age_group2, 
           county_pop, gender:epi_linked) %>% 
    mutate_if(is.character, tolower) %>% 
    mutate(symptom_cough = grepl("COUGH|MILD COUGH", symptom_type, ignore.case = TRUE),
@@ -146,10 +140,21 @@ covid_clean <- covid_data_initial %>%
           symptom_onset_date_new = if_else(is.na(symptom_onset_date), 
                                        test_date - mean_symptom_test_diff,
                                        symptom_onset_date),
+          symptom_onset_date_new = if_else(is.na(symptom_type), test_date,
+                                           symptom_onset_date_new),
           symptom_onset_date_new = ymd(symptom_onset_date_new),
           symptom_onset_date_indicator = if_else(is.na(symptom_onset_date),
-                                                 "Estimated from test date",
-                                                 "Estimated by self-report"),
+                                                 "Symptomatic: onset date estimated by test date",
+                                                 "Symptomatic: onset date by self-report"),
+          symptom_onset_date_indicator = if_else(is.na(symptom_type),
+                                                 "Asymptomatic: test date",
+                                                 symptom_onset_date_indicator),
+          test_date_new = if_else(is.na(test_date), symptom_onset_date,
+                                           test_date),
+          test_date_new = ymd(test_date_new),
+          test_date_indicator = if_else(is.na(test_date),
+                                                 "Epi-linked: date of symptom onset",
+                                                 "Tested: date of test result"),
           travel_hx = as.character(travel_hx),
           travel_hx = if_else(is.na(travel_hx), "Unknown", travel_hx),
           travel_hx = factor(travel_hx, levels = c("Yes", "No", "Unknown")))

@@ -996,9 +996,23 @@ serial_interval_sd <- 4.75
 # Higher mean also makes R go up.
 
 
+# Check earlyR results against some of the earlier R values from EpiEstim
+date_earlyR <- state_data_clean %>% 
+   filter(dates < "2020-03-29") 
+
+incidence_earlyR <- incidence(date_earlyR$dates)
+
+results_earlyR <- get_R(incidence_earlyR, 
+                   si_mean = serial_interval_mean,
+                   si_sd = serial_interval_sd)
+
+results_earlyR
+
+
+
 ## State results
 date_today <- Sys.Date()
-state_incidence <- incidence(state_data_clean$dates, last_date = date_today)
+state_incidence <- incidence(date_filtered$dates, last_date = date_today)
 
 state_n <- as.data.frame(state_incidence$dates)
 
@@ -1140,4 +1154,13 @@ state_r_plot
 ggsave("state_r_2wk.png")
 ```
 
+
+```{r}
+# check sample size for 4 counties
+counties_filter <- state_data_clean %>% 
+   #filter(county == "Missoula") %>% 
+   #filter(county == "Gallatin") %>%
+   #filter(county == "Flathead") %>%
+   filter(county == "Yellowstone")
+```
 

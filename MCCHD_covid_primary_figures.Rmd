@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montanta"
-date: "Data as of May 28, 2020"
+date: "Data as of June 2, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -54,7 +54,7 @@ us_pop_data <- as.data.frame(c("0 to 9, 0.12", "10 to 19, 0.13", "20 to 29, 0.14
 ```
 
 
-```{r}
+```{r, include=FALSE}
 county_joined <- covid_data %>% 
    select(case, age_group, age_group_percent, county_pop) %>% 
    rename(region_pop = county_pop) %>% 
@@ -225,10 +225,10 @@ covid_summary <- rbind(overall_summary, age_group_summary, gender_summary,
           "Proportion of Cases (%)", "Incidence per 100,000 Population")
 
 
-kable(stand_inc, digits = 1,
-      caption = "Age-standardized Incidence") %>% 
-   kable_styling() %>% 
-   footnote(c("Standardized to US population age distribution"))
+#kable(stand_inc, digits = 1,
+#      caption = "Age-standardized Incidence") %>% 
+#   kable_styling() %>% 
+#   footnote(c("Standardized to US population age distribution"))
 
 
 kable(covid_summary, caption = "Missoula County COVID-19 Cases",
@@ -370,14 +370,30 @@ covid_plot_onset <- covid_data %>%
    ggplot() +
      geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
-     geom_label(aes(x = Sys.Date()-8, y = 4.5, 
-                    label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
      geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
-     labs(title = "COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020",
+     geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
+                 y = 2), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-6.5, y = 4.5, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph.")) +
+     labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
           subtitle = paste0("Total cases = ", total_cases),
           fill = " ") +
      ylab("Number of Cases") +
-     xlab("Symptom Onset Date") +
+     xlab("Date") +
      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
                                     by = "2 days"),
@@ -402,23 +418,7 @@ covid_plot_onset <- covid_data %>%
            axis.line.x = element_blank(), 
            axis.line.y = element_blank(), 
            axis.ticks = element_blank())  +
-     scale_fill_manual(values = cbPalette) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14))
+     scale_fill_manual(values = cbPalette) 
 
 covid_plot_onset
 
@@ -427,43 +427,16 @@ covid_plot_onset
 
 \pagebreak  
 
-```{r, fig.width = 10, fig.height = 6}
-covid_plot_onset <- covid_data %>% 
+```{r, fig.width = 10, fig.height = 5}
+total_cases <- sum(covid_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_12 <- format(Sys.Date() - 12, "%d %b %Y")
+
+covid_plot_test_date <- covid_data %>% 
    ggplot() +
      geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
-     geom_label(aes(x = Sys.Date()-9, y = 4.5, 
-                    label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
-     geom_col(aes(symptom_onset_date_new, case, fill = age_group)) +
-     labs(title = "COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020",
-          subtitle = paste0("Total cases = ", total_cases),
-          fill = " ") +
-     ylab("Number of Cases") +
-     xlab("Symptom Onset Date") +
-     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "2 days"),
-                  labels = seq.Date(from = as.Date("2020-03-06"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "2 days"),
-                  date_labels = "%d-%b") +
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 12, colour = "black"),
-           panel.grid = element_blank(),
-           panel.grid.major.y = element_line(colour = "gray75"),
-           axis.text.x = element_text(size = 12, colour = "black", 
-                                     angle = 90, vjust = 0.4),
-           axis.text.y = element_text(size = 12, colour = "black"),
-           axis.title.y = element_text(size = 12, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 12, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           legend.text = element_text(size = 12, colour = "black"),
-           axis.line.x = element_blank(), 
-           axis.line.y = element_blank(), 
-           axis.ticks = element_blank())  +
-     scale_fill_manual(values = cbPalette) +
+     geom_col(aes(test_date_new, case, fill = test_date_indicator)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
@@ -479,28 +452,14 @@ covid_plot_onset <- covid_data %>%
      geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14))
-
-covid_plot_onset
-
-#ggsave("epi_curve_age.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r, fig.width = 10, fig.height = 6}
-covid_plot_onset <- covid_data %>% 
-   ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
-               fill = "gray80", alpha = 0.05) +
-     geom_label(aes(x = Sys.Date()-8, y = 4.5, 
-                    label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
-     geom_col(aes(symptom_onset_date_new, case, fill = gender)) +
-     labs(title = "COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020",
+                 y = 2), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-6.5, y = 4.5, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph.")) +
+     labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
           subtitle = paste0("Total cases = ", total_cases),
           fill = " ") +
      ylab("Number of Cases") +
-     xlab("Symptom Onset Date") +
+     xlab("Date") +
      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
                                     by = "2 days"),
@@ -516,36 +475,20 @@ covid_plot_onset <- covid_data %>%
            axis.text.x = element_text(size = 12, colour = "black", 
                                      angle = 90, vjust = 0.4),
            axis.text.y = element_text(size = 12, colour = "black"),
-           axis.title.y = element_text(size = 12, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 12, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           legend.text = element_text(size = 12, colour = "black"),
            legend.position = "top",
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
            axis.line.x = element_blank(), 
            axis.line.y = element_blank(), 
-           axis.ticks = element_blank())  +
-     scale_fill_manual(values = cbPalette) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14))
+           axis.ticks = element_blank()) +
+     scale_fill_manual(values = cbPalette)   
 
-covid_plot_onset
+covid_plot_test_date
 
-#ggsave("epi_curve_gender.jpg", width = 10, height = 5)
+#ggsave("epi_curve_test_date.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -831,4 +774,128 @@ piechart_function(plot_fill = "age_group", var_label = "Age group (n)")
 piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts (n)")
 
 #ggsave("piechart_contacts.jpg", width = 10, height = 5)
+```
+
+
+
+
+```{r, fig.width = 10, fig.height = 6, include=FALSE}
+# Older plots - saving for future reference
+
+covid_plot_onset <- covid_data %>% 
+   ggplot() +
+     geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_label(aes(x = Sys.Date()-9, y = 4.5, 
+                    label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
+     geom_col(aes(symptom_onset_date_new, case, fill = age_group)) +
+     labs(title = "COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020",
+          subtitle = paste0("Total cases = ", total_cases),
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("Symptom Onset Date") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "2 days"),
+                  labels = seq.Date(from = as.Date("2020-03-06"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "2 days"),
+                  date_labels = "%d-%b") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank())  +
+     scale_fill_manual(values = cbPalette) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14))
+
+covid_plot_onset
+
+#ggsave("epi_curve_age.jpg", width = 10, height = 5)
+```
+
+```{r, fig.width = 10, fig.height = 6, include=FALSE}
+covid_plot_onset <- covid_data %>% 
+   ggplot() +
+     geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_label(aes(x = Sys.Date()-8, y = 4.5, 
+                    label = "Cases with symptom onset \n during the shaded dates may \n not yet be reflected in the graph.")) +
+     geom_col(aes(symptom_onset_date_new, case, fill = gender)) +
+     labs(title = "COVID-19 Cases in Missoula County by Date of Symptom Onset, 2020",
+          subtitle = paste0("Total cases = ", total_cases),
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("Symptom Onset Date") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "2 days"),
+                  labels = seq.Date(from = as.Date("2020-03-06"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "2 days"),
+                  date_labels = "%d-%b") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           legend.position = "top",
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank())  +
+     scale_fill_manual(values = cbPalette) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
+                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14))
+
+covid_plot_onset
+
+#ggsave("epi_curve_gender.jpg", width = 10, height = 5)
 ```
