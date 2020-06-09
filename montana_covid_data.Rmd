@@ -187,6 +187,8 @@ flathead_county <- county_function("Flathead")
 lake_county <- county_function("Lake")
 lincoln_county <- county_function("Lincoln")
 ravalli_county <- county_function("Ravalli")
+rosebud_county <- county_function("Rosebud")
+
 
 
 county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
@@ -204,7 +206,7 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          meagher_county, park_county,
                                          silverbow_county, flathead_county,
                                          lake_county, lincoln_county,
-                                         ravalli_county) 
+                                         ravalli_county, rosebud_county) 
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
@@ -220,7 +222,6 @@ mccone_county <- county_function("McCone")
 phillips_county <- county_function("Phillips")
 priver <- county_function("Powder River")
 prairie_county <- county_function("Prairie")
-rosebud_county <- county_function("Rosebud")
 sheridan_county <- county_function("Sheridan")
 treasure_county <- county_function("Treasure")
 valley_county <- county_function("Valley")
@@ -1012,7 +1013,7 @@ results_earlyR
 
 ## State results
 date_today <- Sys.Date()
-state_incidence <- incidence(date_filtered$dates, last_date = date_today)
+state_incidence <- incidence(state_data_clean$dates, last_date = date_today)
 
 state_n <- as.data.frame(state_incidence$dates)
 
@@ -1152,6 +1153,80 @@ state_r_plot
 
 
 ggsave("state_r_2wk.png")
+
+
+
+# Daily R
+state_incidence <- incidence(state_data_clean$dates)
+
+state_n <- as.data.frame(state_incidence$dates)
+
+time_var <- nrow(state_n)
+time_start <- seq(2, time_var-1)
+time_end <- time_start + 1
+
+state_results_daily <- estimate_R(state_incidence, method="parametric_si", 
+                               config = make_config(list(mean_si = serial_interval_mean, 
+                                                         std_si = serial_interval_sd,
+                                                         t_start =  time_start,
+                                                         t_end = time_end)))
+
+colomns <- c(1:4, 8)
+state_r <- (state_results_daily$R[,colomns]) %>% 
+   mutate(region = "state") %>% 
+   rename(mean_r = `Mean(R)`,
+          sd_r = `Std(R)`,
+          median_r = `Median(R)`)
+
+state_dates <- as.data.frame(state_results_daily$dates)
+state_i <- as.data.frame(state_results_daily$I)
+state_cil <- as.data.frame(state_results_daily$R$`Quantile.0.025(R)`)
+state_cih <- as.data.frame(state_results_daily$R$`Quantile.0.975(R)`)
+state_dates_new <- cbind(state_dates, state_i) %>% 
+   rename(dates = 1,
+          incidence = 2) %>% 
+   mutate(dates = ymd(dates))
+state_dates_new <- state_dates_new[-2, 1:2]
+state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+state_r_clean <- cbind(state_r, state_dates_new) 
+
+
+state_r_plot <- state_r_clean %>% 
+   ggplot() +
+     geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+     geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+     geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
+     labs(title = "COVID-19 Daily R-values, State of Montana, 2020",
+          subtitle = paste0("Data current as of ", date_today),
+          color = "") +
+     ylab("R-value") +
+     xlab("") +
+     geom_hline(yintercept = 1, color = "black", size = 1.2) +
+     scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
+     #scale_y_continuous(breaks = seq(0, 5, 0.25), labels = seq(0, 5, 0.25)) +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "grey"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) +
+     scale_color_manual(values = c("black")) 
+state_r_plot
+
+
+ggsave("state_r_daily.png")
 ```
 
 
@@ -1162,5 +1237,66 @@ counties_filter <- state_data_clean %>%
    #filter(county == "Gallatin") %>%
    #filter(county == "Flathead") %>%
    filter(county == "Yellowstone")
+```
+
+
+Projecting future incidence based on existing incidence data and R-value
+```{r}
+# https://www.repidemicsconsortium.org/projections/
+
+# We create a serial interval distribution using distcrete:
+
+serial_interval_mean <- 4
+serial_interval_sd <- 4.75
+
+## State results
+date_today <- Sys.Date()
+state_incidence <- incidence(state_data_clean$dates, last_date = date_today)
+
+
+cv <- serial_interval_sd / serial_interval_mean
+params <- gamma_mucv2shapescale(serial_interval_mean, cv)
+#params
+
+si <- distcrete("gamma", shape = params$shape,
+                scale = params$scale,
+                interval = 1, w = 0)
+si
+
+plot(1:50, si$d(1:50), type = "h", lwd = 3, col = "navy",
+     main = "Serial interval", xlab = "Days after onset",
+     ylab = "Relative infectiousness")
+
+
+dates_pre_sip <- state_data_clean %>% 
+   filter(dates < "2020-03-29") 
+
+dates_post_phase1 <- state_data_clean %>% 
+   filter(dates > "2020-04-25")
+
+incidence_earlyR <- incidence(dates_post_phase1$dates)
+
+results_earlyR <- get_R(incidence_earlyR, 
+                   si_mean = serial_interval_mean,
+                   si_sd = serial_interval_sd)
+
+results_earlyR
+
+set.seed(1)
+state_projection <- project(incidence_earlyR, R = 1.33, si = si, n_days = 60, n_sim = 1000)
+state_projection
+
+plot(state_projection)
+
+projected_cumulate <- cumulate(state_projection)
+plot(projected_cumulate)
+
+plot(incidence_earlyR) %>% 
+   add_projections(state_projection, boxplots = FALSE) 
+
+%>% 
+   add_projections(projected_cumulate)
+
+ggsave("state_projections_phase1.png")
 ```
 

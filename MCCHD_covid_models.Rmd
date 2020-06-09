@@ -46,7 +46,12 @@ https://cran.r-project.org/web/packages/EpiEstim/EpiEstim.pdf
 ## Load dataset
 
 ```{r}
-covid_data <- read_rds("Output/covid_data_clean.rds")
+output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+
+covid_data <- read_rds(paste0(output_path, "Output/covid_data_clean.rds"))
+state_data <- read_rds(paste0(output_path, "Output/state_data_clean.rds")) %>% 
+   select(-age_group) %>% 
+   rename(age_group = age_group_new)
 ```
 
 Calculate daily incidence, including a date for days with no new cases.

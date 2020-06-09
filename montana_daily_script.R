@@ -273,6 +273,7 @@ flathead_county <- county_function("Flathead")
 lake_county <- county_function("Lake")
 lincoln_county <- county_function("Lincoln")
 ravalli_county <- county_function("Ravalli")
+rosebud_county <- county_function("Rosebud")
 
 
 county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
@@ -290,7 +291,7 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          meagher_county, park_county,
                                          silverbow_county, flathead_county,
                                          lake_county, lincoln_county,
-                                         ravalli_county) 
+                                         ravalli_county, rosebud_county) 
 
 write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_combined.csv")
 
