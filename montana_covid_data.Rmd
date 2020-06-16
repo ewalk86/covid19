@@ -188,6 +188,8 @@ lake_county <- county_function("Lake")
 lincoln_county <- county_function("Lincoln")
 ravalli_county <- county_function("Ravalli")
 rosebud_county <- county_function("Rosebud")
+custer_county <- county_function("Custer")
+
 
 
 
@@ -206,14 +208,14 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          meagher_county, park_county,
                                          silverbow_county, flathead_county,
                                          lake_county, lincoln_county,
-                                         ravalli_county, rosebud_county) 
+                                         ravalli_county, rosebud_county,
+                                         custer_county) 
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 write_csv(county_data_combined, paste0(output_path, "Output/county_data_combined.csv"))
 
 carter_county <- county_function("Carter")
-custer_county <- county_function("Custer")
 daniels_county <- county_function("Daniels")
 dawson_county <- county_function("Dawson")
 fallon_county <- county_function("Fallon")
@@ -1244,59 +1246,59 @@ Projecting future incidence based on existing incidence data and R-value
 ```{r}
 # https://www.repidemicsconsortium.org/projections/
 
-# We create a serial interval distribution using distcrete:
-
+# save si parameters
 serial_interval_mean <- 4
 serial_interval_sd <- 4.75
 
-## State results
+# save state incidence data
 date_today <- Sys.Date()
 state_incidence <- incidence(state_data_clean$dates, last_date = date_today)
 
-
-cv <- serial_interval_sd / serial_interval_mean
-params <- gamma_mucv2shapescale(serial_interval_mean, cv)
-#params
-
-si <- distcrete("gamma", shape = params$shape,
-                scale = params$scale,
-                interval = 1, w = 0)
-si
-
-plot(1:50, si$d(1:50), type = "h", lwd = 3, col = "navy",
-     main = "Serial interval", xlab = "Days after onset",
-     ylab = "Relative infectiousness")
-
-
+# pre-SIP data for calculations below
 dates_pre_sip <- state_data_clean %>% 
    filter(dates < "2020-03-29") 
 
+# post-phase 1 data for calculations below
 dates_post_phase1 <- state_data_clean %>% 
    filter(dates > "2020-04-25")
 
+
+
+# Use date range of interest from above for the following calculations/plots:
 incidence_earlyR <- incidence(dates_post_phase1$dates)
 
 results_earlyR <- get_R(incidence_earlyR, 
                    si_mean = serial_interval_mean,
                    si_sd = serial_interval_sd)
 
-results_earlyR
+# save a distribution of possible R values
+r_distribution <- sample_R(results_earlyR)
 
-set.seed(1)
-state_projection <- project(incidence_earlyR, R = 1.33, si = si, n_days = 60, n_sim = 1000)
-state_projection
+# print distribution of R values
+hist(r_distribution, border = "grey", col = "navy",
+     xlab = "Values of R",
+     main = "Sample of likely R values")
 
+# save SI distribution from get_R calculation
+si <- results_earlyR$si
+
+# run projection
+set.seed(123)
+state_projection <- project(incidence_earlyR, R = r_distribution, si = si, n_days = 30, n_sim = 1000)
+
+# plot projected data
 plot(state_projection)
 
+# project and plot cumulative cases
 projected_cumulate <- cumulate(state_projection)
 plot(projected_cumulate)
 
+# plot projections over incidence data
 plot(incidence_earlyR) %>% 
-   add_projections(state_projection, boxplots = FALSE) 
-
-%>% 
+   add_projections(state_projection, boxplots = FALSE) %>% 
    add_projections(projected_cumulate)
 
+# save last plot
 ggsave("state_projections_phase1.png")
 ```
 

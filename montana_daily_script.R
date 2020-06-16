@@ -1,6 +1,6 @@
 # Pull daily updated State of Montana covid data, estimate R, save results/plots
 # Ethan Walker
-# 14 May 2020
+# 16 June 2020
 
 library(tidyverse)
 library(readxl)
@@ -274,6 +274,7 @@ lake_county <- county_function("Lake")
 lincoln_county <- county_function("Lincoln")
 ravalli_county <- county_function("Ravalli")
 rosebud_county <- county_function("Rosebud")
+custer_county <- county_function("Custer")
 
 
 county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
@@ -291,7 +292,8 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          meagher_county, park_county,
                                          silverbow_county, flathead_county,
                                          lake_county, lincoln_county,
-                                         ravalli_county, rosebud_county) 
+                                         ravalli_county, rosebud_county,
+                                         custer_county) 
 
 write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_combined.csv")
 
