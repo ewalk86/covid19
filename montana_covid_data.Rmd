@@ -189,6 +189,10 @@ lincoln_county <- county_function("Lincoln")
 ravalli_county <- county_function("Ravalli")
 rosebud_county <- county_function("Rosebud")
 custer_county <- county_function("Custer")
+dawson_county <- county_function("Dawson")
+valley_county <- county_function("Valley")
+
+
 
 
 
@@ -209,7 +213,8 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          silverbow_county, flathead_county,
                                          lake_county, lincoln_county,
                                          ravalli_county, rosebud_county,
-                                         custer_county) 
+                                         custer_county, dawson_county,
+                                         valley_county) 
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
@@ -217,7 +222,6 @@ write_csv(county_data_combined, paste0(output_path, "Output/county_data_combined
 
 carter_county <- county_function("Carter")
 daniels_county <- county_function("Daniels")
-dawson_county <- county_function("Dawson")
 fallon_county <- county_function("Fallon")
 garield_county <- county_function("Garfield")
 mccone_county <- county_function("McCone")
@@ -226,7 +230,6 @@ priver <- county_function("Powder River")
 prairie_county <- county_function("Prairie")
 sheridan_county <- county_function("Sheridan")
 treasure_county <- county_function("Treasure")
-valley_county <- county_function("Valley")
 wibaux_county <- county_function("Wibaux")
 blaine_county <- county_function("Blaine")
 chouteau_county <- county_function("Chouteau")
@@ -260,6 +263,65 @@ state_hosp <- state_data_clean %>%
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 write_csv(state_hosp, paste0(output_path, "Output/state_hosp.csv"))
+```
+
+# test data
+```{r}
+query_url <- "https://services.arcgis.com/qnjIrwR8z5Izc0ij/ArcGIS/rest/services/COVID_Cases_Production_View/FeatureServer/1/query?where=1%3D1&objectIds=&time=&resultType=none&outFields=OBJECTID%2C+Total_Tests_Completed%2C+New_Tests_Completed%2C+Test_Date%2C+ScriptRunDate&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&sqlFormat=none&f=pjson&token="
+
+initial_pull <- GET(query_url)
+
+text_data <- content(initial_pull, as = "text")
+
+parsed_data <- content(initial_pull, as = "parsed")
+
+json_data <- fromJSON(text_data)
+
+state_test_data <- as.data.frame(json_data$features$attributes) 
+
+state_test_data_clean <- state_test_data %>% 
+   rename_all(tolower) %>% 
+   mutate(dates = test_date/1000,
+          dates = as.POSIXct(dates, origin = "1970-01-01")) %>% 
+   separate(dates, c("dates", "trash"), sep = " ") %>% 
+   mutate(dates = ymd(dates)) %>% 
+   select(dates, total_tests_completed, new_tests_completed) %>% 
+   arrange(dates, desc(total_tests_completed)) %>% 
+   distinct(dates, .keep_all = TRUE)
+   
+
+   
+
+output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+
+write_rds(state_test_data_clean, paste0(output_path, "Output/state_test_data_clean.rds"))
+write_csv(state_test_data_clean, paste0(output_path, "Output/state_test_data_clean.csv"), na = " ")
+  
+```
+ 
+ 
+# combine daily case and test data
+```{r}
+output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+state_test_data_clean <- read_rds(paste0(output_path, "Output/state_test_data_clean.rds"))
+state_case_data_clean <- read_rds(paste0(output_path, "Output/state_data_clean.rds"))
+
+
+hosp_data_daily <- state_case_data_clean %>% 
+   filter(mt_case == "Y") %>% 
+   select(dates, hospitalization, case) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                      labels = c("hosp_active",
+                                                 "hosp_no",
+                                                 "hosp_past",
+                                                 "hosp_unknown"))) %>% 
+   group_by(dates, hospitalization) %>% 
+   mutate(total_hosp = sum(case)) %>% 
+   group_by(dates) %>% 
+   select(-case) %>% 
+   distinct(dates, hospitalization, .keep_all = TRUE) %>% 
+   pivot_wider(names_from = "hospitalization", values_from = "total_hosp")
+
 ```
 
  
