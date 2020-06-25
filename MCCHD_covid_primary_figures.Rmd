@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montanta"
-date: "Data as of June 23, 2020"
+date: "Data as of June 24, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -236,11 +236,11 @@ kable(covid_summary, caption = "Missoula County COVID-19 Cases",
    kable_styling(font_size = 10) %>% 
    row_spec(0, bold = TRUE, font_size = 10) %>% 
    pack_rows("All Cases", 1, 1) %>% 
-   pack_rows("Age Group (Years)", 2, 3) %>% 
-   pack_rows("Gender", 4, 5) %>% 
-   pack_rows("Travel History", 6, 8) %>% 
-   pack_rows("Contact with Known Case", 9, 11) %>% 
-   pack_rows("Community Spread", 12, 13) %>% 
+   pack_rows("Age Group (Years)", 2, 4) %>% 
+   pack_rows("Gender", 5, 6) %>% 
+   pack_rows("Travel History", 7, 9) %>% 
+   pack_rows("Contact with Known Case", 10, 12) %>% 
+   pack_rows("Community Spread", 13, 14) %>% 
    footnote(c("Travel History: case left Missoula County.",
      "Community Spread: no history of travel and no known contact with a known case."))
 ```
@@ -388,7 +388,8 @@ covid_plot_onset <- covid_data %>%
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
                  y = 2), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_label(aes(x = Sys.Date()-6.5, y = 3.5, 
-                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph.")) +
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
           subtitle = paste0("Total cases = ", total_cases),
           fill = " ") +
@@ -454,7 +455,8 @@ covid_plot_test_date <- covid_data %>%
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
                  y = 2), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_label(aes(x = Sys.Date()-6.5, y = 4, 
-                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph.")) +
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
           subtitle = paste0("Total cases = ", total_cases),
           fill = " ") +
