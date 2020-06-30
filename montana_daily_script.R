@@ -89,7 +89,9 @@ state_data_clean <- state_data %>%
    mutate(hospitalization = factor(hospitalization,
                                    levels = c("Y", "N", "P", "U"),
                                    labels = c("Hosp: Yes", "Hosp: No", 
-                                              "Hosp: Past", "Hosp: Unknown")))
+                                              "Hosp: Past", "Hosp: Unknown"))) %>% 
+   select(-case_no) %>% 
+   rownames_to_column(var = "case_no")
 
 state_data_wide <- state_data_clean %>% 
    mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99",
@@ -205,7 +207,9 @@ state_data_incidence <- state_data %>%
 county_function <- function(county_name, data = state_data_clean){
    
    county_data <- data %>% 
-      filter(county == county_name)
+      filter(county == county_name) %>% 
+      select(-case_no) %>% 
+      rownames_to_column(var = "case_no")
    
    county_incidence <- incidence(county_data$dates, 
                                  first_date = "2020-03-13", 
@@ -450,7 +454,9 @@ case_hosp_test_outcome <- case_data_daily %>%
           total_tests_completed = if_else(total_tests_completed == 0, 
                                           lag(total_tests_completed), total_tests_completed),
           total_tests_completed = if_else(is.na(total_tests_completed), 
-                                          0, total_tests_completed)) 
+                                          0, total_tests_completed)) %>% 
+   rename(total_tests = total_tests_completed,
+          daily_tests = new_tests_completed) 
 
 write_csv(case_hosp_test_outcome, "C:/R/covid19/state_daily_results/mt_case_outcome_hosp_data.csv", na = " ")
 

@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montanta"
-date: "Data as of June 24, 2020"
+date: "Data as of June 29, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -32,7 +32,7 @@ jv_palette <- c("#330099","#CC0066","#FF6633",
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", 
-               "#0072B2", "#D55E00", "#CC79A7", "#999999")
+               "#0072B2", "#D55E00", "#CC79A7", "#999999", "#33CC99")
 ```
 
 
@@ -387,7 +387,7 @@ covid_plot_onset <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
                  y = 2), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-6.5, y = 3.5, 
+     geom_label(aes(x = Sys.Date()-6.5, y = 6.0, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
@@ -397,10 +397,10 @@ covid_plot_onset <- covid_data %>%
      xlab("Date") +
      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "2 days"),
+                                    by = "3 days"),
                   labels = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "2 days"),
+                                    by = "3 days"),
                   date_labels = "%d-%b") +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -454,7 +454,7 @@ covid_plot_test_date <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
                  y = 2), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-6.5, y = 4, 
+     geom_label(aes(x = Sys.Date()-6.5, y = 9.0, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
@@ -464,10 +464,10 @@ covid_plot_test_date <- covid_data %>%
      xlab("Date") +
      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "2 days"),
+                                    by = "3 days"),
                   labels = seq.Date(from = as.Date("2020-03-06"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "2 days"),
+                                    by = "3 days"),
                   date_labels = "%d-%b") +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -514,7 +514,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x = variable, y = values, fill = gender)) +   
      geom_bar(stat = "identity", width = .6) +   
      labs(title = "Symptoms reported at time of testing", y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 50, 2)), labels = c(seq(0, 50, 2))) +
+     scale_y_continuous(breaks = c(seq(0, 100, 5)), labels = c(seq(0, 100, 5))) +
      coord_flip() +
      theme_minimal() +
      theme(plot.title = element_text(hjust = .5),
@@ -542,6 +542,7 @@ covid_plot
 ```{r}
 #Symptoms and age group
 covid_plot <- covid_data %>% 
+   filter(!is.na(age_group)) %>% 
    pivot_longer(cols = c(symptom_taste_smell:symptom_respiratory),
                 names_to = "variable", values_to = "values") %>% 
    group_by(variable, age_group) %>% 
@@ -558,7 +559,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x = variable, y = values, fill = age_group)) +   
      geom_bar(stat = "identity", width = .6) +   
      labs(title = "Cases with symptoms, by age group", y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 50, 2)), labels = c(seq(0, 50, 2))) +
+     scale_y_continuous(breaks = c(seq(0, 100, 5)), labels = c(seq(0, 100, 5))) +
      coord_flip() +
      theme_minimal() +
      theme(plot.title = element_text(hjust = .5),

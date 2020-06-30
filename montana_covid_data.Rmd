@@ -118,7 +118,9 @@ write_csv(state_data_clean, paste0(output_path, "Output/state_data_clean.csv"), 
 county_function <- function(county_name, data = state_data_clean){
 
 county_data <- data %>% 
-   filter(county == county_name)
+   filter(county == county_name) %>% 
+   select(-case_no) %>% 
+   rownames_to_column(var = "case_no")
 
 county_incidence <- incidence(county_data$dates, 
                               first_date = "2020-03-13", 
@@ -132,6 +134,7 @@ county_data_new <<- county_dates %>%
    left_join(county_data, by = "dates") %>% 
    mutate(case_new = case) %>% 
    group_by(dates) %>% 
+   mutate(hospitalization = as.character(hospitalization)) %>% 
    pivot_wider(names_from = "hospitalization", values_from = "case") %>% 
    select(-"NA") %>% 
    group_by(dates) %>% 
@@ -389,7 +392,9 @@ case_hosp_test_outcome <- case_data_daily %>%
           total_tests_completed = if_else(total_tests_completed == 0, 
                                           lag(total_tests_completed), total_tests_completed),
           total_tests_completed = if_else(is.na(total_tests_completed), 
-                                          0, total_tests_completed)) 
+                                          0, total_tests_completed)) %>% 
+   rename(total_tests = total_tests_completed,
+          daily_tests = new_tests_completed)
 
 write_csv(case_hosp_test_outcome, paste0(output_path, "Output/mt_daily_case_test_data.csv"), na = " ")
 ```

@@ -30,11 +30,11 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 6.25.20.xlsx"), 
-             range = "C2:AA500", 
+   read_xlsx(paste0(input_path, "COVID data 6.30.20.xlsx"), 
+             range = "A2:X500", 
                         col_names = c("case_id", "age", "gender", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
-                                      "test_date", "test_lab", "last_exposure_date", 
+                                      "test_date", "last_exposure_date", 
                                       "release_date", "contact_with_case", "travel_hx",
                                       "hospitalized", "ventilated", "discharge_date",
                                       "chronic_conditions", "chronic_conditions_type",
@@ -43,7 +43,7 @@ covid_data_initial <-
                                       "community_spread", "epi_linked"),
                         col_types = c("text", "text", "text", "text", "text",
                                       "text", "text", "date",
-                                      "date", "text", "date",
+                                      "date", "date",
                                       "date", "text", "text",
                                       "text", "text", "date",
                                       "text", "text",
@@ -83,16 +83,17 @@ covid_clean <- covid_data_initial %>%
           symptom_runny_nose = grepl("RUNNY NOSE", symptom_type, ignore.case = TRUE),
           symptom_body_aches = grepl("BODY ACHES|ACHES|ACHINESS", symptom_type, ignore.case = TRUE),
           symptom_headache = grepl("HEADACHE|HA|H/A", symptom_type, ignore.case = TRUE),
-          symptom_chest_pain = grepl("CHEST PAIN|CHEST TIGHTNESS", symptom_type, ignore.case = TRUE),
+          symptom_chest_pain = grepl("CHEST PAIN|CHEST TIGHTNESS|CHEST", symptom_type, ignore.case = TRUE),
           symptom_taste_smell = grepl("TASTE|SMELL", symptom_type, ignore.case = TRUE),
           symptom_fever_chill = grepl("FEVER|CHILL|CHILLS|NIGHT SWEAT", symptom_type, ignore.case = TRUE),
-          symptom_fatigue_lethargy = grepl("FATIGUE|LETHARGY", symptom_type, ignore.case = TRUE),
-          symptom_nv_diarrhea = grepl("NAUSEA|N/V|DIARRHEA|N/V/D|ABDOMINAL|STOMACH", symptom_type, ignore.case = TRUE),
+          symptom_fatigue_lethargy = grepl("FATIGUE|LETHARGY|MALAISE|TIRED", symptom_type, ignore.case = TRUE),
+          symptom_nv_diarrhea = grepl("NAUSEA|N/V|DIARRHEA|N/V/D|ABDOMINAL|STOMACH|GI", symptom_type, ignore.case = TRUE),
           symptom_aches = grepl("BODY ACHES|HEADACHE|MYALGIA|HA|H/A|ACHES", symptom_type, ignore.case = TRUE),
           symptom_sinus_throat = grepl("CONGESTION|RUNNY NOSE|SNEEZING|SORE THROAT|RHINORRHEA|SCRATCHY THROAT|THROAT|SINUS", 
                                        symptom_type, ignore.case = TRUE),
-          symptom_respiratory = grepl("COUGH|MILD COUGH|SOB|COLD SX", symptom_type, ignore.case = TRUE)) %>% 
+          symptom_respiratory = grepl("COUGH|MILD COUGH|SOB|COLD SX|SHORTNESS OF BREATH", symptom_type, ignore.case = TRUE)) %>% 
    separate(healthcare_worker, c("healthcare_worker", "healthcare_worker_comment"), sep = " ") %>% 
+   separate(symptoms, c("symptoms", "symptoms_comment"), sep = " ") %>% 
    separate(travel_hx, c("travel_hx", "travel_hx_comment"), sep = " ") %>% 
    separate(hospitalized, c("hospitalized", "hospitalized_comment"), sep = " ") %>% 
    separate(ventilated, c("ventilated", "ventilated_comment"), sep = "o, ") %>% 
@@ -111,6 +112,7 @@ covid_clean <- covid_data_initial %>%
    mutate(case = 1,
           gender = factor(gender, levels = c("m", "f"),
                           labels = c("Male", "Female")),
+          symptoms = fct_collapse(symptoms, "No" = c("n", "No"), "Yes" = c("y", "yes")),
           contact_with_case = factor(contact_with_case,
                                      levels = c("y", "n", "unknown"),
                                      labels = c("Yes", "No", "Unknown")),
