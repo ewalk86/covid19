@@ -105,7 +105,7 @@ state_data_clean <- state_data %>%
    mutate(hospitalization = factor(hospitalization,
                                    levels = c("Y", "N", "P", "U"),
                                    labels = c("Hosp: Yes", "Hosp: No", 
-                                              "Hosp: Past", "Hosp: Unknown")))
+                                              "Hosp: Past", "Hosp: Unknown"))) 
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
@@ -191,6 +191,9 @@ rosebud_county <- county_function("Rosebud")
 custer_county <- county_function("Custer")
 dawson_county <- county_function("Dawson")
 valley_county <- county_function("Valley")
+treasure_county <- county_function("Treasure")
+granite_county <- county_function("Granite")
+
 
 
 
@@ -214,7 +217,8 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          lake_county, lincoln_county,
                                          ravalli_county, rosebud_county,
                                          custer_county, dawson_county,
-                                         valley_county) 
+                                         valley_county, treasure_county,
+                                         granite_county) 
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
@@ -229,7 +233,6 @@ phillips_county <- county_function("Phillips")
 priver <- county_function("Powder River")
 prairie_county <- county_function("Prairie")
 sheridan_county <- county_function("Sheridan")
-treasure_county <- county_function("Treasure")
 wibaux_county <- county_function("Wibaux")
 blaine_county <- county_function("Blaine")
 chouteau_county <- county_function("Chouteau")
@@ -237,7 +240,6 @@ teton_county <- county_function("Teton")
 jbasin_county <- county_function("Judith Basin")
 petroleum_county <- county_function("Petroleum")
 sweetgrass_county <- county_function("Sweet Grass")
-granite_county <- county_function("Granite")
 powell_county <- county_function("Powell")
 mineral_county <- county_function("Mineral")
 sanders_county <- county_function("Sanders")
@@ -316,12 +318,80 @@ hosp_data_daily <- state_case_data_clean %>%
                                                  "hosp_past",
                                                  "hosp_unknown"))) %>% 
    group_by(dates, hospitalization) %>% 
-   mutate(total_hosp = sum(case)) %>% 
+   mutate(sum_hosp = sum(case)) %>% 
    group_by(dates) %>% 
    select(-case) %>% 
    distinct(dates, hospitalization, .keep_all = TRUE) %>% 
-   pivot_wider(names_from = "hospitalization", values_from = "total_hosp")
+   pivot_wider(names_from = "hospitalization", values_from = "sum_hosp") %>% 
+   mutate(hosp_active = if_else(is.na(hosp_active), 0, hosp_active),
+          hosp_no = if_else(is.na(hosp_no), 0, hosp_no),
+          hosp_past = if_else(is.na(hosp_past), 0, hosp_past),
+          hosp_unknown = if_else(is.na(hosp_unknown), 0, hosp_unknown)) %>% 
+   group_by(dates) %>% 
+   mutate(daily_hosp = hosp_active + hosp_past) %>% 
+   ungroup() %>% 
+   mutate(total_hosp = cumsum(daily_hosp)) %>% 
+   select(dates, daily_hosp, total_hosp)
 
+
+outcome_data_daily <- state_case_data_clean %>% 
+   filter(mt_case == "Y") %>% 
+   select(dates, outcome, case) %>% 
+   mutate(outcome = factor(outcome,
+                           labels = c("active",
+                           "deceased",
+                           "recovered"))) %>% 
+   group_by(dates, outcome) %>% 
+   mutate(total_outcome = sum(case)) %>% 
+   group_by(dates) %>% 
+   select(-case) %>% 
+   distinct(dates, outcome, .keep_all = TRUE) %>% 
+   pivot_wider(names_from = "outcome", values_from = "total_outcome") %>% 
+   mutate(active = if_else(is.na(active), 0, active),
+          deceased = if_else(is.na(deceased), 0, deceased),
+          recovered = if_else(is.na(recovered), 0, recovered)) %>% 
+   group_by(dates) %>% 
+   mutate(daily_deceased = deceased,
+          daily_active = active,
+          daily_recovered = recovered) %>% 
+   ungroup() %>% 
+   mutate(total_deceased = cumsum(daily_deceased),
+          total_active = cumsum(daily_active),
+          total_recovered = cumsum(daily_recovered)) %>% 
+   select(dates, daily_deceased, total_deceased, daily_active,
+          total_active, daily_recovered, total_recovered)
+
+
+case_data_daily <- state_case_data_clean %>% 
+   filter(mt_case == "Y") %>% 
+   select(dates, case) %>% 
+   group_by(dates) %>% 
+   mutate(daily_cases = sum(case)) %>% 
+   ungroup() %>% 
+   distinct(dates, .keep_all = TRUE) %>% 
+   mutate(total_cases = cumsum(daily_cases)) %>% 
+   select(-case)
+
+
+case_hosp_test_outcome <- case_data_daily %>% 
+   left_join(hosp_data_daily, by = "dates") %>% 
+   left_join(outcome_data_daily, by = "dates") %>% 
+   full_join(state_test_data_clean, by = "dates") %>% 
+   arrange(dates) %>% 
+   mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>% 
+   mutate(total_cases = cumsum(daily_cases),
+          total_hosp = cumsum(daily_hosp),
+          total_deceased = cumsum(daily_deceased),
+          total_active = cumsum(daily_active),
+          total_recovered = cumsum(daily_recovered),
+          total_tests_completed = if_else(total_tests_completed == 0, 
+                                          lag(total_tests_completed), total_tests_completed),
+          total_tests_completed = if_else(total_tests_completed == 0, 
+                                          lag(total_tests_completed), total_tests_completed),
+          total_tests_completed = if_else(is.na(total_tests_completed), 
+                                          0, total_tests_completed)) 
+
+write_csv(case_hosp_test_outcome, paste0(output_path, "Output/mt_daily_case_test_data.csv"), na = " ")
 ```
 
  
@@ -1366,14 +1436,10 @@ ggsave("state_projections_phase1.png")
 
 # Estimate serial interval using MT data
 ```{r}
-# Look at mock data for example of formatting
-data("MockRotavirus")
-MockRotavirus$si_data
-
 # Load and format MT SI data
 file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
-mt_si_data <- read_csv(paste0(file_path, "Input/si_data.csv")) %>% 
+mt_si_data_1 <- read_csv(paste0(file_path, "Input/si_data.csv")) %>% 
    select(-Pair_No) %>% 
    rename(EL = EL_Infector_Lower,
           ER = ER_Infector_Upper,
@@ -1384,36 +1450,61 @@ mt_si_data <- read_csv(paste0(file_path, "Input/si_data.csv")) %>%
    filter(SR > 0) %>% 
    filter(SL > 0)
 
+mt_si_data_2 <- read_csv(paste0(file_path, "Input/si_data.csv")) %>% 
+   select(-Pair_No) %>% 
+   rename(EL = EL_Infector_Lower,
+          ER = ER_Infector_Upper,
+          SL = SL_Infected_Lower,
+          SR = SR_Infected_Upper) %>% 
+   mutate(SL2 = if_else(SL<1, SL + (1 - SL), SL),
+          SR2 = if_else(SL<1, SR + (1 - SL), SR)) %>% 
+   select(EL, ER, SL2, SR2) %>% 
+   rename(SL = SL2,
+          SR = SR2) %>% 
+   mutate_all(as.integer)
+
 # Load data with import/local incidence
 mt_li_data <- read_csv(paste0(file_path, "Input/local_import_data.csv")) %>% 
    filter(!is.na(`Date Reported to CDEpi`)) %>% 
    mutate(local = if_else(Local_Import == 0, 1, 0),
           imported = Local_Import,
-          dates = mdy(`Date Reported to CDEpi`)) %>% 
+          date_reported = mdy(`Date Reported to CDEpi`),
+          date_onset = mdy(`Symptom Onset Date`),
+          date_onset_est = mdy(`Estimated onset date`),
+          dates = if_else(is.na(date_onset), date_onset_est, date_onset),
+          dates = if_else(is.na(dates), date_reported, dates)) %>% 
    group_by(dates) %>% 
    mutate(local = sum(local),
           imported = sum(imported)) %>% 
    select(dates, local, imported) %>% 
-   distinct(dates, .keep_all = TRUE)
+   distinct(dates, .keep_all = TRUE) %>% 
+   arrange(dates)
 
-## State incidence data
-date_today <- Sys.Date()
-state_incidence <- incidence(state_data_clean$dates, last_date = date_today)
+mt_data <- mt_li_data %>% 
+   mutate(I = local + imported) %>% 
+   select(dates, I) 
 
-# Merge local/import data with state incidence data to get all dates in the range
-mt_li_data_final <- as.data.frame(state_incidence$dates) %>% 
-   mutate(dates = ymd(state_incidence$dates)) %>% 
+mt_incidence_data <- incidence(mt_data$dates)
+
+mt_li_sep_data <- as.data.frame(mt_incidence_data$dates) %>% 
+   mutate(dates = ymd(mt_incidence_data$dates)) %>% 
    select(dates) %>% 
    left_join(mt_li_data, by = "dates") %>% 
    mutate(local = if_else(is.na(local), 0, local),
-          imported = if_else(is.na(imported), 0, imported)) 
+          imported = if_else(is.na(imported), 0, imported))
+
+mt_li_combined_data <- as.data.frame(mt_incidence_data$dates) %>% 
+   mutate(dates = ymd(mt_incidence_data$dates)) %>% 
+   left_join(mt_data, by = "dates") %>% 
+   mutate(I = if_else(is.na(I), 0, I)) %>% 
+   select(dates, I)
 
 
-state_n <- as.data.frame(state_incidence$dates)
+state_n <- as.data.frame(mt_incidence_data$dates)
 
 time_var <- nrow(state_n)
 time_start <- seq(2, time_var-13)
-time_end <- time_start + 13
+time_end <- as.integer(time_start + 13)
 
 
 
@@ -1425,30 +1516,35 @@ si_config <- make_config(list(si_parametric_distr = dist,
     mcmc_control = mcmc_control, seed = overall_seed, n1 = 500, n2 = 50,
     t_start = time_start, t_end = time_end))
 
-r_mt_si <- estimate_R(mt_li_data_final, method = "si_from_data", 
+r_li_sep <- estimate_R(mt_li_sep_data, method = "si_from_data", 
+    si_data = mt_si_data_1, config = si_config)
+
+r_li_combined <- estimate_R(mt_li_combined_data, method = "si_from_data", 
     si_data = mt_si_data, config = si_config)
 
-estimate_plots <- estimate_R_plots(r_mt_si, what = "R")
-estimate_plots
+# plot R estimates using total incidence and local/imported incidence
+plot_li_sep <- estimate_R_plots(r_li_sep, what = "R")
+plot_li_combined <- estimate_R_plots(r_li_combined, what = "R")
+plot_li_sep
+plot_li_combined
 
-mt_mean_si <- r_mt_si$SI.Moments %>% 
+# calculate mean serial interval using SI data
+mean_si <- r_li_sep$SI.Moments %>% 
    summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
-mt_mean_si
-
-r_mt_si$si_distr
 
 
+# save R estimates and prep for plotting - total incidence
 colomns <- c(1:4, 8)
-state_r <- (r_mt_si$R[,colomns]) %>% 
+state_r <- (r_li_combined$R[,colomns]) %>% 
    mutate(region = "state") %>% 
    rename(mean_r = `Mean(R)`,
           sd_r = `Std(R)`,
           median_r = `Median(R)`)
 
-state_dates <- as.data.frame(r_mt_si$dates)
-state_i <- as.data.frame(r_mt_si$I)
-state_cil <- as.data.frame(r_mt_si$R$`Quantile.0.025(R)`)
-state_cih <- as.data.frame(r_mt_si$R$`Quantile.0.975(R)`)
+state_dates <- as.data.frame(r_li_combined$dates)
+state_i <- as.data.frame(r_li_combined$I)
+state_cil <- as.data.frame(r_li_combined$R$`Quantile.0.025(R)`)
+state_cih <- as.data.frame(r_li_combined$R$`Quantile.0.975(R)`)
 state_dates_new <- cbind(state_dates, state_i) %>% 
    rename(dates = 1,
           incidence = 2) %>% 
@@ -1457,17 +1553,38 @@ state_dates_new <- state_dates_new[-(1:14), 1:2]
 state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
-state_r_clean <- cbind(state_r, state_dates_new) %>% 
-   filter(t_end < 106)
+state_r_clean_combined <- cbind(state_r, state_dates_new) 
 
 
-state_r_plot <- state_r_clean %>% 
+# save R estimates and prep for plotting - local/imported incidence
+colomns <- c(1:4, 8)
+state_r <- (r_li_sep$R[,colomns]) %>% 
+   mutate(region = "state") %>% 
+   rename(mean_r = `Mean(R)`,
+          sd_r = `Std(R)`,
+          median_r = `Median(R)`)
+
+state_dates <- as.data.frame(r_li_sep$dates)
+state_i <- as.data.frame(r_li_sep$I)
+state_cil <- as.data.frame(r_li_sep$R$`Quantile.0.025(R)`)
+state_cih <- as.data.frame(r_li_sep$R$`Quantile.0.975(R)`)
+state_dates_new <- cbind(state_dates, state_i) %>% 
+   rename(dates = 1,
+          incidence = 2) %>% 
+   mutate(dates = ymd(dates))
+state_dates_new <- state_dates_new[-(1:14), 1:2]
+state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+state_r_clean_sep <- cbind(state_r, state_dates_new) 
+
+
+state_r_plot <- state_r_clean_combined %>% 
    ggplot() +
      geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
      geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
      geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
      labs(title = "COVID-19 Rolling 14-day R-values, State of Montana, 2020",
-          subtitle = paste0("Data current as of ", date_today),
           color = "") +
      ylab("R-value") +
      xlab("") +
@@ -1494,6 +1611,7 @@ state_r_plot <- state_r_clean %>%
 state_r_plot
 
 
-ggsave("mt_r_si_li.png")
+ggsave("mt_r_local_imported_separate.png")
+ggsave("mt_r_local_imported_combined.png")
 ```
 

@@ -277,6 +277,8 @@ rosebud_county <- county_function("Rosebud")
 custer_county <- county_function("Custer")
 dawson_county <- county_function("Dawson")
 valley_county <- county_function("Valley")
+treasure_county <- county_function("Treasure")
+granite_county <- county_function("Granite")
 
 
 county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
@@ -296,7 +298,8 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          lake_county, lincoln_county,
                                          ravalli_county, rosebud_county,
                                          custer_county, dawson_county,
-                                         valley_county) 
+                                         valley_county, treasure_county,
+                                         granite_county) 
 
 write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_combined.csv")
 
@@ -341,6 +344,116 @@ state_hosp <- state_hosp_data %>%
    arrange(age_group)
 
 write_csv(state_hosp, "C:/R/covid19/state_daily_results/state_hosp.csv", na = " ")
+
+
+#################### Run and save daily case, hosp, outcome, test data
+query_url <- "https://services.arcgis.com/qnjIrwR8z5Izc0ij/ArcGIS/rest/services/COVID_Cases_Production_View/FeatureServer/1/query?where=1%3D1&objectIds=&time=&resultType=none&outFields=OBJECTID%2C+Total_Tests_Completed%2C+New_Tests_Completed%2C+Test_Date%2C+ScriptRunDate&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&sqlFormat=none&f=pjson&token="
+
+initial_pull <- GET(query_url)
+
+text_data <- content(initial_pull, as = "text")
+
+parsed_data <- content(initial_pull, as = "parsed")
+
+json_data <- fromJSON(text_data)
+
+state_test_data <- as.data.frame(json_data$features$attributes) 
+
+state_test_data_clean <- state_test_data %>% 
+   rename_all(tolower) %>% 
+   mutate(dates = test_date/1000,
+          dates = as.POSIXct(dates, origin = "1970-01-01")) %>% 
+   separate(dates, c("dates", "trash"), sep = " ") %>% 
+   mutate(dates = ymd(dates)) %>% 
+   select(dates, total_tests_completed, new_tests_completed) %>% 
+   arrange(dates, desc(total_tests_completed)) %>% 
+   distinct(dates, .keep_all = TRUE)
+
+
+hosp_data_daily <- state_data_clean %>% 
+   filter(mt_case == "Y") %>% 
+   select(dates, hospitalization, case) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   labels = c("hosp_active",
+                                              "hosp_no",
+                                              "hosp_past",
+                                              "hosp_unknown"))) %>% 
+   group_by(dates, hospitalization) %>% 
+   mutate(sum_hosp = sum(case)) %>% 
+   group_by(dates) %>% 
+   select(-case) %>% 
+   distinct(dates, hospitalization, .keep_all = TRUE) %>% 
+   pivot_wider(names_from = "hospitalization", values_from = "sum_hosp") %>% 
+   mutate(hosp_active = if_else(is.na(hosp_active), 0, hosp_active),
+          hosp_no = if_else(is.na(hosp_no), 0, hosp_no),
+          hosp_past = if_else(is.na(hosp_past), 0, hosp_past),
+          hosp_unknown = if_else(is.na(hosp_unknown), 0, hosp_unknown)) %>% 
+   group_by(dates) %>% 
+   mutate(daily_hosp = hosp_active + hosp_past) %>% 
+   ungroup() %>% 
+   mutate(total_hosp = cumsum(daily_hosp)) %>% 
+   select(dates, daily_hosp, total_hosp)
+
+
+outcome_data_daily <- state_data_clean %>% 
+   filter(mt_case == "Y") %>% 
+   select(dates, outcome, case) %>% 
+   mutate(outcome = factor(outcome,
+                           labels = c("active",
+                                      "deceased",
+                                      "recovered"))) %>% 
+   group_by(dates, outcome) %>% 
+   mutate(total_outcome = sum(case)) %>% 
+   group_by(dates) %>% 
+   select(-case) %>% 
+   distinct(dates, outcome, .keep_all = TRUE) %>% 
+   pivot_wider(names_from = "outcome", values_from = "total_outcome") %>% 
+   mutate(active = if_else(is.na(active), 0, active),
+          deceased = if_else(is.na(deceased), 0, deceased),
+          recovered = if_else(is.na(recovered), 0, recovered)) %>% 
+   group_by(dates) %>% 
+   mutate(daily_deceased = deceased,
+          daily_active = active,
+          daily_recovered = recovered) %>% 
+   ungroup() %>% 
+   mutate(total_deceased = cumsum(daily_deceased),
+          total_active = cumsum(daily_active),
+          total_recovered = cumsum(daily_recovered)) %>% 
+   select(dates, daily_deceased, total_deceased, daily_active,
+          total_active, daily_recovered, total_recovered)
+
+
+case_data_daily <- state_data_clean %>% 
+   filter(mt_case == "Y") %>% 
+   select(dates, case) %>% 
+   group_by(dates) %>% 
+   mutate(daily_cases = sum(case)) %>% 
+   ungroup() %>% 
+   distinct(dates, .keep_all = TRUE) %>% 
+   mutate(total_cases = cumsum(daily_cases)) %>% 
+   select(-case)
+
+
+case_hosp_test_outcome <- case_data_daily %>% 
+   left_join(hosp_data_daily, by = "dates") %>% 
+   left_join(outcome_data_daily, by = "dates") %>% 
+   full_join(state_test_data_clean, by = "dates") %>% 
+   arrange(dates) %>% 
+   mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>% 
+   mutate(total_cases = cumsum(daily_cases),
+          total_hosp = cumsum(daily_hosp),
+          total_deceased = cumsum(daily_deceased),
+          total_active = cumsum(daily_active),
+          total_recovered = cumsum(daily_recovered),
+          total_tests_completed = if_else(total_tests_completed == 0, 
+                                          lag(total_tests_completed), total_tests_completed),
+          total_tests_completed = if_else(total_tests_completed == 0, 
+                                          lag(total_tests_completed), total_tests_completed),
+          total_tests_completed = if_else(is.na(total_tests_completed), 
+                                          0, total_tests_completed)) 
+
+write_csv(case_hosp_test_outcome, "C:/R/covid19/state_daily_results/mt_case_outcome_hosp_data.csv", na = " ")
+
 
 
 #################### Run analysis and print results
@@ -1032,6 +1145,10 @@ sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
            "/celFtpFiles/covid19/Rt/incoming/county_data_combined.csv",
            "C:/R/covid19/state_daily_results/county_data_combined.csv")
+
+sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+           "/celFtpFiles/covid19/Rt/incoming/mt_case_outcome_hosp_data.csv",
+           "C:/R/covid19/state_daily_results/mt_case_outcome_hosp_data.csv")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
            "/celFtpFiles/covid19/Rt/incoming/state_r_plot.png",
