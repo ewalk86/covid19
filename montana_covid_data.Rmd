@@ -1,7 +1,6 @@
 ---
-title: "State of Montana Covid-19 Data"
+title: "State of Montana Covid-19 data analysis practice/testing"
 author: "Ethan Walker"
-date: "Data as of 13 May 2020"
 output:
   pdf_document: default
   html_document:
@@ -105,7 +104,9 @@ state_data_clean <- state_data %>%
    mutate(hospitalization = factor(hospitalization,
                                    levels = c("Y", "N", "P", "U"),
                                    labels = c("Hosp: Yes", "Hosp: No", 
-                                              "Hosp: Past", "Hosp: Unknown"))) 
+                                              "Hosp: Past", "Hosp: Unknown"))) %>% 
+   select(-case_no) %>% 
+   rownames_to_column(var = "case_no")
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 

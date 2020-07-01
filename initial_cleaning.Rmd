@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 23 June 2020"
+date: "Started 2 April 2020, Updated 1 July 2020"
 output:
   pdf_document: default
   html_document:
@@ -26,6 +26,8 @@ library(knitr)
 
 
 ```{r}
+# Load data and format columns
+
 input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
@@ -54,6 +56,8 @@ covid_data_initial <-
 
 
 ```{r}
+# Clean data
+
 covid_clean <- covid_data_initial %>% 
    filter(!is.na(gender)) %>% 
    mutate(age = as.numeric(age),
@@ -164,6 +168,7 @@ covid_clean <- covid_data_initial %>%
 ```
 
 ```{r}
+# Save data
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 write_rds(covid_clean, paste0(output_path, "Output/covid_data_clean.rds"))
