@@ -106,7 +106,7 @@ state_data_clean <- state_data %>%
                                    labels = c("Hosp: Yes", "Hosp: No", 
                                               "Hosp: Past", "Hosp: Unknown"))) %>% 
    select(-case_no) %>% 
-   rownames_to_column(var = "case_no")
+   rownames_to_column(var = "case_no") %>% 
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 

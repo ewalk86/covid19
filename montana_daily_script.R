@@ -542,7 +542,7 @@ state_r_plot <- state_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #state_r_plot
-ggsave("C:/R/covid19/state_daily_results/state_r_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/state_r_plot_test_date.png", width = 10, height = 8)
 
 state_inc_plot <- state_data_clean %>% 
    ggplot() +
@@ -571,7 +571,7 @@ state_inc_plot <- state_data_clean %>%
          axis.ticks = element_blank()) 
 #state_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/state_inc_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/state_inc_plot_test_date.png", width = 10, height = 8)
 
 
 
@@ -652,7 +652,7 @@ reg1_r_plot <- reg1_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg1_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg1_r_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/reg1_r_plot_test_date.png", width = 10, height = 8)
 
 reg1_inc_plot <- reg1_data_clean %>% 
    ggplot() +
@@ -681,7 +681,7 @@ reg1_inc_plot <- reg1_data_clean %>%
          axis.ticks = element_blank()) 
 #reg1_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg1_inc_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/reg1_inc_plot_test_date.png", width = 10, height = 8)
 
 
 
@@ -763,7 +763,7 @@ reg2_r_plot <- reg2_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg2_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg2_r_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/reg2_r_plot_test_date.png", width = 10, height = 8)
 
 reg2_inc_plot <- reg2_data_clean %>% 
    ggplot() +
@@ -792,7 +792,7 @@ reg2_inc_plot <- reg2_data_clean %>%
          axis.ticks = element_blank()) 
 #reg2_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg2_inc_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/reg2_inc_plot_test_date.png", width = 10, height = 8)
 
 
 ## Reg3 results
@@ -872,7 +872,7 @@ reg3_r_plot <- reg3_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg3_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg3_r_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/reg3_r_plot_test_date.png", width = 10, height = 8)
 
 reg3_inc_plot <- reg3_data_clean %>% 
    ggplot() +
@@ -901,7 +901,7 @@ reg3_inc_plot <- reg3_data_clean %>%
          axis.ticks = element_blank()) 
 #reg3_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg3_inc_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/reg3_inc_plot_test_date.png", width = 10, height = 8)
 
 
 ## Reg4 results
@@ -981,7 +981,7 @@ reg4_r_plot <- reg4_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 #reg4_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg4_r_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/reg4_r_plot_test_date.png", width = 10, height = 8)
 
 reg4_inc_plot <- reg4_data_clean %>% 
    ggplot() +
@@ -1010,7 +1010,7 @@ reg4_inc_plot <- reg4_data_clean %>%
          axis.ticks = element_blank()) 
 #reg4_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg4_inc_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/reg4_inc_plot_test_date.png", width = 10, height = 8)
 
 
 ## Reg5 results
@@ -1091,7 +1091,7 @@ reg5_r_plot <- reg5_r_clean %>%
    scale_color_manual(values = c("black")) 
 #reg5_r_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg5_r_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/reg5_r_plot_test_date.png", width = 10, height = 8)
 
 reg5_inc_plot <- reg5_data_clean %>% 
    ggplot() +
@@ -1120,16 +1120,16 @@ reg5_inc_plot <- reg5_data_clean %>%
          axis.ticks = element_blank()) 
 #reg5_inc_plot
 
-ggsave("C:/R/covid19/state_daily_results/reg5_inc_plot.png", width = 10, height = 8)
+ggsave("C:/R/covid19/state_daily_results/reg5_inc_plot_test_date.png", width = 10, height = 8)
 
 
 
 # Bind files and save
-all_regions_r <- rbind(state_r_clean, reg1_r_clean, reg2_r_clean, reg3_r_clean, 
+all_regions_r_test_date <- rbind(state_r_clean, reg1_r_clean, reg2_r_clean, reg3_r_clean, 
                        reg4_r_clean, reg5_r_clean) %>% 
    left_join(all_data_wide, by = c("region", "dates"))
 
-write_csv(all_regions_r, "C:/R/covid19/state_daily_results/all_regions_r.csv", na = " ")
+write_csv(all_regions_r_test_date, "C:/R/covid19/state_daily_results/all_regions_r_test_date.csv", na = " ")
 
 
 
@@ -1141,8 +1141,8 @@ write_csv(all_regions_r, "C:/R/covid19/state_daily_results/all_regions_r.csv", n
 # remotepath = '/celFtpFiles/covid19/Rt/incoming/'
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/all_regions_r.csv",
-           "C:/R/covid19/state_daily_results/all_regions_r.csv")
+           "/celFtpFiles/covid19/Rt/incoming/all_regions_r_test_date.csv",
+           "C:/R/covid19/state_daily_results/all_regions_r_test_date.csv")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
            "/celFtpFiles/covid19/Rt/incoming/state_hosp.csv",
@@ -1157,52 +1157,52 @@ sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
            "C:/R/covid19/state_daily_results/mt_case_outcome_hosp_data.csv")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/state_r_plot.png",
-           "C:/R/covid19/state_daily_results/state_r_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/state_r_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/state_r_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg1_r_plot.png",
-           "C:/R/covid19/state_daily_results/reg1_r_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/reg1_r_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/reg1_r_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg2_r_plot.png",
-           "C:/R/covid19/state_daily_results/reg2_r_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/reg2_r_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/reg2_r_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg3_r_plot.png",
-           "C:/R/covid19/state_daily_results/reg3_r_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/reg3_r_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/reg3_r_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg4_r_plot.png",
-           "C:/R/covid19/state_daily_results/reg4_r_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/reg4_r_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/reg4_r_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg5_r_plot.png",
-           "C:/R/covid19/state_daily_results/reg5_r_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/reg5_r_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/reg5_r_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/state_inc_plot.png",
-           "C:/R/covid19/state_daily_results/state_inc_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/state_inc_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/state_inc_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg1_inc_plot.png",
-           "C:/R/covid19/state_daily_results/reg1_inc_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/reg1_inc_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/reg1_inc_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg2_inc_plot.png",
-           "C:/R/covid19/state_daily_results/reg2_inc_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/reg2_inc_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/reg2_inc_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg3_inc_plot.png",
-           "C:/R/covid19/state_daily_results/reg3_inc_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/reg3_inc_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/reg3_inc_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg4_inc_plot.png",
-           "C:/R/covid19/state_daily_results/reg4_inc_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/reg4_inc_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/reg4_inc_plot_test_date.png")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg5_inc_plot.png",
-           "C:/R/covid19/state_daily_results/reg5_inc_plot.png")
+           "/celFtpFiles/covid19/Rt/incoming/reg5_inc_plot_test_date.png",
+           "C:/R/covid19/state_daily_results/reg5_inc_plot_test_date.png")
 
 
 
