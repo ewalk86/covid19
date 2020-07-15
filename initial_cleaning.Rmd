@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 1 July 2020"
+date: "Started 2 April 2020, Updated 15 July 2020"
 output:
   pdf_document: default
   html_document:
@@ -31,25 +31,25 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 6.30.20.xlsx"), 
-             range = "A2:X500", 
-                        col_names = c("case_id", "age", "gender", "zipcode", "healthcare_worker",
+   read_xlsx(paste0(input_path, "COVID data 7.13.20.xlsx"), 
+             range = "A2:Y500", 
+                        col_names = c("case_id", "age", "gender", "race", 
+                                      "ethnicity", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
-                                      "test_date", "last_exposure_date", 
-                                      "release_date", "contact_with_case", "travel_hx",
+                                      "test_date", "contact_with_case", "contact_case_number", 
+                                      "epi_linked", "epi_linked_number", "travel_hx",
                                       "hospitalized", "ventilated", "discharge_date",
                                       "chronic_conditions", "chronic_conditions_type",
                                       "number_contacts", "patient_died", 
-                                      "patient_died_date", "contact_case_number",
-                                      "community_spread", "epi_linked"),
-                        col_types = c("text", "text", "text", "text", "text",
+                                      "suspected_source", "community_spread"),
+                        col_types = c("text", "text", "text", "text", 
+                                      "text", "text", "text",
                                       "text", "text", "date",
-                                      "date", "date",
                                       "date", "text", "text",
+                                      "text", "text", "text",
                                       "text", "text", "date",
-                                      "text", "text",
                                       "text", "text", 
-                                      "date", "text",
+                                      "text", "text",
                                       "text", "text"))
 ```
 
@@ -58,7 +58,7 @@ covid_data_initial <-
 # Clean data
 
 covid_clean <- covid_data_initial %>% 
-   filter(!is.na(gender)) %>% 
+   filter(!is.na(case_id)) %>% 
    mutate(age = as.numeric(age),
           age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 110),
                           labels = c("0 to 9, 0.1", "10 to 19, 0.12", "20 to 29, 0.19", 
@@ -70,8 +70,9 @@ covid_clean <- covid_data_initial %>%
    mutate(age_group_percent = as.numeric(age_group_percent),
           county_pop = as.numeric(119000)) %>% 
    select(case_id, age, age_group, age_group_percent, age_group2, 
-          county_pop, gender:epi_linked) %>% 
+          county_pop, gender:community_spread) %>% 
    mutate_if(is.character, tolower) %>% 
+   mutate_if(is.factor, tolower) %>% 
    mutate(symptom_cough = grepl("COUGH|MILD COUGH", symptom_type, ignore.case = TRUE),
           symptom_fever = grepl("FEVER", symptom_type, ignore.case = TRUE),
           symptom_fatigue = grepl("FATIGUE", symptom_type, ignore.case = TRUE),
@@ -99,49 +100,52 @@ covid_clean <- covid_data_initial %>%
    separate(symptoms, c("symptoms", "symptoms_comment"), sep = " ") %>% 
    separate(travel_hx, c("travel_hx", "travel_hx_comment"), sep = " ") %>% 
    separate(hospitalized, c("hospitalized", "hospitalized_comment"), sep = " ") %>% 
-   separate(ventilated, c("ventilated", "ventilated_comment"), sep = "o, ") %>% 
-   replace_with_na(replace = list(number_contacts = "UNKNOWN")) %>% 
-   replace_with_na(replace = list(epi_linked = "UNKNOWN")) %>% 
+   separate(chronic_conditions, c("chronic_conditions", "chronic_conditions_comment"), sep = "- ") %>% 
+   replace_with_na_all(condition = ~.x %in% c("n/a", "na", "unknown", "unkown")) %>% 
    mutate(symptom_onset_date = ymd(symptom_onset_date),
-          release_date = ymd(release_date),
           discharge_date = ymd(discharge_date),
-          patient_died_date = ymd(patient_died_date),
           test_date = ymd(test_date),
-          last_exposure_date = ymd(last_exposure_date),
           number_contacts = as.numeric(number_contacts),
           number_contacts_categorical = cut(number_contacts, breaks = c(0, 5, 10, 50),
                                             labels = c("0 to 5", "5 to 10", "10+"),
                                             right = FALSE)) %>% 
    mutate(case = 1,
-          gender = factor(gender, levels = c("m", "f"),
-                          labels = c("Male", "Female")),
-          symptoms = fct_collapse(symptoms, "No" = c("n", "No"), "Yes" = c("y", "yes")),
+          gender = fct_collapse(gender, "Male" = c("m", "male"), "Female" = c("f", "female")),
+          ventilated = fct_collapse(ventilated, "No" = c("n", "no"), "Yes" = c("y", "yes")),
+          symptoms = fct_collapse(symptoms, "No" = c("n", "no"), "Yes" = c("y", "yes"),
+                                  "N/A" = c("n/a", "cost")),
+          contact_with_case = if_else(is.na(contact_with_case), "Unknown", contact_with_case),
+          contact_with_case = fct_collapse(contact_with_case,
+                                           "Yes" = c("y", "yes"),
+                                           "No" = c("n", "no"),
+                                           "Unknown" = "Unknown"),
           contact_with_case = factor(contact_with_case,
-                                     levels = c("y", "n", "unknown"),
-                                     labels = c("Yes", "No", "Unknown")),
+                                     levels = c("Yes", "No", "Unknown")),
           healthcare_worker = factor(healthcare_worker,
                                      levels = c("y", "n"),
                                      labels = c("Yes", "No")),
-          travel_hx = factor(travel_hx, levels = c("y", "n"),
+          travel_hx = factor(travel_hx, 
+                             levels = c("y", "n"),
                              labels = c("Yes", "No")),
-          hospitalized = factor(hospitalized, levels = c("y", "n"),
-                             labels = c("Yes", "No")),
-          ventilated = factor(ventilated,
-                                     levels = c("y", "n", "n/a"),
-                                     labels = c("Yes", "No", "N/A")),
+          hospitalized = factor(hospitalized, 
+                                levels = c("y", "n"),
+                                labels = c("Yes", "No")),
           chronic_conditions = if_else(!is.na(chronic_conditions_type), "y", "n"),
-          chronic_conditions = factor(chronic_conditions, levels = c("y", "n"),
-                             labels = c("Yes", "No")),
-          community_spread = if_else(travel_hx == "No" & contact_with_case == "No",
-                                     "Yes", "No"),
-          community_spread = factor(community_spread, levels = c("Yes", "No")),
-          patient_died = factor(patient_died, levels = c("y", "n"),
-                             labels = c("Yes", "No")),
-          epi_linked = factor(epi_linked, levels = c("y", "n"),
-                             labels = c("Yes", "No"))) %>% 
-   replace_with_na(replace = list(ventilated = "N/A")) %>% 
+          chronic_conditions = factor(chronic_conditions, 
+                                      levels = c("y", "n"),
+                                      labels = c("Yes", "No")),
+          community_spread_new = if_else(travel_hx == "No" & contact_with_case == "No", "Yes", "No"),
+          community_spread_new = factor(community_spread_new, levels = c("Yes", "No")),
+          patient_died = factor(patient_died, 
+                                levels = c("y", "n"),
+                                labels = c("Yes", "No")),
+          epi_linked = factor(epi_linked, 
+                              levels = c("y", "n"),
+                              labels = c("Yes", "No"))) %>% 
+   replace_with_na(replace = list(symptoms = "N/A")) %>% 
    mutate(symptom_test_diff = as.duration(interval(symptom_onset_date, test_date)),
           symptom_test_diff = as.numeric(symptom_test_diff)/86400,
+          symptom_test_diff = if_else(symptom_test_diff < -10, 0, symptom_test_diff),
           mean_symptom_test_diff = mean(symptom_test_diff, na.rm = TRUE),
           symptom_onset_date_new = if_else(is.na(symptom_onset_date), 
                                        test_date - mean_symptom_test_diff,
@@ -163,7 +167,14 @@ covid_clean <- covid_data_initial %>%
                                                  "Tested: date of test result"),
           travel_hx = as.character(travel_hx),
           travel_hx = if_else(is.na(travel_hx), "Unknown", travel_hx),
-          travel_hx = factor(travel_hx, levels = c("Yes", "No", "Unknown")))
+          travel_hx = factor(travel_hx, levels = c("Yes", "No", "Unknown")),
+          age_group = as.factor(age_group),
+          age_group2 = as.factor(age_group2),
+          race = as.factor(race),
+          ethnicity = as.factor(ethnicity),
+          community_spread = as.factor(community_spread))
+
+summary(covid_clean)
 ```
 
 ```{r}

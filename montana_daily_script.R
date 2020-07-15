@@ -283,6 +283,10 @@ dawson_county <- county_function("Dawson")
 valley_county <- county_function("Valley")
 treasure_county <- county_function("Treasure")
 granite_county <- county_function("Granite")
+fallon_county <- county_function("Fallon")
+garield_county <- county_function("Garfield")
+sheridan_county <- county_function("Sheridan")
+teton_county <- county_function("Teton")
 
 
 county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
@@ -303,7 +307,9 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          ravalli_county, rosebud_county,
                                          custer_county, dawson_county,
                                          valley_county, treasure_county,
-                                         granite_county) 
+                                         granite_county, fallon_county,
+                                         garield_county, sheridan_county,
+                                         teton_county) 
 
 write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_combined.csv")
 

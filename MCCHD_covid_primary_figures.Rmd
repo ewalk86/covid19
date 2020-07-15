@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montanta"
-date: "Data as of June 29, 2020"
+date: "Data as of July 13, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -106,13 +106,13 @@ contact_summary <- covid_data %>%
 
 community_spread_summary <- covid_data %>% 
    mutate(total_cases = n()) %>% 
-   group_by(community_spread) %>% 
+   group_by(community_spread_new) %>% 
    summarize("Number of Cases" = n()) %>% 
    ungroup() %>% 
    mutate("Proportion of Cases (%)" = 
           round(`Number of Cases`/(sum(`Number of Cases`))*100),
           "Incidence per 100,000 Population" = "NA") %>% 
-   rename("Data Category" = community_spread) %>% 
+   rename("Data Category" = community_spread_new) %>% 
    na.exclude()
 
 
@@ -197,30 +197,30 @@ covid_incidence
 
 total_cases <- sum(covid_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
-date_12 <- format(Sys.Date() - 12, "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
 covid_plot_onset <- covid_data %>% 
    ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
+     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
      geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
-                 y = 2), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-6.5, y = 6.0, 
+                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-7, y = 8, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
@@ -266,30 +266,30 @@ covid_plot_onset
 
 total_cases <- sum(covid_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
-date_12 <- format(Sys.Date() - 12, "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
 covid_plot_test_date <- covid_data %>% 
    ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 12, xmax = Sys.Date(), ymin=0, ymax=Inf),
+     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
      geom_col(aes(test_date_new, case, fill = test_date_indicator)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
-                 y = 3.5), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
-                 y = 2), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-6.5, y = 9.0, 
+                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-7, y = 8, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
@@ -333,6 +333,7 @@ covid_plot_test_date
 ```{r}
 #Symptoms and gender
 covid_plot <- covid_data %>% 
+   filter(!is.na(gender)) %>% 
    pivot_longer(cols = c(symptom_taste_smell:symptom_respiratory),
                 names_to = "variable", values_to = "values") %>% 
    group_by(variable, gender) %>% 
@@ -587,7 +588,7 @@ covid_piechart
 ```
 
 ```{r}
-piechart_function(plot_fill = "community_spread", var_label = "Community Spread (n)")
+piechart_function(plot_fill = "community_spread_new", var_label = "Community Spread (n)")
 
 #ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
 ```
