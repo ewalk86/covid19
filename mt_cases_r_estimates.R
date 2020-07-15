@@ -56,7 +56,7 @@ counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 
 # Load serial interval and case data
-mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.01.2020.xlsx"),
+mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.15.2020.xlsx"),
                           sheet = 1) %>% 
    select(-Pair_No) %>% 
    rename(EL = EL_Infector_Lower,
@@ -73,7 +73,7 @@ mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.01.20
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.01.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.15.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -81,8 +81,11 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.01.
    mutate(local = if_else(local_import == 0, 1, 0),
           imported = local_import,
           date_reported = ymd(date_reported),
-          dates = ymd(symptom_onset_date),
+          dates = ymd_hms(symptom_onset_date),
           case = 1) %>% 
+   separate(dates, c("dates", "trash"), sep = " ") %>% 
+   select(-trash) %>% 
+   mutate(dates = ymd(dates)) %>% 
    rename(hospitalization = "ever_hospitalized") %>% 
    left_join(counties_regions, by = "county") %>% 
    mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99",
@@ -112,20 +115,19 @@ state_data_wide <- mt_case_data %>%
    mutate(case = 1) %>% 
    pivot_wider(names_from = "age_group_new", values_from = "case") %>% 
    mutate(case = 1) %>% 
-   select(-"NA") %>% 
+   #select(-"NA") %>% 
    pivot_wider(names_from = "sex", values_from = "case") %>% 
    mutate(case = 1) %>% 
    select(-"NA") %>% 
    pivot_wider(names_from = "hospitalization", values_from = "case") %>% 
    mutate(case = 1) %>% 
    select(-"NA") %>% 
-   pivot_wider(names_from = "county", values_from = "case") %>% 
-   select(-"NA")
+   pivot_wider(names_from = "county", values_from = "case") 
 
 
 # Filter and format wide data for state and 5 health regions
 state_wide_date <- state_data_wide %>% 
-   select(region, dates, 8:59) %>% 
+   select(region, dates, 8:66) %>% 
    mutate(region = "state") %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
@@ -135,11 +137,11 @@ state_wide_date <- state_data_wide %>%
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, 3:53)
+   select(region, dates, daily_cases, cumulative_cases, 3:61)
 
 reg1_wide_date <- state_data_wide %>% 
    filter(region == 1) %>% 
-   select(region, dates, 8:59) %>% 
+   select(region, dates, 8:66) %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
    mutate(case = 1,
@@ -148,11 +150,11 @@ reg1_wide_date <- state_data_wide %>%
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, 3:53)
+   select(region, dates, daily_cases, cumulative_cases, 3:61)
 
 reg2_wide_date <- state_data_wide %>% 
    filter(region == 2) %>% 
-   select(region, dates, 8:59) %>% 
+   select(region, dates, 8:66) %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
    mutate(case = 1,
@@ -161,11 +163,11 @@ reg2_wide_date <- state_data_wide %>%
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, 3:53)
+   select(region, dates, daily_cases, cumulative_cases, 3:61)
 
 reg3_wide_date <- state_data_wide %>% 
    filter(region == 3) %>% 
-   select(region, dates, 8:59) %>% 
+   select(region, dates, 8:66) %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
    mutate(case = 1,
@@ -174,11 +176,11 @@ reg3_wide_date <- state_data_wide %>%
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, 3:53)
+   select(region, dates, daily_cases, cumulative_cases, 3:61)
 
 reg4_wide_date <- state_data_wide %>% 
    filter(region == 4) %>% 
-   select(region, dates, 8:59) %>% 
+   select(region, dates, 8:66) %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
    mutate(case = 1,
@@ -187,11 +189,11 @@ reg4_wide_date <- state_data_wide %>%
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, 3:53)
+   select(region, dates, daily_cases, cumulative_cases, 3:61)
 
 reg5_wide_date <- state_data_wide %>% 
    filter(region == 5) %>% 
-   select(region, dates, 8:59) %>% 
+   select(region, dates, 8:66) %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
    mutate(case = 1,
@@ -200,7 +202,7 @@ reg5_wide_date <- state_data_wide %>%
    distinct(dates, .keep_all = TRUE) %>% 
    ungroup() %>% 
    mutate(cumulative_cases = cumsum(daily_cases)) %>% 
-   select(region, dates, daily_cases, cumulative_cases, 3:53)
+   select(region, dates, daily_cases, cumulative_cases, 3:61)
 
 all_data_wide <- rbind(state_wide_date, reg1_wide_date, reg2_wide_date,
                        reg3_wide_date, reg4_wide_date, reg5_wide_date)
