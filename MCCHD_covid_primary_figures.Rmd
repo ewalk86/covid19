@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
-author: "Ethan Walker, University of Montanta"
-date: "Data as of July 13, 2020"
+author: "Ethan Walker, University of Montana"
+date: "Data as of July 16, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -192,7 +192,7 @@ covid_incidence
 
 \pagebreak  
 
-```{r, fig.width = 10, fig.height = 5}
+```{r, fig.width = 11, fig.height = 5}
 # Epi curve - date of onset
 
 total_cases <- sum(covid_data$case)
@@ -220,7 +220,7 @@ covid_plot_onset <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
                  y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-7, y = 8, 
+     geom_label(aes(x = Sys.Date()-8, y = 10, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
@@ -289,7 +289,7 @@ covid_plot_test_date <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
                  y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-7, y = 8, 
+     geom_label(aes(x = Sys.Date()-7, y = 10, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
