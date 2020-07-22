@@ -56,7 +56,7 @@ counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 
 # Load serial interval and case data
-mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.15.2020.xlsx"),
+mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.22.2020.xlsx"),
                         sheet = 1) %>% 
    select(-Pair_No) %>% 
    rename(EL = EL_Infector_Lower,
@@ -73,7 +73,7 @@ mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.15.20
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.15.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.22.2020.xlsx"),
                           sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -81,11 +81,8 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.15.
    mutate(local = if_else(local_import == 0, 1, 0),
           imported = local_import,
           date_reported = ymd(date_reported),
-          dates = ymd_hms(symptom_onset_date),
+          dates = ymd(symptom_onset_date),
           case = 1) %>% 
-   separate(dates, c("dates", "trash"), sep = " ") %>% 
-   select(-trash) %>% 
-   mutate(dates = ymd(dates)) %>% 
    rename(hospitalization = "ever_hospitalized") %>% 
    left_join(counties_regions, by = "county") %>% 
    mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99",
@@ -948,7 +945,8 @@ ggsave("C:/R/covid19/lewisandclark_inc_plot.png", width = 10, height = 8)
 
 # Bind files and save
 all_counties_r <- rbind(missoula_r_clean, gallatin_r_clean, yellowstone_r_clean, 
-                        bighorn_r_clean, lake_r_clean, lewisandclark_r_clean) 
+                        bighorn_r_clean, lake_r_clean, lewisandclark_r_clean) %>% 
+   mutate(daily_cases = incidence) 
 
 write_csv(all_counties_r, "C:/R/covid19/all_counties_r.csv", na = " ")
 
@@ -966,7 +964,7 @@ sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
 
 # Combine county R file and region/state R file; push to server
 
-all_counties_r <- read_csv("C:/R/covid19/all_counties_r.csv")
+all_counties_r <- read_csv("C:/R/covid19/all_counties_r.csv") 
 
 all_regions_r <- read_csv("C:/R/covid19/state_daily_results/all_regions_r.csv")
 
@@ -977,5 +975,5 @@ write_csv(all_regions_cos_r, "C:/R/covid19/all_regions_cos_r.csv", na = " ")
 
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/all_regions_cos_r.csv",
+           "/celFtpFiles/covid19/Rt/incoming/all_regions_r.csv",
            "C:/R/covid19/all_regions_cos_r.csv")
