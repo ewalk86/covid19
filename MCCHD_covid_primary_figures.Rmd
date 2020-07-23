@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of July 20, 2020"
+date: "Data as of July 22, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -24,6 +24,7 @@ library(knitr)
 library(ggthemes)
 library(knitr)
 library(kableExtra)
+library(gmodels)
 jv_palette <- c("#330099","#CC0066","#FF6633", 
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
@@ -37,13 +38,6 @@ cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442",
 file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 covid_data <- read_rds(paste0(file_path, "Output/covid_data_clean.rds"))
-   filter(symptom_onset_date >= "2020-06-01")
-
-mean(covid_data$number_contacts, na.rm = TRUE)
-median(covid_data$number_contacts, na.rm = TRUE)
-range(covid_data$number_contacts, na.rm = TRUE)
-
-table(covid_data$age_group, covid_data$number_contacts_categorical)
 ```
 
 
@@ -624,4 +618,22 @@ piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number
 #ggsave("piechart_contacts.jpg", width = 10, height = 5)
 ```
 
+\pagebreak  
+
+```{r}
+mean_num_contact <- mean(covid_data$number_contacts, na.rm = TRUE)
+paste0("Mean number of contacts: ", round(mean_num_contact, digits = 1))
+
+median_num_contact <- median(covid_data$number_contacts, na.rm = TRUE)
+paste0("Median number of contacts: ", round(median_num_contact, digits = 1))
+
+max_num_contact <- max(covid_data$number_contacts, na.rm = TRUE)
+paste0("Maximum number of contacts: ", round(max_num_contact, digits = 1))
+
+CrossTable(covid_data$age_group, covid_data$number_contacts_categorical,
+           digits = 1, prop.r=FALSE, prop.c=FALSE,
+           prop.t=FALSE, prop.chisq=FALSE,
+           dnn = c("Age group", "Number of contacts"),
+           format = "SPSS")
+```
 

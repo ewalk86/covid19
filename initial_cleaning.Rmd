@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 20 July 2020"
+date: "Started 2 April 2020, Updated 23 July 2020"
 output:
   pdf_document: default
   html_document:
@@ -31,7 +31,7 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 7.20.20.xlsx"), 
+   read_xlsx(paste0(input_path, "COVID data 7.22.20.xlsx"), 
              range = "A2:Y500", 
                         col_names = c("case_id", "age", "gender", "race", 
                                       "ethnicity", "zipcode", "healthcare_worker",
@@ -163,7 +163,7 @@ covid_clean <- covid_data_initial %>%
                                            test_date),
           test_date_new = ymd(test_date_new),
           test_date_indicator = if_else(is.na(test_date),
-                                                 "Epi-linked: date of symptom onset",
+                                                 "Date of symptom onset",
                                                  "Tested: date of test result"),
           travel_hx = as.character(travel_hx),
           travel_hx = if_else(is.na(travel_hx), "Unknown", travel_hx),
