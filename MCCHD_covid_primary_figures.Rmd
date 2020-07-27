@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of July 22, 2020"
+date: "Data as of July 27, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -290,7 +290,7 @@ covid_plot_test_date <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
                  y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-7, y = 10, 
+     geom_label(aes(x = Sys.Date()-8, y = 10, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
@@ -351,7 +351,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x = variable, y = values, fill = gender)) +   
      geom_bar(stat = "identity", width = .6) +   
      labs(title = "Symptoms reported at time of testing", y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 100, 5)), labels = c(seq(0, 100, 5))) +
+     scale_y_continuous(breaks = c(seq(0, 200, 10)), labels = c(seq(0, 200, 10))) +
      coord_flip() +
      theme_minimal() +
      theme(plot.title = element_text(hjust = .5),
@@ -396,7 +396,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x = variable, y = values, fill = age_group)) +   
      geom_bar(stat = "identity", width = .6) +   
      labs(title = "Cases with symptoms, by age group", y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 100, 5)), labels = c(seq(0, 100, 5))) +
+     scale_y_continuous(breaks = c(seq(0, 200, 10)), labels = c(seq(0, 200, 10))) +
      coord_flip() +
      theme_minimal() +
      theme(plot.title = element_text(hjust = .5),

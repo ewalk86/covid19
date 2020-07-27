@@ -184,6 +184,15 @@ fallon_county <- county_function("Fallon")
 garield_county <- county_function("Garfield")
 sheridan_county <- county_function("Sheridan")
 teton_county <- county_function("Teton")
+daniels_county <- county_function("Daniels")
+mccone_county <- county_function("McCone")
+priver_county <- county_function("Powder River")
+wibaux_county <- county_function("Wibaux")
+blaine_county <- county_function("Blaine")
+chouteau_county <- county_function("Chouteau")
+jbasin_county <- county_function("Judith Basin")
+sweetgrass_county <- county_function("Sweet Grass")
+sanders_county <- county_function("Sanders")
 
 
 county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
@@ -206,7 +215,11 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          valley_county, treasure_county,
                                          granite_county, fallon_county,
                                          garield_county, sheridan_county,
-                                         teton_county) 
+                                         teton_county, daniels_county,
+                                         mccone_county, priver_county, 
+                                         wibaux_county, blaine_county,
+                                         chouteau_county, jbasin_county,
+                                         sweetgrass_county, sanders_county) 
 
 write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_combined.csv")
 

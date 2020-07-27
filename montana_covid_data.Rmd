@@ -201,9 +201,15 @@ fallon_county <- county_function("Fallon")
 garield_county <- county_function("Garfield")
 sheridan_county <- county_function("Sheridan")
 teton_county <- county_function("Teton")
-
-
-
+daniels_county <- county_function("Daniels")
+mccone_county <- county_function("McCone")
+priver_county <- county_function("Powder River")
+wibaux_county <- county_function("Wibaux")
+blaine_county <- county_function("Blaine")
+chouteau_county <- county_function("Chouteau")
+jbasin_county <- county_function("Judith Basin")
+sweetgrass_county <- county_function("Sweet Grass")
+sanders_county <- county_function("Sanders")
 
 
 
@@ -228,27 +234,22 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          valley_county, treasure_county,
                                          granite_county, fallon_county,
                                          garield_county, sheridan_county,
-                                         teton_county) 
+                                         teton_county, daniels_county,
+                                         mccone_county, priver_county, 
+                                         wibaux_county, blaine_county,
+                                         chouteau_county, jbasin_county,
+                                         sweetgrass_county, sanders_county) 
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 write_csv(county_data_combined, paste0(output_path, "Output/county_data_combined.csv"))
 
 carter_county <- county_function("Carter")
-daniels_county <- county_function("Daniels")
-mccone_county <- county_function("McCone")
 phillips_county <- county_function("Phillips")
-priver <- county_function("Powder River")
 prairie_county <- county_function("Prairie")
-wibaux_county <- county_function("Wibaux")
-blaine_county <- county_function("Blaine")
-chouteau_county <- county_function("Chouteau")
-jbasin_county <- county_function("Judith Basin")
 petroleum_county <- county_function("Petroleum")
-sweetgrass_county <- county_function("Sweet Grass")
 powell_county <- county_function("Powell")
 mineral_county <- county_function("Mineral")
-sanders_county <- county_function("Sanders")
 ```
 
 
