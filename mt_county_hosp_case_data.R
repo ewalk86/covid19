@@ -104,6 +104,7 @@ write_csv(state_data_clean, paste0(output_path, "Output/state_data_clean.csv"), 
 county_function <- function(county_name, data = state_data_clean){
    
    county_data <- data %>% 
+      filter(mt_case != "X") %>% 
       filter(county == county_name) %>% 
       select(-case_no) %>% 
       rownames_to_column(var = "case_no")
@@ -112,14 +113,18 @@ county_function <- function(county_name, data = state_data_clean){
                                  first_date = "2020-03-13", 
                                  last_date = Sys.Date(),
                                  standard = FALSE)
+   
    county_dates <- as.data.frame(county_incidence$dates) %>% 
       rename_at(1, ~"dates")
-   county_cases <- county_incidence$counts
+   
+   county_cases <- as.data.frame(county_incidence$counts) %>% 
+      rename_at(1, ~"Daily total cases")
    
    county_data_new <<- county_dates %>% 
       left_join(county_data, by = "dates") %>% 
       mutate(case_new = case) %>% 
       group_by(dates) %>% 
+      mutate(hospitalization = as.character(hospitalization)) %>% 
       pivot_wider(names_from = "hospitalization", values_from = "case") %>% 
       select(-"NA") %>% 
       group_by(dates) %>% 
@@ -139,7 +144,7 @@ county_function <- function(county_name, data = state_data_clean){
       fill(region, .direction = c("downup")) %>% 
       select(-case_no, -age_group, -sex, -mt_case)
    
-   
+   county_data_final <- cbind(county_data_new, county_cases) 
    
 }
 
@@ -193,6 +198,9 @@ chouteau_county <- county_function("Chouteau")
 jbasin_county <- county_function("Judith Basin")
 sweetgrass_county <- county_function("Sweet Grass")
 sanders_county <- county_function("Sanders")
+powell_county <- county_function("Powell")
+
+
 
 
 county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
@@ -219,7 +227,13 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          mccone_county, priver_county, 
                                          wibaux_county, blaine_county,
                                          chouteau_county, jbasin_county,
-                                         sweetgrass_county, sanders_county) 
+                                         sweetgrass_county, sanders_county,
+                                         powell_county) %>% 
+   group_by(county) %>% 
+   mutate("Cumulative total cases" = cumsum(`Daily total cases`),
+          "Cumulative active cases" = cumsum(Active),
+          "Cumulative recovered cases" = cumsum(Recovered),
+          "Cumulative deseased cases" = cumsum(Deceased))
 
 write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_combined.csv")
 
@@ -250,7 +264,7 @@ state_hosp_data <- state_data %>%
                                               "Hosp: Past", "Hosp: Unknown")))
 
 state_hosp <- state_hosp_data %>% 
-   filter(mt_case != "N" & mt_case != "X") %>% 
+   filter(mt_case != "X") %>% 
    group_by(age_group_new) %>% 
    mutate(age_group_cases = sum(case)) %>% 
    mutate(hosp = if_else(hospitalization == "Hosp: Yes" | hospitalization == "Hosp: Past", 1, 0),
@@ -291,7 +305,7 @@ state_test_data_clean <- state_test_data %>%
 
 
 hosp_data_daily <- state_data_clean %>% 
-   filter(mt_case == "Y") %>% 
+   filter(mt_case != "X") %>% 
    select(dates, hospitalization, case) %>% 
    mutate(hospitalization = factor(hospitalization,
                                    labels = c("hosp_active",
@@ -316,7 +330,7 @@ hosp_data_daily <- state_data_clean %>%
 
 
 outcome_data_daily <- state_data_clean %>% 
-   filter(mt_case == "Y") %>% 
+   filter(mt_case != "X") %>% 
    select(dates, outcome, case) %>% 
    mutate(outcome = factor(outcome,
                            labels = c("active",
@@ -344,7 +358,7 @@ outcome_data_daily <- state_data_clean %>%
 
 
 case_data_daily <- state_data_clean %>% 
-   filter(mt_case == "Y") %>% 
+   filter(mt_case != "X") %>% 
    select(dates, case) %>% 
    group_by(dates) %>% 
    mutate(daily_cases = sum(case)) %>% 

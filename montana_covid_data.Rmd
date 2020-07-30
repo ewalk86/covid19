@@ -119,6 +119,7 @@ write_csv(state_data_clean, paste0(output_path, "Output/state_data_clean.csv"), 
 county_function <- function(county_name, data = state_data_clean){
 
 county_data <- data %>% 
+   filter(mt_case != "X") %>% 
    filter(county == county_name) %>% 
    select(-case_no) %>% 
    rownames_to_column(var = "case_no")
@@ -127,9 +128,12 @@ county_incidence <- incidence(county_data$dates,
                               first_date = "2020-03-13", 
                               last_date = Sys.Date(),
                               standard = FALSE)
+
 county_dates <- as.data.frame(county_incidence$dates) %>% 
    rename_at(1, ~"dates")
-county_cases <- county_incidence$counts
+
+county_cases <- as.data.frame(county_incidence$counts) %>% 
+   rename_at(1, ~"Daily total cases")
 
 county_data_new <<- county_dates %>% 
    left_join(county_data, by = "dates") %>% 
@@ -156,7 +160,7 @@ county_data_new <<- county_dates %>%
    select(-case_no, -age_group, -sex, -mt_case, -age_group_new,
           -age_group_new_percent, -state_pop)
 
-
+county_data_final <- cbind(county_data_new, county_cases) 
 
 }
 
@@ -210,6 +214,7 @@ chouteau_county <- county_function("Chouteau")
 jbasin_county <- county_function("Judith Basin")
 sweetgrass_county <- county_function("Sweet Grass")
 sanders_county <- county_function("Sanders")
+powell_county <- county_function("Powell")
 
 
 
@@ -238,7 +243,13 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          mccone_county, priver_county, 
                                          wibaux_county, blaine_county,
                                          chouteau_county, jbasin_county,
-                                         sweetgrass_county, sanders_county) 
+                                         sweetgrass_county, sanders_county,
+                                         powell_county) %>% 
+   group_by(county) %>% 
+   mutate("Cumulative total cases" = cumsum(`Daily total cases`),
+          "Cumulative active cases" = cumsum(Active),
+          "Cumulative recovered cases" = cumsum(Recovered),
+          "Cumulative deseased cases" = cumsum(Deceased))
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
@@ -248,7 +259,6 @@ carter_county <- county_function("Carter")
 phillips_county <- county_function("Phillips")
 prairie_county <- county_function("Prairie")
 petroleum_county <- county_function("Petroleum")
-powell_county <- county_function("Powell")
 mineral_county <- county_function("Mineral")
 ```
 

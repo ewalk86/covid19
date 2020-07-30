@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of July 27, 2020"
+date: "Data as of July 30, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -201,8 +201,9 @@ date_today <- format(Sys.Date(), "%d %b %Y")
 date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
 covid_plot_onset <- covid_data %>% 
+   filter(!is.na(symptom_onset_date_new)) %>% 
    ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
+     geom_rect(aes(xmin = Sys.Date() - 21, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
      geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
@@ -221,7 +222,7 @@ covid_plot_onset <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
                  y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-8, y = 10, 
+     geom_label(aes(x = Sys.Date()-10, y = 8, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
@@ -271,7 +272,7 @@ date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
 covid_plot_test_date <- covid_data %>% 
    ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
+     geom_rect(aes(xmin = Sys.Date() - 21, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
      geom_col(aes(test_date_new, case, fill = test_date_indicator)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
@@ -290,7 +291,7 @@ covid_plot_test_date <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
                  y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-8, y = 10, 
+     geom_label(aes(x = Sys.Date()-10, y = 9, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
@@ -515,7 +516,7 @@ covid_piechart
 
 \pagebreak  
 
-```{r}
+```{r, include=FALSE, eval=FALSE}
 # Hospitalized and chronic conditions
 save_table <- data.frame(table(covid_data_table$hospitalized, 
                                covid_data_table$chronic_conditions))
@@ -589,6 +590,35 @@ covid_piechart
 ```
 
 ```{r}
+piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts (n)")
+
+#ggsave("piechart_contacts.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+#CrossTable(covid_data$age_group, covid_data$number_contacts_categorical,
+#           digits = 1, prop.r=FALSE, prop.c=FALSE,
+#           prop.t=FALSE, prop.chisq=FALSE,
+#           dnn = c("Age group", "Number of contacts"), format = "SPSS")
+
+
+sum_nums <- covid_data %>% 
+   rename("Age group" = age_group) %>% 
+   group_by(`Age group`) %>% 
+   filter(!is.na(`Age group`)) %>% 
+   summarize("Mean # contacts" = round(mean(number_contacts, na.rm = TRUE), digits = 1),
+             "SD # contacts" = round(sd(number_contacts, na.rm = TRUE), digits = 1),
+             "Min # contacts" = round(min(number_contacts, na.rm = TRUE), digits = 1),
+             "Median # contacts" = round(median(number_contacts, na.rm = TRUE), digits = 1),
+             "Max # contacts" = round(max(number_contacts, na.rm = TRUE), digits = 1)) 
+kable(sum_nums)
+```
+
+\pagebreak  
+
+```{r}
 piechart_function(plot_fill = "community_spread_new", var_label = "Community Spread (n)")
 
 #ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
@@ -612,28 +642,58 @@ piechart_function(plot_fill = "age_group", var_label = "Age group (n)")
 
 \pagebreak  
 
-```{r}
-piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts (n)")
+```{r, fig.width = 11, fig.height = 5}
+# Epi curve - date of onset
 
-#ggsave("piechart_contacts.jpg", width = 10, height = 5)
-```
+total_cases <- sum(covid_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
-\pagebreak  
+covid_plot_onset <- covid_data %>% 
+   filter(!is.na(symptom_onset_date_new)) %>% 
+   filter(symptom_onset_date_new > "2020-05-30") %>% 
+   group_by(symptom_onset_date_new) %>% 
+   ggplot() +
+     geom_rect(aes(xmin = Sys.Date() - 21, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
+     geom_label(aes(x = Sys.Date()-10, y = 8, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
+     labs(title = "COVID-19 Cases in Missoula County Since June 1, 2020",
+          subtitle = paste0("Total cases = ", total_cases),
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("Date") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-06-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "3 days"),
+                  labels = seq.Date(from = as.Date("2020-06-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "3 days"),
+                  date_labels = "%d-%b") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.position = "top",
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank())  +
+     scale_fill_manual(values = cbPalette) 
 
-```{r}
-mean_num_contact <- mean(covid_data$number_contacts, na.rm = TRUE)
-paste0("Mean number of contacts: ", round(mean_num_contact, digits = 1))
 
-median_num_contact <- median(covid_data$number_contacts, na.rm = TRUE)
-paste0("Median number of contacts: ", round(median_num_contact, digits = 1))
+covid_plot_onset 
 
-max_num_contact <- max(covid_data$number_contacts, na.rm = TRUE)
-paste0("Maximum number of contacts: ", round(max_num_contact, digits = 1))
-
-CrossTable(covid_data$age_group, covid_data$number_contacts_categorical,
-           digits = 1, prop.r=FALSE, prop.c=FALSE,
-           prop.t=FALSE, prop.chisq=FALSE,
-           dnn = c("Age group", "Number of contacts"),
-           format = "SPSS")
+#ggsave("epi_curve_onset.jpg", width = 10, height = 5)
 ```
 
