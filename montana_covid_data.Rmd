@@ -126,7 +126,7 @@ county_data <- data %>%
 
 county_incidence <- incidence(county_data$dates, 
                               first_date = "2020-03-13", 
-                              last_date = Sys.Date(),
+                              last_date = Sys.Date() - 1,
                               standard = FALSE)
 
 county_dates <- as.data.frame(county_incidence$dates) %>% 
@@ -265,7 +265,7 @@ mineral_county <- county_function("Mineral")
 
 ```{r}
 state_hosp <- state_data_clean %>% 
-   filter(mt_case != "N" & mt_case != "X") %>% 
+   filter(mt_case != "X") %>% 
    group_by(age_group_new) %>% 
    mutate(age_group_cases = sum(case)) %>% 
    mutate(hosp = if_else(hospitalization == "Hosp: Yes" | hospitalization == "Hosp: Past", 1, 0),
@@ -327,7 +327,7 @@ state_case_data_clean <- read_rds(paste0(output_path, "Output/state_data_clean.r
 
 
 hosp_data_daily <- state_case_data_clean %>% 
-   filter(mt_case == "Y") %>% 
+   filter(mt_case != "X") %>% 
    select(dates, hospitalization, case) %>% 
    mutate(hospitalization = factor(hospitalization,
                                       labels = c("hosp_active",
@@ -352,7 +352,7 @@ hosp_data_daily <- state_case_data_clean %>%
 
 
 outcome_data_daily <- state_case_data_clean %>% 
-   filter(mt_case == "Y") %>% 
+   filter(mt_case != "X") %>% 
    select(dates, outcome, case) %>% 
    mutate(outcome = factor(outcome,
                            labels = c("active",
@@ -380,7 +380,7 @@ outcome_data_daily <- state_case_data_clean %>%
 
 
 case_data_daily <- state_case_data_clean %>% 
-   filter(mt_case == "Y") %>% 
+   filter(mt_case != "X") %>% 
    select(dates, case) %>% 
    group_by(dates) %>% 
    mutate(daily_cases = sum(case)) %>% 

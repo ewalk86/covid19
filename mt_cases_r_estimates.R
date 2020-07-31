@@ -254,6 +254,7 @@ mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data",
 
 
 # calculate mean serial interval using SI data
+# Mean SI = 6.3, SD SI = 5.4
 mean_si <- mt_r_results$SI.Moments %>% 
    summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
 

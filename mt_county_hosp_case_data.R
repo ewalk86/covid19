@@ -111,7 +111,7 @@ county_function <- function(county_name, data = state_data_clean){
    
    county_incidence <- incidence(county_data$dates, 
                                  first_date = "2020-03-13", 
-                                 last_date = Sys.Date(),
+                                 last_date = Sys.Date() - 1,
                                  standard = FALSE)
    
    county_dates <- as.data.frame(county_incidence$dates) %>% 
