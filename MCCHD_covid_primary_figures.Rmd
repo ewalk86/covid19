@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of July 30, 2020"
+date: "Data as of August 3, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -25,6 +25,8 @@ library(ggthemes)
 library(knitr)
 library(kableExtra)
 library(gmodels)
+library(incidence)
+library(EpiEstim)
 jv_palette <- c("#330099","#CC0066","#FF6633", 
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
@@ -695,5 +697,94 @@ covid_plot_onset <- covid_data %>%
 covid_plot_onset 
 
 #ggsave("epi_curve_onset.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+## Missoula county R results
+inc_data <- covid_data %>% 
+   filter(symptom_onset_date > "2020-05-30" & symptom_onset_date < Sys.Date() - 21) 
+
+# create an incidence dataset
+missoula_inc_data <- incidence(inc_data$symptom_onset_date_new)
+
+# Use serial interval from MT data
+serial_interval_mean <- 6.3
+serial_interval_sd <- 5.4
+
+# save settings to do rolling 14-day averages
+county_n <- as.data.frame(missoula_inc_data$dates)
+time_var <- nrow(county_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
+# run analysis
+estimate_results <- estimate_R(missoula_inc_data, method="parametric_si", 
+                               config = make_config(list(mean_si = serial_interval_mean, 
+                                                         std_si = serial_interval_sd,
+                                                      t_start =  time_start,
+                                                      t_end = time_end)))
+
+# pull out results from analysis and save dataset
+colomns <- c(1:4, 8)
+county_r <- (estimate_results$R[,colomns]) %>% 
+   mutate(label = "14-day R-value") %>% 
+   rename(mean_r = `Mean(R)`,
+          sd_r = `Std(R)`,
+          median_r = `Median(R)`)
+
+county_dates <- as.data.frame(estimate_results$dates)
+county_i <- as.data.frame(estimate_results$I)
+county_cil <- as.data.frame(estimate_results$R$`Quantile.0.025(R)`)
+county_cih <- as.data.frame(estimate_results$R$`Quantile.0.975(R)`)
+county_dates_new <- cbind(county_dates, county_i) %>% 
+   rename(dates = 1,
+          incidence = 2) %>% 
+   mutate(dates = ymd(dates))
+county_dates_new <- county_dates_new[-(1:14), 1:2]
+county_dates_new <- cbind(county_dates_new, county_cil, county_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+county_r_clean <- cbind(county_r, county_dates_new)
+   
+# generic plot of R values
+estimate_plots <- estimate_R_plots(estimate_results, what = "R")
+# estimate_plots
+
+
+missoula_r_plot <- county_r_clean %>% 
+   filter(dates > Sys.Date() - 35) %>% 
+   ggplot() +
+   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   #geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   #geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
+   labs(title = "COVID-19 Rolling 14-day R-values, Missoula County",
+        color = "") +
+   ylab("R-value") +
+   xlab("") +
+   geom_hline(yintercept = 1, color = "red", size = 1.2) +
+   scale_x_date(date_breaks = "1 days", date_labels = "%d-%b") +
+   #scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
+   theme_minimal() +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 12, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 12, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 12, colour = "black"),
+         legend.text = element_text(size = 12, colour = "black"),
+         axis.title.y = element_text(size = 12, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 12, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = c("black")) 
+missoula_r_plot
+
+#ggsave("C:/R/covid19/missoula_r_plot.png", width = 10, height = 8)
 ```
 

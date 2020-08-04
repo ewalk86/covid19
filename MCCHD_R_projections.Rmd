@@ -62,7 +62,10 @@ serial_interval_sd <- 5.4
 r_results <- get_R(missoula_inc_data, 
                    si_mean = serial_interval_mean,
                    si_sd = serial_interval_sd)
+
+par(mar=c(4.5,4.5,6,2))
 plot(r_results)
+
 
 fit_results <- incidence::fit(missoula_inc_data)
 
@@ -76,7 +79,7 @@ si <- distcrete("gamma", shape = params$shape,
                 scale = params$scale,
                 interval = 1, w = 0.5)
 
-pred_1 <- project(missoula_inc_data, R = 1.18, si = si, n_days = 30, n_sim = 1000)
+pred_1 <- project(missoula_inc_data, R = 1.04, si = si, n_days = 30, n_sim = 1000)
 
 plot(pred_1) +
   theme_bw()
@@ -118,17 +121,31 @@ ggsave("C:/R/covid19/missoula_projections.png", width = 10, height = 6)
 ```
 
 ```{r}
+## Missoula county R results
+inc_data <- covid_data %>% 
+   filter(symptom_onset_date > "2020-05-30" & symptom_onset_date < Sys.Date() - 21) 
+
+# create an incidence dataset
+missoula_inc_data <- incidence(inc_data$symptom_onset_date_new)
+
+# Use serial interval from MT data
+serial_interval_mean <- 6.3
+serial_interval_sd <- 5.4
+
+# save settings to do rolling 14-day averages
 county_n <- as.data.frame(missoula_inc_data$dates)
 time_var <- nrow(county_n)
 time_start <- seq(2, time_var-13)
 time_end <- time_start + 13
 
+# run analysis
 estimate_results <- estimate_R(missoula_inc_data, method="parametric_si", 
                                config = make_config(list(mean_si = serial_interval_mean, 
                                                          std_si = serial_interval_sd,
                                                       t_start =  time_start,
                                                       t_end = time_end)))
 
+# pull out results from analysis and save dataset
 colomns <- c(1:4, 8)
 county_r <- (estimate_results$R[,colomns]) %>% 
    mutate(label = "14-day R-value") %>% 
@@ -150,21 +167,18 @@ county_dates_new <- cbind(county_dates_new, county_cil, county_cih) %>%
           cl_high = 4)
 county_r_clean <- cbind(county_r, county_dates_new)
    
-
+# generic plot of R values
 estimate_plots <- estimate_R_plots(estimate_results, what = "R")
-estimate_plots
-
-par(mar=c(4.5,4.5,6,2))
-plot(r_results)
+# estimate_plots
 
 
 missoula_r_plot <- county_r_clean %>% 
    filter(dates > Sys.Date() - 35) %>% 
    ggplot() +
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
-   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
-   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-values, Missoula County, 2020",
+   #geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   #geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
+   labs(title = "COVID-19 Rolling 14-day R-values, Missoula County",
         color = "") +
    ylab("R-value") +
    xlab("") +
@@ -189,7 +203,7 @@ missoula_r_plot <- county_r_clean %>%
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
 missoula_r_plot
-#ggsave("C:/R/covid19/missoula_r_plot.png", width = 10, height = 8)
 
+#ggsave("C:/R/covid19/missoula_r_plot.png", width = 10, height = 8)
 ```
 
