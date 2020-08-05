@@ -199,6 +199,8 @@ jbasin_county <- county_function("Judith Basin")
 sweetgrass_county <- county_function("Sweet Grass")
 sanders_county <- county_function("Sanders")
 powell_county <- county_function("Powell")
+phillips_county <- county_function("Phillips")
+prairie_county <- county_function("Prairie")
 
 
 
@@ -228,7 +230,8 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          wibaux_county, blaine_county,
                                          chouteau_county, jbasin_county,
                                          sweetgrass_county, sanders_county,
-                                         powell_county) %>% 
+                                         powell_county, phillips_county,
+                                         prairie_county) %>% 
    group_by(county) %>% 
    mutate("Cumulative total cases" = cumsum(`Daily total cases`),
           "Cumulative active cases" = cumsum(Active),

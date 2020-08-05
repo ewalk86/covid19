@@ -56,7 +56,7 @@ counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 
 # Load serial interval and case data
-mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.22.2020.xlsx"),
+mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_08.05.2020.xlsx"),
                         sheet = 1) %>% 
    select(-Pair_No) %>% 
    rename(EL = EL_Infector_Lower,
@@ -73,7 +73,7 @@ mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.22.20
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_07.22.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_08.05.2020.xlsx"),
                           sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -946,7 +946,12 @@ ggsave("C:/R/covid19/lewisandclark_inc_plot.png", width = 10, height = 8)
 # Bind files and save
 all_counties_r <- rbind(missoula_r_clean, gallatin_r_clean, yellowstone_r_clean, 
                         bighorn_r_clean, lake_r_clean, lewisandclark_r_clean) %>% 
-   mutate(daily_cases = incidence) 
+   mutate(daily_cases = incidence) %>% 
+   mutate(mean_r = round(mean_r, digits = 2),
+          median_r = round(median_r, digits = 2),
+          sd_r = round(sd_r, digits = 2),
+          cl_low = round(cl_low, digits = 2),
+          cl_high = round(cl_high, digits = 2))
 
 write_csv(all_counties_r, "C:/R/covid19/all_counties_r.csv", na = " ")
 
