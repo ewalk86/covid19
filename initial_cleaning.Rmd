@@ -31,7 +31,7 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 8.3.20.xlsx"), 
+   read_xlsx(paste0(input_path, "COVID data 8.6.20.xlsx"), 
              range = "A2:Y500", 
                         col_names = c("case_id", "age", "gender", "race", 
                                       "ethnicity", "zipcode", "healthcare_worker",

@@ -19,6 +19,10 @@ library(jsonlite)
 library(httr)
 library(rlist)
 library(Rsftp)
+library(googledrive)
+library(googlesheets4)
+
+
 
 file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
@@ -54,22 +58,6 @@ reg5 <- as.data.frame(c("Flathead", "Lake", "Lincoln", "Mineral", "Missoula",
 
 counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
-
-# Load serial interval and case data
-mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_08.05.2020.xlsx"),
-                          sheet = 1) %>% 
-   select(-Pair_No) %>% 
-   rename(EL = EL_Infector_Lower,
-          ER = ER_Infector_Upper,
-          SL = SL_Infected_Lower,
-          SR = SR_Infected_Upper) %>% 
-   mutate(SL2 = if_else(SL<1, SL + (1 - SL), SL),
-          SR2 = if_else(SL<1, SR + (1 - SL), SR),
-          type = 0) %>% 
-   select(EL, ER, SL2, SR2, type) %>% 
-   rename(SL = SL2,
-          SR = SR2) %>% 
-   mutate_all(as.integer)
 
 
 # Load/format case data
@@ -207,8 +195,11 @@ all_data_wide <- rbind(state_wide_date, reg1_wide_date, reg2_wide_date,
 
 
 
-#################### Run analysis and print results
-## State results
+#################### Run analysis and print results ########################
+
+
+##### State results #####
+
 # Format analysis data
 mt_li_analysis_data <- mt_case_data %>% 
    group_by(dates) %>% 
@@ -235,31 +226,24 @@ mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>%
           imported = if_else(is.na(imported), 0, imported))
 
 
+# Set dates for 14-day rolling averages
 state_n <- as.data.frame(mt_li_inc_data$dates)
 time_var <- nrow(state_n)
 time_start <- seq(2, time_var-13)
 time_end <- time_start + 13
 
 
-MCMC_seed <- 1
-overall_seed <- 2
-mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 1000, thin = 10)
-dist <- "G"  # fitting a Gamma distribution for the SI
-si_config <- make_config(list(si_parametric_distr = dist, 
-                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 500, n2 = 50,
-                              t_start = time_start, t_end = time_end))
+# Serial Interval derived from State of Montana paired case data
+serial_interval_mean <- 6.3
+serial_interval_sd <- 5.4
 
-mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                       si_data = mt_si_data, config = si_config)
+mt_r_results <- estimate_R(mt_li_inc_data, method="parametric_si", 
+                           config = make_config(list(mean_si = serial_interval_mean, 
+                                                     std_si = serial_interval_sd,
+                                                     t_start =  time_start,
+                                                     t_end = time_end)))
 
-
-# calculate mean serial interval using SI data
-# Mean SI = 6.3, SD SI = 5.4
-mean_si <- mt_r_results$SI.Moments %>% 
-   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
-
-
-
+# Format and save analysis results
 colomns <- c(1:4, 8)
 state_r <- (mt_r_results$R[,colomns]) %>% 
    mutate(region = "state") %>% 
@@ -279,762 +263,174 @@ state_dates_new <- state_dates_new[-(1:14), 1:2]
 state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
-state_r_clean <- cbind(state_r, state_dates_new)
+state_r <- cbind(state_r, state_dates_new)
+
+
+
+##### Function for running R results for 5 health regions #####
+
+region_analysis_function <- function(filter_var, label_var, data = mt_case_data) {
+   
+   mt_analysis_data <- mt_case_data %>% 
+      filter(region == filter_var) %>% 
+      group_by(dates) %>% 
+      mutate(local = sum(local),
+             imported = sum(imported)) %>% 
+      select(dates, local, imported) %>% 
+      distinct(dates, .keep_all = TRUE) %>% 
+      arrange(dates)
+   
+   
+   mt_data <- mt_analysis_data %>% 
+      mutate(I = local + imported) %>% 
+      select(dates, I) 
+   
+   mt_incidence_data <- incidence(mt_data$dates, last_date = latest_date)
+   
+   mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
+      mutate(dates = ymd(mt_incidence_data$dates)) %>% 
+      select(dates) %>% 
+      left_join(mt_analysis_data, by = "dates") %>% 
+      mutate(local = if_else(is.na(local), 0, local),
+             imported = if_else(is.na(imported), 0, imported)) 
+   
+   
+   state_n <- as.data.frame(mt_li_inc_data$dates)
+   time_var <- nrow(state_n)
+   time_start <- seq(2, time_var-13)
+   time_end <- time_start + 13
+   
+   
+   # Serial Interval derived from State of Montana case data
+   serial_interval_mean <- 6.3
+   serial_interval_sd <- 5.4
+   
+   mt_r_results <- estimate_R(mt_li_inc_data, method="parametric_si", 
+                              config = make_config(list(mean_si = serial_interval_mean, 
+                                                        std_si = serial_interval_sd,
+                                                        t_start =  time_start,
+                                                        t_end = time_end)))
+   
+   
+   colomns <- c(1:4, 8)
+   state_r <- (mt_r_results$R[,colomns]) %>% 
+      mutate(region = label_var) %>% 
+      rename(mean_r = `Mean(R)`,
+             sd_r = `Std(R)`,
+             median_r = `Median(R)`)
+   
+   state_dates <- as.data.frame(mt_r_results$dates)
+   state_i <- as.data.frame(mt_r_results$I)
+   state_cil <- as.data.frame(mt_r_results$R$`Quantile.0.025(R)`)
+   state_cih <- as.data.frame(mt_r_results$R$`Quantile.0.975(R)`)
+   state_dates_new <- cbind(state_dates, state_i) %>% 
+      rename(dates = 1,
+             incidence = 2) %>% 
+      mutate(dates = ymd(dates))
+   state_dates_new <- state_dates_new[-(1:14), 1:2]
+   state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
+      rename(cl_low = 3,
+             cl_high = 4)
+   r_clean <<- cbind(state_r, state_dates_new)
+   
+}
+
+reg1_r <- region_analysis_function("1", "1")
+reg2_r <- region_analysis_function("2", "2")
+reg3_r <- region_analysis_function("3", "3")
+reg4_r <- region_analysis_function("4", "4")
+reg5_r <- region_analysis_function("5", "5")
+
+
+
+##### Function for running R results for counties #####
+
+county_analysis_function <- function(filter_var, label_var, data = mt_case_data) {
+   
+   mt_analysis_data <- mt_case_data %>% 
+      filter(county == filter_var) %>% 
+      group_by(dates) %>% 
+      mutate(local = sum(local),
+             imported = sum(imported)) %>% 
+      select(dates, local, imported) %>% 
+      distinct(dates, .keep_all = TRUE) %>% 
+      arrange(dates)
+   
+   
+   mt_data <- mt_analysis_data %>% 
+      mutate(I = local + imported) %>% 
+      select(dates, I) 
+   
+   mt_incidence_data <- incidence(mt_data$dates, last_date = latest_date)
+   
+   mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
+      mutate(dates = ymd(mt_incidence_data$dates)) %>% 
+      select(dates) %>% 
+      left_join(mt_analysis_data, by = "dates") %>% 
+      mutate(local = if_else(is.na(local), 0, local),
+             imported = if_else(is.na(imported), 0, imported)) 
+   
+   
+   state_n <- as.data.frame(mt_li_inc_data$dates)
+   time_var <- nrow(state_n)
+   time_start <- seq(2, time_var-13)
+   time_end <- time_start + 13
+   
+   
+   # Serial Interval derived from State of Montana case data
+   serial_interval_mean <- 6.3
+   serial_interval_sd <- 5.4
+   
+   mt_r_results <- estimate_R(mt_li_inc_data, method="parametric_si", 
+                              config = make_config(list(mean_si = serial_interval_mean, 
+                                                        std_si = serial_interval_sd,
+                                                        t_start =  time_start,
+                                                        t_end = time_end)))
+   
+   
+   colomns <- c(1:4, 8)
+   state_r <- (mt_r_results$R[,colomns]) %>% 
+      mutate(region = label_var) %>% 
+      rename(mean_r = `Mean(R)`,
+             sd_r = `Std(R)`,
+             median_r = `Median(R)`)
+   
+   state_dates <- as.data.frame(mt_r_results$dates)
+   state_i <- as.data.frame(mt_r_results$I)
+   state_cil <- as.data.frame(mt_r_results$R$`Quantile.0.025(R)`)
+   state_cih <- as.data.frame(mt_r_results$R$`Quantile.0.975(R)`)
+   state_dates_new <- cbind(state_dates, state_i) %>% 
+      rename(dates = 1,
+             incidence = 2) %>% 
+      mutate(dates = ymd(dates))
+   state_dates_new <- state_dates_new[-(1:14), 1:2]
+   state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
+      rename(cl_low = 3,
+             cl_high = 4)
+   r_clean <<- cbind(state_r, state_dates_new)
+   
+}
+
+missoula_r <- county_analysis_function("Missoula", "Missoula County")
+gallatin_r <- county_analysis_function("Gallatin", "Gallatin County")
+yellowstone_r <- county_analysis_function("Yellowstone", "Yellowstone County")
+bighorn_r <- county_analysis_function("Big Horn", "Big Horn County")
+lake_r <- county_analysis_function("Lake", "Lake County")
+lewisandclark_r <- county_analysis_function("Lewis and Clark", "Lewis and Clark County")
+flathead_r <- county_analysis_function("Flathead", "Flathead County")
+cascade_r <- county_analysis_function("Cascade", "Cascade County")
+silverbow_r <- county_analysis_function("Silver Bow", "Silver Bow County")
 
-total_cases <- sum(mt_case_data$case)
-date_today <- format(Sys.Date(), "%d %b %Y")
-
-
-state_r_plot <- state_r_clean %>% 
-   ggplot() +
-   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
-   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
-   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-values, State of Montana, 2020",
-        color = "") +
-   ylab("R-value") +
-   xlab("") +
-   geom_hline(yintercept = 1, color = "black", size = 1.2) +
-   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         legend.text = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = c("black")) 
-#state_r_plot
-ggsave("C:/R/covid19/state_daily_results/state_r_plot.png", width = 10, height = 8)
-
-state_inc_plot <- mt_case_data %>% 
-   ggplot() +
-   geom_col(aes(dates, case), 
-            fill = "steelblue") +
-   labs(title = paste0("COVID-19 Cases in State of Montana, 2020", 
-                       " (Total cases = ", total_cases, ")"),
-        subtitle = paste0("Data current as of ", date_today)) +
-   ylab("Number of Cases") +
-   xlab("") +
-   scale_x_date(date_breaks = "3 day", date_labels = "%d-%b") +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) 
-#state_inc_plot
-
-ggsave("C:/R/covid19/state_daily_results/state_inc_plot.png", width = 10, height = 8)
-
-
-
-## Region 1 results
-# Format analysis data
-mt_li_analysis_data <- mt_case_data %>% 
-   filter(region == 1) %>% 
-   group_by(dates) %>% 
-   mutate(local = sum(local),
-          imported = sum(imported)) %>% 
-   select(dates, local, imported) %>% 
-   distinct(dates, .keep_all = TRUE) %>% 
-   arrange(dates)
-
-
-reg1_data <- mt_li_analysis_data 
-
-mt_data <- reg1_data %>% 
-   mutate(I = local + imported) %>% 
-   select(dates, I) 
-
-mt_incidence_data <- incidence(mt_data$dates, last_date = latest_date)
-
-mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
-   mutate(dates = ymd(mt_incidence_data$dates)) %>% 
-   select(dates) %>% 
-   left_join(reg1_data, by = "dates") %>% 
-   mutate(local = if_else(is.na(local), 0, local),
-          imported = if_else(is.na(imported), 0, imported)) 
-
-
-state_n <- as.data.frame(mt_li_inc_data$dates)
-time_var <- nrow(state_n)
-time_start <- seq(2, time_var-13)
-time_end <- time_start + 13
-
-
-MCMC_seed <- 1
-overall_seed <- 2
-mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 1000, thin = 10)
-dist <- "G"  # fitting a Gamma distribution for the SI
-si_config <- make_config(list(si_parametric_distr = dist, 
-                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 500, n2 = 50,
-                              t_start = time_start, t_end = time_end))
-
-mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data, config = si_config)
-
-
-
-colomns <- c(1:4, 8)
-state_r <- (mt_r_results$R[,colomns]) %>% 
-   mutate(region = "1") %>% 
-   rename(mean_r = `Mean(R)`,
-          sd_r = `Std(R)`,
-          median_r = `Median(R)`)
-
-state_dates <- as.data.frame(mt_r_results$dates)
-state_i <- as.data.frame(mt_r_results$I)
-state_cil <- as.data.frame(mt_r_results$R$`Quantile.0.025(R)`)
-state_cih <- as.data.frame(mt_r_results$R$`Quantile.0.975(R)`)
-state_dates_new <- cbind(state_dates, state_i) %>% 
-   rename(dates = 1,
-          incidence = 2) %>% 
-   mutate(dates = ymd(dates))
-state_dates_new <- state_dates_new[-(1:14), 1:2]
-state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
-   rename(cl_low = 3,
-          cl_high = 4)
-reg1_r_clean <- cbind(state_r, state_dates_new)
-
-reg1_data_clean <- mt_case_data %>% 
-   filter(region == 1)
-total_cases <- sum(reg1_data_clean$case)
-
-
-state_r_plot <- reg1_r_clean %>% 
-   ggplot() +
-   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
-   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
-   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-values, Montana Region 1, 2020",
-        color = "") +
-   ylab("R-value") +
-   xlab("") +
-   geom_hline(yintercept = 1, color = "black", size = 1.2) +
-   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
-   #scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         legend.text = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = c("black")) 
-#state_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg1_r_plot.png", width = 10, height = 8)
-
-state_inc_plot <- reg1_data_clean %>% 
-   ggplot() +
-   geom_col(aes(dates, case), 
-            fill = "steelblue") +
-   labs(title = paste0("COVID-19 Cases in Montana Region 1, 2020", 
-                       " (Total cases = ", total_cases, ")"),
-        subtitle = paste0("Data current as of ", date_today)) +
-   ylab("Number of Cases") +
-   xlab("") +
-   scale_x_date(date_breaks = "3 day", date_labels = "%d-%b") +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) 
-#state_inc_plot
-
-ggsave("C:/R/covid19/state_daily_results/reg1_inc_plot.png", width = 10, height = 8)
-
-
-
-## Region 2 results
-# Format analysis data
-mt_li_analysis_data <- mt_case_data %>% 
-   filter(region == 2) %>% 
-   group_by(dates) %>% 
-   mutate(local = sum(local),
-          imported = sum(imported)) %>% 
-   select(dates, local, imported) %>% 
-   distinct(dates, .keep_all = TRUE) %>% 
-   arrange(dates)
-
-
-reg2_data <- mt_li_analysis_data 
-
-mt_data <- reg2_data %>% 
-   mutate(I = local + imported) %>% 
-   select(dates, I) 
-
-mt_incidence_data <- incidence(mt_data$dates, last_date = latest_date)
-
-mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
-   mutate(dates = ymd(mt_incidence_data$dates)) %>% 
-   select(dates) %>% 
-   left_join(reg2_data, by = "dates") %>% 
-   mutate(local = if_else(is.na(local), 0, local),
-          imported = if_else(is.na(imported), 0, imported)) 
-
-
-state_n <- as.data.frame(mt_li_inc_data$dates)
-time_var <- nrow(state_n)
-time_start <- seq(2, time_var-13)
-time_end <- time_start + 13
-
-
-MCMC_seed <- 1
-overall_seed <- 2
-mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 1000, thin = 10)
-dist <- "G"  # fitting a Gamma distribution for the SI
-si_config <- make_config(list(si_parametric_distr = dist, 
-                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 500, n2 = 50,
-                              t_start = time_start, t_end = time_end))
-
-mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data, config = si_config)
-
-
-
-colomns <- c(1:4, 8)
-state_r <- (mt_r_results$R[,colomns]) %>% 
-   mutate(region = "2") %>% 
-   rename(mean_r = `Mean(R)`,
-          sd_r = `Std(R)`,
-          median_r = `Median(R)`)
-
-state_dates <- as.data.frame(mt_r_results$dates)
-state_i <- as.data.frame(mt_r_results$I)
-state_cil <- as.data.frame(mt_r_results$R$`Quantile.0.025(R)`)
-state_cih <- as.data.frame(mt_r_results$R$`Quantile.0.975(R)`)
-state_dates_new <- cbind(state_dates, state_i) %>% 
-   rename(dates = 1,
-          incidence = 2) %>% 
-   mutate(dates = ymd(dates))
-state_dates_new <- state_dates_new[-(1:14), 1:2]
-state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
-   rename(cl_low = 3,
-          cl_high = 4)
-reg2_r_clean <- cbind(state_r, state_dates_new)
-
-reg2_data_clean <- mt_case_data %>% 
-   filter(region == 2)
-total_cases <- sum(reg2_data_clean$case)
-
-
-state_r_plot <- reg2_r_clean %>% 
-   ggplot() +
-   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
-   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
-   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-values, Montana Region 2, 2020",
-        color = "") +
-   ylab("R-value") +
-   xlab("") +
-   geom_hline(yintercept = 1, color = "black", size = 1.2) +
-   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
-   #scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         legend.text = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = c("black")) 
-#state_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg2_r_plot.png", width = 10, height = 8)
-
-state_inc_plot <- reg2_data_clean %>% 
-   ggplot() +
-   geom_col(aes(dates, case), 
-            fill = "steelblue") +
-   labs(title = paste0("COVID-19 Cases in Montana Region 2, 2020", 
-                       " (Total cases = ", total_cases, ")"),
-        subtitle = paste0("Data current as of ", date_today)) +
-   ylab("Number of Cases") +
-   xlab("") +
-   scale_x_date(date_breaks = "3 day", date_labels = "%d-%b") +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) 
-#state_inc_plot
-
-ggsave("C:/R/covid19/state_daily_results/reg2_inc_plot.png", width = 10, height = 8)
-
-
-
-
-## Region 3 results
-# Format analysis data
-mt_li_analysis_data <- mt_case_data %>% 
-   filter(region == 3) %>% 
-   group_by(dates) %>% 
-   mutate(local = sum(local),
-          imported = sum(imported)) %>% 
-   select(dates, local, imported) %>% 
-   distinct(dates, .keep_all = TRUE) %>% 
-   arrange(dates)
-
-
-reg3_data <- mt_li_analysis_data 
-
-mt_data <- reg3_data %>% 
-   mutate(I = local + imported) %>% 
-   select(dates, I) 
-
-mt_incidence_data <- incidence(mt_data$dates, last_date = latest_date)
-
-mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
-   mutate(dates = ymd(mt_incidence_data$dates)) %>% 
-   select(dates) %>% 
-   left_join(reg3_data, by = "dates") %>% 
-   mutate(local = if_else(is.na(local), 0, local),
-          imported = if_else(is.na(imported), 0, imported)) 
-
-
-state_n <- as.data.frame(mt_li_inc_data$dates)
-time_var <- nrow(state_n)
-time_start <- seq(2, time_var-13)
-time_end <- time_start + 13
-
-
-MCMC_seed <- 1
-overall_seed <- 2
-mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 1000, thin = 10)
-dist <- "G"  # fitting a Gamma distribution for the SI
-si_config <- make_config(list(si_parametric_distr = dist, 
-                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 500, n2 = 50,
-                              t_start = time_start, t_end = time_end))
-
-mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data, config = si_config)
-
-
-
-colomns <- c(1:4, 8)
-state_r <- (mt_r_results$R[,colomns]) %>% 
-   mutate(region = "3") %>% 
-   rename(mean_r = `Mean(R)`,
-          sd_r = `Std(R)`,
-          median_r = `Median(R)`)
-
-state_dates <- as.data.frame(mt_r_results$dates)
-state_i <- as.data.frame(mt_r_results$I)
-state_cil <- as.data.frame(mt_r_results$R$`Quantile.0.025(R)`)
-state_cih <- as.data.frame(mt_r_results$R$`Quantile.0.975(R)`)
-state_dates_new <- cbind(state_dates, state_i) %>% 
-   rename(dates = 1,
-          incidence = 2) %>% 
-   mutate(dates = ymd(dates))
-state_dates_new <- state_dates_new[-(1:14), 1:2]
-state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
-   rename(cl_low = 3,
-          cl_high = 4)
-reg3_r_clean <- cbind(state_r, state_dates_new)
-
-reg3_data_clean <- mt_case_data %>% 
-   filter(region == 3)
-total_cases <- sum(reg3_data_clean$case)
-
-
-state_r_plot <- reg3_r_clean %>% 
-   ggplot() +
-   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
-   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
-   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-values, Montana Region 3, 2020",
-        color = "") +
-   ylab("R-value") +
-   xlab("") +
-   geom_hline(yintercept = 1, color = "black", size = 1.2) +
-   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
-   #scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         legend.text = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = c("black")) 
-#state_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg3_r_plot.png", width = 10, height = 8)
-
-state_inc_plot <- reg3_data_clean %>% 
-   ggplot() +
-   geom_col(aes(dates, case), 
-            fill = "steelblue") +
-   labs(title = paste0("COVID-19 Cases in Montana Region 3, 2020", 
-                       " (Total cases = ", total_cases, ")"),
-        subtitle = paste0("Data current as of ", date_today)) +
-   ylab("Number of Cases") +
-   xlab("") +
-   scale_x_date(date_breaks = "3 day", date_labels = "%d-%b") +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) 
-#state_inc_plot
-
-ggsave("C:/R/covid19/state_daily_results/reg3_inc_plot.png", width = 10, height = 8)
-
-
-
-
-## Region 4 results
-# Format analysis data
-mt_li_analysis_data <- mt_case_data %>% 
-   filter(region == 4) %>% 
-   group_by(dates) %>% 
-   mutate(local = sum(local),
-          imported = sum(imported)) %>% 
-   select(dates, local, imported) %>% 
-   distinct(dates, .keep_all = TRUE) %>% 
-   arrange(dates)
-
-
-reg4_data <- mt_li_analysis_data 
-
-mt_data <- reg4_data %>% 
-   mutate(I = local + imported) %>% 
-   select(dates, I) 
-
-mt_incidence_data <- incidence(mt_data$dates, last_date = latest_date)
-
-mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
-   mutate(dates = ymd(mt_incidence_data$dates)) %>% 
-   select(dates) %>% 
-   left_join(reg4_data, by = "dates") %>% 
-   mutate(local = if_else(is.na(local), 0, local),
-          imported = if_else(is.na(imported), 0, imported)) 
-
-
-state_n <- as.data.frame(mt_li_inc_data$dates)
-time_var <- nrow(state_n)
-time_start <- seq(2, time_var-13)
-time_end <- time_start + 13
-
-
-MCMC_seed <- 1
-overall_seed <- 2
-mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 1000, thin = 10)
-dist <- "G"  # fitting a Gamma distribution for the SI
-si_config <- make_config(list(si_parametric_distr = dist, 
-                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 500, n2 = 50,
-                              t_start = time_start, t_end = time_end))
-
-mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data, config = si_config)
-
-
-
-colomns <- c(1:4, 8)
-state_r <- (mt_r_results$R[,colomns]) %>% 
-   mutate(region = "4") %>% 
-   rename(mean_r = `Mean(R)`,
-          sd_r = `Std(R)`,
-          median_r = `Median(R)`)
-
-state_dates <- as.data.frame(mt_r_results$dates)
-state_i <- as.data.frame(mt_r_results$I)
-state_cil <- as.data.frame(mt_r_results$R$`Quantile.0.025(R)`)
-state_cih <- as.data.frame(mt_r_results$R$`Quantile.0.975(R)`)
-state_dates_new <- cbind(state_dates, state_i) %>% 
-   rename(dates = 1,
-          incidence = 2) %>% 
-   mutate(dates = ymd(dates))
-state_dates_new <- state_dates_new[-(1:14), 1:2]
-state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
-   rename(cl_low = 3,
-          cl_high = 4)
-reg4_r_clean <- cbind(state_r, state_dates_new)
-
-reg4_data_clean <- mt_case_data %>% 
-   filter(region == 4)
-total_cases <- sum(reg4_data_clean$case)
-
-
-state_r_plot <- reg4_r_clean %>% 
-   ggplot() +
-   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
-   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
-   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-values, Montana Region 4, 2020",
-        color = "") +
-   ylab("R-value") +
-   xlab("") +
-   geom_hline(yintercept = 1, color = "black", size = 1.2) +
-   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
-   #scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         legend.text = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = c("black")) 
-#state_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg4_r_plot.png", width = 10, height = 8)
-
-state_inc_plot <- reg4_data_clean %>% 
-   ggplot() +
-   geom_col(aes(dates, case), 
-            fill = "steelblue") +
-   labs(title = paste0("COVID-19 Cases in Montana Region 4, 2020", 
-                       " (Total cases = ", total_cases, ")"),
-        subtitle = paste0("Data current as of ", date_today)) +
-   ylab("Number of Cases") +
-   xlab("") +
-   scale_x_date(date_breaks = "3 day", date_labels = "%d-%b") +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) 
-#state_inc_plot
-
-ggsave("C:/R/covid19/state_daily_results/reg4_inc_plot.png", width = 10, height = 8)
-
-
-
-
-## Region 5 results
-# Format analysis data
-mt_li_analysis_data <- mt_case_data %>% 
-   filter(region == 5) %>% 
-   group_by(dates) %>% 
-   mutate(local = sum(local),
-          imported = sum(imported)) %>% 
-   select(dates, local, imported) %>% 
-   distinct(dates, .keep_all = TRUE) %>% 
-   arrange(dates)
-
-
-reg5_data <- mt_li_analysis_data 
-
-mt_data <- reg5_data %>% 
-   mutate(I = local + imported) %>% 
-   select(dates, I) 
-
-mt_incidence_data <- incidence(mt_data$dates, last_date = latest_date)
-
-mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
-   mutate(dates = ymd(mt_incidence_data$dates)) %>% 
-   select(dates) %>% 
-   left_join(reg5_data, by = "dates") %>% 
-   mutate(local = if_else(is.na(local), 0, local),
-          imported = if_else(is.na(imported), 0, imported)) 
-
-
-state_n <- as.data.frame(mt_li_inc_data$dates)
-time_var <- nrow(state_n)
-time_start <- seq(2, time_var-13)
-time_end <- time_start + 13
-
-
-MCMC_seed <- 1
-overall_seed <- 2
-mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 1000, thin = 10)
-dist <- "G"  # fitting a Gamma distribution for the SI
-si_config <- make_config(list(si_parametric_distr = dist, 
-                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 500, n2 = 50,
-                              t_start = time_start, t_end = time_end))
-
-mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data, config = si_config)
-
-
-
-colomns <- c(1:4, 8)
-state_r <- (mt_r_results$R[,colomns]) %>% 
-   mutate(region = "5") %>% 
-   rename(mean_r = `Mean(R)`,
-          sd_r = `Std(R)`,
-          median_r = `Median(R)`)
-
-state_dates <- as.data.frame(mt_r_results$dates)
-state_i <- as.data.frame(mt_r_results$I)
-state_cil <- as.data.frame(mt_r_results$R$`Quantile.0.025(R)`)
-state_cih <- as.data.frame(mt_r_results$R$`Quantile.0.975(R)`)
-state_dates_new <- cbind(state_dates, state_i) %>% 
-   rename(dates = 1,
-          incidence = 2) %>% 
-   mutate(dates = ymd(dates))
-state_dates_new <- state_dates_new[-(1:14), 1:2]
-state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
-   rename(cl_low = 3,
-          cl_high = 4)
-reg5_r_clean <- cbind(state_r, state_dates_new)
-
-reg5_data_clean <- mt_case_data %>% 
-   filter(region == 5)
-total_cases <- sum(reg5_data_clean$case)
-
-
-state_r_plot <- reg5_r_clean %>% 
-   ggplot() +
-   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
-   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
-   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-values, Montana Region 5, 2020",
-        color = "") +
-   ylab("R-value") +
-   xlab("") +
-   geom_hline(yintercept = 1, color = "black", size = 1.2) +
-   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
-   #scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         legend.text = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = c("black")) 
-#state_r_plot
-ggsave("C:/R/covid19/state_daily_results/reg5_r_plot.png", width = 10, height = 8)
-
-state_inc_plot <- reg5_data_clean %>% 
-   ggplot() +
-   geom_col(aes(dates, case), 
-            fill = "steelblue") +
-   labs(title = paste0("COVID-19 Cases in Montana Region 5, 2020", 
-                       " (Total cases = ", total_cases, ")"),
-        subtitle = paste0("Data current as of ", date_today)) +
-   ylab("Number of Cases") +
-   xlab("") +
-   scale_x_date(date_breaks = "3 day", date_labels = "%d-%b") +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 12, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 12, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 12, colour = "black"),
-         axis.title.y = element_text(size = 12, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 12, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) 
-#state_inc_plot
-
-ggsave("C:/R/covid19/state_daily_results/reg5_inc_plot.png", width = 10, height = 8)
 
 
 
 # Bind files and save
-all_regions_r <- rbind(state_r_clean, reg1_r_clean, reg2_r_clean, reg3_r_clean, 
-                       reg4_r_clean, reg5_r_clean) %>% 
+all_regions_r <- rbind(state_r, reg1_r, reg2_r, reg3_r, reg4_r, reg5_r,
+                       missoula_r, gallatin_r, yellowstone_r, bighorn_r,
+                       lake_r, lewisandclark_r, flathead_r, cascade_r,
+                       silverbow_r) %>% 
    left_join(all_data_wide, by = c("region", "dates")) %>% 
+   mutate(daily_cases = incidence) %>% 
    mutate(mean_r = round(mean_r, digits = 2),
           median_r = round(median_r, digits = 2),
           sd_r = round(sd_r, digits = 2),
@@ -1056,54 +452,6 @@ sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
            "/celFtpFiles/covid19/Rt/incoming/all_regions_r.csv",
            "C:/R/covid19/state_daily_results/all_regions_r.csv")
 
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/state_r_plot.png",
-           "C:/R/covid19/state_daily_results/state_r_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg1_r_plot.png",
-           "C:/R/covid19/state_daily_results/reg1_r_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg2_r_plot.png",
-           "C:/R/covid19/state_daily_results/reg2_r_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg3_r_plot.png",
-           "C:/R/covid19/state_daily_results/reg3_r_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg4_r_plot.png",
-           "C:/R/covid19/state_daily_results/reg4_r_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg5_r_plot.png",
-           "C:/R/covid19/state_daily_results/reg5_r_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/state_inc_plot.png",
-           "C:/R/covid19/state_daily_results/state_inc_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg1_inc_plot.png",
-           "C:/R/covid19/state_daily_results/reg1_inc_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg2_inc_plot.png",
-           "C:/R/covid19/state_daily_results/reg2_inc_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg3_inc_plot.png",
-           "C:/R/covid19/state_daily_results/reg3_inc_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg4_inc_plot.png",
-           "C:/R/covid19/state_daily_results/reg4_inc_plot.png")
-
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg5_inc_plot.png",
-           "C:/R/covid19/state_daily_results/reg5_inc_plot.png")
-
 
 
 # Test to see if I can pull file back from server
@@ -1112,3 +460,352 @@ sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
 #           "/celFtpFiles/covid19/Rt/incoming/reg5_plot.png",
 #           "C:/R/covid19/reg5_plot.png")
 
+
+
+############ Push files to Google ##################3
+
+options(gargle_oauth_email = "ethanwalker86@gmail.com")
+drive_auth(email = "ethanwalker86@gmail.com")
+gs4_auth(token = drive_token())
+
+
+
+# Write State/region R data to google
+mt_data <- all_regions_r %>% 
+   filter(region == "state") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
+            sheet = 1)
+
+reg1_data <- all_regions_r %>% 
+   filter(region == "1") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(reg1_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
+            sheet = 2)
+
+reg2_data <- all_regions_r %>% 
+   filter(region == "2") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(reg2_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
+            sheet = 3)
+
+reg3_data <- all_regions_r %>% 
+   filter(region == "3") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(reg3_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
+            sheet = 4)
+
+reg4_data <- all_regions_r %>% 
+   filter(region == "4") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(reg4_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
+            sheet = 5)
+
+reg5_data <- all_regions_r %>% 
+   filter(region == "5") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(reg5_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
+            sheet = 6)
+
+
+
+# Write State/region case data to google
+mt_data <- all_regions_r %>% 
+   filter(region == "state") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/11adsCi8okCW26lyfkZSXItlBCMGuvnysSxM6lVB8pQY/edit#gid=0",
+            sheet = 1)
+
+reg1_data <- all_regions_r %>% 
+   filter(region == "1") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(reg1_data, 
+            ss = "https://docs.google.com/spreadsheets/d/11adsCi8okCW26lyfkZSXItlBCMGuvnysSxM6lVB8pQY/edit#gid=0",
+            sheet = 2)
+
+reg2_data <- all_regions_r %>% 
+   filter(region == "2") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(reg2_data, 
+            ss = "https://docs.google.com/spreadsheets/d/11adsCi8okCW26lyfkZSXItlBCMGuvnysSxM6lVB8pQY/edit#gid=0",
+            sheet = 3)
+
+reg3_data <- all_regions_r %>% 
+   filter(region == "3") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(reg3_data, 
+            ss = "https://docs.google.com/spreadsheets/d/11adsCi8okCW26lyfkZSXItlBCMGuvnysSxM6lVB8pQY/edit#gid=0",
+            sheet = 4)
+
+reg4_data <- all_regions_r %>% 
+   filter(region == "4") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(reg4_data, 
+            ss = "https://docs.google.com/spreadsheets/d/11adsCi8okCW26lyfkZSXItlBCMGuvnysSxM6lVB8pQY/edit#gid=0",
+            sheet = 5)
+
+reg5_data <- all_regions_r %>% 
+   filter(region == "5") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(reg5_data, 
+            ss = "https://docs.google.com/spreadsheets/d/11adsCi8okCW26lyfkZSXItlBCMGuvnysSxM6lVB8pQY/edit#gid=0",
+            sheet = 6)
+
+
+
+# Write county R data to google
+miss_data <- all_regions_r %>% 
+   filter(region == "Missoula County") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(miss_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
+            sheet = 1)
+
+gall_data <- all_regions_r %>% 
+   filter(region == "Gallatin County") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(gall_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
+            sheet = 2)
+
+ystn_data <- all_regions_r %>% 
+   filter(region == "Yellowstone County") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(ystn_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
+            sheet = 3)
+
+bh_data <- all_regions_r %>% 
+   filter(region == "Big Horn County") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(bh_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
+            sheet = 4)
+
+lake_data <- all_regions_r %>% 
+   filter(region == "Lake County") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(lake_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
+            sheet = 5)
+
+lac_data <- all_regions_r %>% 
+   filter(region == "Lewis and Clark County") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(lac_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
+            sheet = 6)
+
+flat_data <- all_regions_r %>% 
+   filter(region == "Flathead County") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(flat_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
+            sheet = 7)
+
+casc_data <- all_regions_r %>% 
+   filter(region == "Cascade County") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(casc_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
+            sheet = 8)
+
+sb_data <- all_regions_r %>% 
+   filter(region == "Silver Bow County") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(sb_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
+            sheet = 9)
+
+
+
+# Write county case data to google
+miss_data <- all_regions_r %>% 
+   filter(region == "Missoula County") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(miss_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
+            sheet = 1)
+
+gall_data <- all_regions_r %>% 
+   filter(region == "Gallatin County") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(gall_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
+            sheet = 2)
+
+ystn_data <- all_regions_r %>% 
+   filter(region == "Yellowstone County") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(ystn_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
+            sheet = 3)
+
+bh_data <- all_regions_r %>% 
+   filter(region == "Big Horn County") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(bh_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
+            sheet = 4)
+
+lake_data <- all_regions_r %>% 
+   filter(region == "Lake County") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(lake_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
+            sheet = 5)
+
+lac_data <- all_regions_r %>% 
+   filter(region == "Lewis and Clark County") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(lac_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
+            sheet = 6)
+
+flat_data <- all_regions_r %>% 
+   filter(region == "Flathead County") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(flat_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
+            sheet = 7)
+
+casc_data <- all_regions_r %>% 
+   filter(region == "Cascade County") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(casc_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
+            sheet = 8)
+
+sb_data <- all_regions_r %>% 
+   filter(region == "Silver Bow County") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(sb_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
+            sheet = 9)

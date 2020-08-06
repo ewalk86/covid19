@@ -1,0 +1,233 @@
+---
+title: "State of Montana Covid-19 Serial Interval Calculation"
+author: "Ethan Walker"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, 
+                      include = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 8, fig.height = 6)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+#library(plyr)
+library(readxl)
+library(naniar)
+library(lubridate)
+library(zoo)
+library(eeptools)
+library(knitr)
+library(incidence)
+library(EpiEstim)
+library(earlyR)
+library(projections)
+library(distcrete)
+library(epitrix)
+library(jsonlite)
+library(httr)
+library(rlist)
+library(Rsftp)
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", 
+               "#0072B2", "#D55E00", "#CC79A7")
+
+file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+```
+
+
+```{r}
+# Load serial interval data
+mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_08.05.2020.xlsx"),
+                          sheet = 1) %>% 
+   select(-Pair_No) %>% 
+   rename(EL = EL_Infector_Lower,
+          ER = ER_Infector_Upper,
+          SL = SL_Infected_Lower,
+          SR = SR_Infected_Upper) %>% 
+   mutate(SL2 = if_else(SL<1, SL + (1 - SL), SL),
+          SR2 = if_else(SL<1, SR + (1 - SL), SR),
+          type = 0) %>% 
+   select(EL, ER, SL2, SR2, type) %>% 
+   rename(SL = SL2,
+          SR = SR2) %>% 
+   mutate_all(as.integer)
+
+
+# Load/format case data
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_08.05.2020.xlsx"),
+                                 sheet = 2) %>% 
+   rename_all(tolower) %>% 
+   select(-case_no) %>% 
+   rownames_to_column(var = "case_no") %>% 
+   mutate(local = if_else(local_import == 0, 1, 0),
+          imported = local_import,
+          date_reported = ymd(date_reported),
+          dates = ymd(symptom_onset_date),
+          case = 1) %>% 
+   rename(hospitalization = "ever_hospitalized") %>% 
+   mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99",
+                               "80+", age_group),
+          age_group_new = factor(age_group_new, 
+                                 levels = c("0-9", "10-19", "20-29", 
+                                            "30-39", "40-49", "50-59", 
+                                            "60-69", "70-79", "80+"),
+                                 labels = c("0 to 9", "10 to 19", "20 to 29", 
+                                            "30 to 39", "40 to 49", "50 to 59", 
+                                            "60 to 69", "70 to 79", "80+"))) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Y", "N", "P", "U"),
+                                   labels = c("Hosp: Yes", "Hosp: No", 
+                                              "Hosp: Past", "Hosp: Unknown"))) %>% 
+   filter(!is.na(dates)) %>% 
+   arrange(dates) %>% 
+   ungroup() %>% 
+   select(case_no, mt_case, county:hospitalization, local_import:age_group_new)
+```
+
+
+```{r}
+#################### Run analysis and print results
+## State results
+# Format analysis data
+mt_li_analysis_data <- mt_case_data %>% 
+   group_by(dates) %>% 
+   mutate(local = sum(local),
+          imported = sum(imported)) %>% 
+   select(dates, local, imported) %>% 
+   distinct(dates, .keep_all = TRUE) %>% 
+   arrange(dates)
+
+
+mt_data <- mt_li_analysis_data %>% 
+   mutate(I = local + imported) %>% 
+   select(dates, I) 
+
+latest_date <- format(Sys.Date() - 14, "%Y-%m-%d")
+
+mt_incidence_data <- incidence(mt_data$dates, last_date = latest_date)
+
+mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
+   mutate(dates = ymd(mt_incidence_data$dates)) %>% 
+   select(dates) %>% 
+   left_join(mt_li_analysis_data, by = "dates") %>% 
+   mutate(local = if_else(is.na(local), 0, local),
+          imported = if_else(is.na(imported), 0, imported))
+
+
+state_n <- as.data.frame(mt_li_inc_data$dates)
+time_var <- nrow(state_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
+## This code uses paired cases to calculate a serial interval
+## I tried this code with various burnin and n1 settings, giving essentially the same results
+## Once the SI is calculated from this code, the mean SI and SD SI can then be used in other files to the run analysis
+## This code only needs to be used if we want to update the SI with new paired cases
+MCMC_seed <- 1
+overall_seed <- 2
+mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 1000, thin = 10)
+dist <- "G"  # fitting a Gamma distribution for the SI
+si_config <- make_config(list(si_parametric_distr = dist, 
+                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 500, n2 = 50,
+                              t_start = time_start, t_end = time_end))
+
+mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
+                           si_data = mt_si_data, config = si_config)
+
+
+# calculate mean serial interval using SI data
+# Mean SI = 6.3, SD SI = 5.4
+mean_si <- mt_r_results$SI.Moments %>% 
+   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
+mean_si
+
+colomns <- c(1:4, 8)
+state_r <- (mt_r_results$R[,colomns]) %>% 
+   mutate(region = "state") %>% 
+   rename(mean_r = `Mean(R)`,
+          sd_r = `Std(R)`,
+          median_r = `Median(R)`)
+
+state_dates <- as.data.frame(mt_r_results$dates)
+state_i <- as.data.frame(mt_r_results$I)
+state_cil <- as.data.frame(mt_r_results$R$`Quantile.0.025(R)`)
+state_cih <- as.data.frame(mt_r_results$R$`Quantile.0.975(R)`)
+state_dates_new <- cbind(state_dates, state_i) %>% 
+   rename(dates = 1,
+          incidence = 2) %>% 
+   mutate(dates = ymd(dates))
+state_dates_new <- state_dates_new[-(1:14), 1:2]
+state_dates_new <- cbind(state_dates_new, state_cil, state_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+state_r_clean <- cbind(state_r, state_dates_new)
+
+total_cases <- sum(mt_case_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+
+
+state_r_plot <- state_r_clean %>% 
+   ggplot() +
+   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
+   labs(title = "COVID-19 Rolling 14-day R-values, State of Montana, 2020",
+        color = "") +
+   ylab("R-value") +
+   xlab("") +
+   geom_hline(yintercept = 1, color = "black", size = 1.2) +
+   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
+   scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
+   theme_minimal() +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 12, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 12, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 12, colour = "black"),
+         legend.text = element_text(size = 12, colour = "black"),
+         axis.title.y = element_text(size = 12, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 12, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = c("black")) 
+state_r_plot
+#ggsave("C:/R/covid19/state_daily_results/state_r_plot.png", width = 10, height = 8)
+
+state_inc_plot <- mt_case_data %>% 
+   ggplot() +
+   geom_col(aes(dates, case), 
+            fill = "steelblue") +
+   labs(title = paste0("COVID-19 Cases in State of Montana, 2020", 
+                       " (Total cases = ", total_cases, ")"),
+        subtitle = paste0("Data current as of ", date_today)) +
+   ylab("Number of Cases") +
+   xlab("") +
+   scale_x_date(date_breaks = "3 day", date_labels = "%d-%b") +
+   theme_minimal() +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 12, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 12, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 12, colour = "black"),
+         axis.title.y = element_text(size = 12, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 12, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) 
+state_inc_plot
+#ggsave("C:/R/covid19/state_daily_results/state_inc_plot.png", width = 10, height = 8)
+```
+
