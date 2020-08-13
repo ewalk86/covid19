@@ -20,6 +20,8 @@ library(jsonlite)
 library(httr)
 library(rlist)
 library(Rsftp)
+library(googledrive)
+library(googlesheets4)
 #library(sftp)
 
 
@@ -80,12 +82,12 @@ state_data_clean <- state_data %>%
                                  levels = c("0-9", "10-19", "20-29", 
                                             "30-39", "40-49", "50-59", 
                                             "60-69", "70-79", "80+"),
-                                 labels = c("0 to 9, 0.12", "10 to 19, 0.13", "20 to 29, 0.13", 
-                                            "30 to 39, 0.13", "40 to 49, 0.11", "50 to 59, 0.13", 
+                                 labels = c("0 to 9, 0.12", "10 to 19, 0.12", "20 to 29, 0.13", 
+                                            "30 to 39, 0.13", "40 to 49, 0.11", "50 to 59, 0.12", 
                                             "60 to 69, 0.14", "70 to 79, 0.08", "80+, 0.04"))) %>% 
    separate(age_group_new, c("age_group_new", "age_group_new_percent"), sep = ",") %>% 
    mutate(age_group_new_percent = as.numeric(age_group_new_percent),
-          state_pop = as.numeric(1062000)) %>% 
+          state_pop = as.numeric(1068778)) %>% 
    select(-age_group2, -age_group_new, -age_group_new_percent, -state_pop) %>% 
    mutate(hospitalization = factor(hospitalization,
                                    levels = c("Y", "N", "P", "U"),
@@ -201,7 +203,7 @@ sanders_county <- county_function("Sanders")
 powell_county <- county_function("Powell")
 phillips_county <- county_function("Phillips")
 prairie_county <- county_function("Prairie")
-
+mineral_county <- county_function("Mineral")
 
 
 
@@ -231,7 +233,7 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          chouteau_county, jbasin_county,
                                          sweetgrass_county, sanders_county,
                                          powell_county, phillips_county,
-                                         prairie_county) %>% 
+                                         prairie_county, mineral_county) %>% 
    group_by(county) %>% 
    mutate("Cumulative total cases" = cumsum(`Daily total cases`),
           "Cumulative active cases" = cumsum(Active),
@@ -281,6 +283,75 @@ state_hosp <- state_hosp_data %>%
    arrange(age_group)
 
 write_csv(state_hosp, "C:/R/covid19/state_daily_results/state_hosp.csv", na = " ")
+
+
+
+hosp_data_initial <- state_data %>% 
+   rename_all(tolower) %>% 
+   mutate(date_reported_to_cdepi = date_reported_to_cdepi/1000,
+          dates = as.POSIXct(date_reported_to_cdepi, origin = "1970-01-01")) %>% 
+   separate(dates, c("dates", "trash"), sep = " ") %>% 
+   mutate(dates = ymd(dates)) %>% 
+   select(case_no, dates, county:mt_case) %>% 
+   left_join(counties_regions, by = "county") %>% 
+   mutate(case = 1) %>% 
+   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99",
+                               "80+", age_group),
+          age_group_new = factor(age_group2, 
+                                 levels = c("0-9", "10-19", "20-29", 
+                                            "30-39", "40-49", "50-59", 
+                                            "60-69", "70-79", "80+"),
+                                 labels = c("0 to 9, 0.12", "10 to 19, 0.12", "20 to 29, 0.13", 
+                                            "30 to 39, 0.13", "40 to 49, 0.11", "50 to 59, 0.12", 
+                                            "60 to 69, 0.14", "70 to 79, 0.08", "80+, 0.04"))) %>% 
+   separate(age_group_new, c("age_group_new", "age_group_new_percent"), sep = ",") %>% 
+   mutate(age_group_new_percent = as.numeric(age_group_new_percent),
+          state_pop = as.numeric(1068778)) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Y", "N", "P", "U"),
+                                   labels = c("Hosp: Yes", "Hosp: No", 
+                                              "Hosp: Past", "Hosp: Unknown"))) %>% 
+   select(-case_no) %>% 
+   rownames_to_column(var = "case_no")
+
+
+age_rates <- hosp_data_initial %>% 
+   select(case, age_group_new, age_group_new_percent, state_pop) %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(age_group_new) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group_new_percent*state_pop,
+          group_rate = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(age_group_new, .keep_all = TRUE) %>% 
+   mutate(region = "Montana") %>% 
+   rename(age_group = age_group_new,
+          age_group_cases = group_cases) %>% 
+   mutate(age_group_rate = round(group_rate, digits = 0)) %>% 
+   select(age_group, age_group_cases, age_group_rate) %>% 
+   filter(!is.na(age_group)) %>% 
+   arrange(age_group)
+
+hosp_rates <- hosp_data_initial %>% 
+   select(case, age_group_new, age_group_new_percent, state_pop, hospitalization) %>% 
+   mutate(total_cases = n(),
+          hospitalization_status = if_else(hospitalization == "Hosp: Yes" | hospitalization == "Hosp: Past", 
+                                "Yes", "No")) %>% 
+   group_by(age_group_new, hospitalization_status) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group_new_percent*state_pop,
+          group_rate = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(age_group_new, hospitalization_status, .keep_all = TRUE) %>% 
+   mutate(region = "Montana") %>% 
+   rename(age_group = age_group_new,
+          age_group_cases = group_cases) %>% 
+   mutate(age_group_rate = round(group_rate, digits = 0)) %>% 
+   select(age_group, hospitalization_status, age_group_cases, age_group_rate) %>% 
+   filter(!is.na(age_group)) %>% 
+   arrange(age_group, hospitalization_status)
 
 
 #################### Run and save daily case, hosp, outcome, test data
@@ -412,3 +483,52 @@ sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
            "/celFtpFiles/covid19/Rt/incoming/mt_case_outcome_hosp_data.csv",
            "C:/R/covid19/state_daily_results/mt_case_outcome_hosp_data.csv")
+
+
+########## Push case and rate data by age group to Google sheets
+
+options(gargle_oauth_email = "ethanwalker86@gmail.com")
+drive_auth(email = "ethanwalker86@gmail.com")
+gs4_auth(token = drive_token())
+
+
+
+# Write State/region R data to google
+mt_data <- age_rates %>% 
+   select(age_group, age_group_cases) %>% 
+   rename("Age_Group" = age_group,
+          "Cases" = age_group_cases)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
+            sheet = 1)
+
+mt_data <- age_rates %>% 
+   select(age_group, age_group_rate) %>% 
+   rename("Age_Group" = age_group,
+          "Rate per 100,000 population" = age_group_rate)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
+            sheet = 2)
+
+mt_data <- hosp_rates %>% 
+   select(age_group, hospitalization_status, age_group_cases) %>% 
+   rename("Age_Group" = age_group,
+          "Hospitalization_Status" = hospitalization_status,
+          "Cases" = age_group_cases)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
+            sheet = 3)
+
+mt_data <- hosp_rates %>% 
+   select(age_group, hospitalization_status, age_group_rate) %>% 
+   rename("Age_Group" = age_group,
+          "Hospitalization_Status" = hospitalization_status,
+          "Rate per 100,000 population" = age_group_rate)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
+            sheet = 4)
+
