@@ -333,7 +333,7 @@ age_rates <- hosp_data_initial %>%
    filter(!is.na(age_group)) %>% 
    arrange(age_group)
 
-hosp_rates <- hosp_data_initial %>% 
+hosp_data <- hosp_data_initial %>% 
    select(case, age_group_new, age_group_new_percent, state_pop, hospitalization) %>% 
    mutate(total_cases = n(),
           hospitalization_status = if_else(hospitalization == "Hosp: Yes" | hospitalization == "Hosp: Past", 
@@ -344,14 +344,28 @@ hosp_rates <- hosp_data_initial %>%
           group_pop = age_group_new_percent*state_pop,
           group_rate = group_cases/group_pop*100000) %>% 
    ungroup() %>% 
-   distinct(age_group_new, hospitalization_status, .keep_all = TRUE) %>% 
-   mutate(region = "Montana") %>% 
+   distinct(age_group_new, hospitalization_status, .keep_all = TRUE) 
+
+hosp_cases <- hosp_data %>% 
+   arrange(age_group_new, hospitalization_status) %>% 
+   pivot_wider(names_from = hospitalization_status, values_from = group_cases) %>% 
    rename(age_group = age_group_new,
-          age_group_cases = group_cases) %>% 
+          Hospitalized = Yes,
+          Not_Hospitalized = No) %>% 
+   select(age_group, Hospitalized, Not_Hospitalized) %>% 
+   filter(!is.na(age_group)) 
+
+
+hosp_rates <- hosp_data %>% 
+   arrange(age_group_new, hospitalization_status) %>% 
    mutate(age_group_rate = round(group_rate, digits = 0)) %>% 
-   select(age_group, hospitalization_status, age_group_cases, age_group_rate) %>% 
-   filter(!is.na(age_group)) %>% 
-   arrange(age_group, hospitalization_status)
+   pivot_wider(names_from = hospitalization_status, values_from = age_group_rate) %>% 
+   rename(age_group = age_group_new,
+          Hospitalized = Yes,
+          Not_Hospitalized = No) %>% 
+   select(age_group, Hospitalized, Not_Hospitalized) %>% 
+   filter(!is.na(age_group)) 
+   
 
 
 #################### Run and save daily case, hosp, outcome, test data
@@ -512,21 +526,17 @@ sheet_write(mt_data,
             ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
             sheet = 2)
 
-mt_data <- hosp_rates %>% 
-   select(age_group, hospitalization_status, age_group_cases) %>% 
-   rename("Age_Group" = age_group,
-          "Hospitalization_Status" = hospitalization_status,
-          "Cases" = age_group_cases)
+mt_data <- hosp_cases %>% 
+   select(age_group, Hospitalized, Not_Hospitalized) %>% 
+   rename("Age_Group" = age_group)
 
 sheet_write(mt_data, 
             ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
             sheet = 3)
 
 mt_data <- hosp_rates %>% 
-   select(age_group, hospitalization_status, age_group_rate) %>% 
-   rename("Age_Group" = age_group,
-          "Hospitalization_Status" = hospitalization_status,
-          "Rate per 100,000 population" = age_group_rate)
+   select(age_group, Hospitalized, Not_Hospitalized) %>% 
+   rename("Age_Group" = age_group)
 
 sheet_write(mt_data, 
             ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",

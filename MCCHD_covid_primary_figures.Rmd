@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of August 10, 2020"
+date: "Data as of August 18, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -163,34 +163,578 @@ county_incidence <- covid_data %>%
 
 \pagebreak  
 
-```{r, fig.width = 8, fig.height = 6}
-# Incidence plot by age
-covid_incidence <- county_incidence %>% 
-   filter(region == "Missoula County") %>% 
-   ggplot() +
-     geom_col(aes(age_group, group_inc), fill = "steelblue") +
-     labs(title = "COVID-19 Incidence in Missoula County by Age Group",
-          fill = "") +
-     ylab("Incidence per 100,000 Population") +
-     xlab("Age Group (years)") +
+```{r}
+# Age group table - counts
+covid_plot <- covid_data %>% 
+   filter(!is.na(age_group)) %>% 
+   ggplot() +   
+     geom_bar(aes(fct_rev(age_group)), fill = "steelblue", width = .6) +   
+     labs(title = "COVID-19 Cases in Missoula County by Age Group", 
+          y = "Number of cases", x = "Age Group (years)") +
+     scale_y_continuous(breaks = c(seq(0, 200, 10)), labels = c(seq(0, 200, 10))) +
+     coord_flip() +
      theme_minimal() +
-     theme(title = element_text(size = 16, colour = "black"),
+     theme(plot.title = element_text(hjust = .5),
+           strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
            panel.grid = element_blank(),
-           panel.grid.major.y = element_line(colour = "grey"),
            axis.text.x = element_text(size = 14, colour = "black", 
-                                      vjust = 0.4, angle = 15),
-           axis.text.y = element_text(size = 14, colour = "black"),
+                                     angle = 45, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
            axis.title.y = element_text(size = 14, colour = "black",
                                        margin = unit(c(0, 5, 0, 0), "mm")),
            axis.title.x = element_text(size = 14, colour = "black",
                                        margin = unit(c(5, 0, 0, 0), "mm")),
-           axis.line.x = element_blank(), 
-           axis.line.y = element_blank(), 
-           axis.ticks = element_blank()) +
-     scale_fill_manual(values = cbPalette) 
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) 
+covid_plot
+
+#ggsave("cases_plot.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+# Incidence plot by age
+covid_incidence <- county_incidence %>% 
+   filter(region == "Missoula County") %>% 
+   ggplot() +
+     geom_col(aes(fct_rev(age_group), group_inc), fill = "steelblue", width = .6) +
+     coord_flip() +
+     labs(title = "COVID-19 Incidence in Missoula County by Age Group", 
+          y = "Incidence per 100,000 Population", x = "Age Group (years)") +
+     scale_y_continuous(breaks = c(seq(0, 800, 50)), labels = c(seq(0, 800, 50))) +
+     theme_minimal() +
+     theme(plot.title = element_text(hjust = .5),
+           strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 45, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 14, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 14, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) 
 covid_incidence
 
-#ggsave("county_incidence_age.jpg", width = 8, height = 6)
+#ggsave("incidence_plot.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+#Symptoms and gender
+covid_plot <- covid_data %>% 
+   filter(!is.na(gender)) %>% 
+   pivot_longer(cols = c(symptom_fever_chill:symptom_diarrhea),
+                names_to = "variable", values_to = "values") %>% 
+   group_by(variable, gender) %>% 
+   mutate(values = as.numeric(values),
+          values = sum(values)) %>% 
+   distinct(variable, .keep_all = TRUE) %>% 
+   ungroup() %>% 
+   arrange(gender, values) %>% 
+   mutate(variable = factor(variable,
+                            levels = c("symptom_fever_chill", "symptom_cough",
+                                       "symptom_sob", "symptom_fatigue_lethargy",
+                                       "symptom_body_aches", "symptom_headache", 
+                                       "symptom_taste_smell", "symptom_sorethroat",
+                                       "symptom_congestion", "symptom_nv",
+                                       "symptom_diarrhea"),
+                            labels = c("Fever/chills", "Cough",
+                                       "Short of breath", "Fatigue",
+                                       "Muscle/body aches", "Headache", 
+                                       "Taste/Smell Loss", "Sore throat",
+                                       "Congestion", "Nausea/vomiting",
+                                       "Diarrhea"))) %>% 
+   ggplot(aes(x = fct_rev(variable), y = values, fill = gender)) +   
+     geom_bar(stat = "identity", width = .6) +   
+     labs(title = "Symptoms reported at time of testing", 
+          subtitle = "By gender",
+          y = "Count", x = "", fill = "") +
+     scale_y_continuous(breaks = c(seq(0, 200, 10)), labels = c(seq(0, 200, 10))) +
+     coord_flip() +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 45, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "white"),
+           axis.title.x = element_blank(),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) + 
+     scale_fill_manual(values = cbPalette)
+covid_plot
+
+#ggsave("symptoms_plot_gender.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+#Symptoms and age group
+covid_plot <- covid_data %>% 
+   filter(!is.na(age_group)) %>% 
+   pivot_longer(cols = c(symptom_fever_chill:symptom_diarrhea),
+                names_to = "variable", values_to = "values") %>% 
+   group_by(variable, age_group) %>% 
+   mutate(values = as.numeric(values),
+          values = sum(values)) %>% 
+   distinct(variable, .keep_all = TRUE) %>% 
+   ungroup() %>% 
+   arrange(age_group, values) %>% 
+   mutate(variable = factor(variable,
+                            levels = c("symptom_fever_chill", "symptom_cough",
+                                       "symptom_sob", "symptom_fatigue_lethargy",
+                                       "symptom_body_aches", "symptom_headache", 
+                                       "symptom_taste_smell", "symptom_sorethroat",
+                                       "symptom_congestion", "symptom_nv",
+                                       "symptom_diarrhea"),
+                            labels = c("Fever/chills", "Cough",
+                                       "Short of breath", "Fatigue",
+                                       "Muscle/body aches", "Headache", 
+                                       "Taste/Smell Loss", "Sore throat",
+                                       "Congestion", "Nausea/vomiting",
+                                       "Diarrhea"))) %>% 
+   ggplot(aes(x = fct_rev(variable), y = values, fill = age_group)) +   
+     geom_bar(stat = "identity", width = .6) +   
+     labs(title = "Symptoms reported at time of testing", 
+          subtitle = "By age group",
+          y = "Count", x = "", fill = "") +
+     scale_y_continuous(breaks = c(seq(0, 200, 10)), labels = c(seq(0, 200, 10))) +
+     coord_flip() +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 45, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 16, colour = "white"),
+           axis.title.x = element_blank(),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) + 
+     scale_fill_manual(values = cbPalette)
+covid_plot
+
+#ggsave("symptoms_plot_age.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r, include=FALSE, eval=FALSE}
+# Travel and previous contact
+covid_data_table <- covid_data %>% 
+   mutate(contact_with_case = as.character(contact_with_case),
+          contact_with_case = if_else(contact_with_case == "No",
+                                      "Unknown", contact_with_case))
+
+save_table <- data.frame(table(covid_data_table$travel_hx, covid_data_table$contact_with_case))
+
+plot_table <- save_table %>% 
+   mutate(Var1 = as.character(Var1),
+          Var2 = as.character(Var2)) %>% 
+   mutate(spread_method = if_else(Var1 == "Yes" & Var2 == "Yes", 
+                                  "Traveled/known contact with case", "Other"),
+          spread_method = if_else(Var1 == "No" & Var2 == "Yes", 
+                                  "No travel/known contact with case", spread_method),
+          spread_method = if_else(Var1 == "Yes" & Var2 == "Unknown", 
+                                  "Traveled/unknown contact", spread_method),
+          spread_method = if_else(Var1 == "No" & Var2 == "Unknown", 
+                                  "No travel/unknown contact", spread_method)) %>% 
+   mutate(total_n = sum(Freq),
+          group_percent = round(Freq/total_n*100, digits = 0))
+   
+
+covid_piechart <- plot_table %>% 
+   ggplot(aes("", Freq, fill = spread_method)) +
+     geom_bar(stat = "identity", color = "black", width = 1) +
+     coord_polar("y") +
+     geom_text(aes(label = Freq), 
+               position = position_stack(vjust = 0.5),
+               color = "white", size = 6) +
+     labs(title = "MCCHD COVID-19 infections", fill = "",
+          subtitle = "Travel and contact with known cases (n)") + 
+     theme_void() +
+     theme(title = element_text(size = 16, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black")) +
+           scale_fill_manual(values = cbPalette)
+covid_piechart
+
+#ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r, include=FALSE, eval=FALSE}
+# Hospitalized and ventilated
+covid_data_table <- covid_data %>% 
+   mutate(ventilated2 = as.character(ventilated)) %>% 
+   mutate(ventilated2 = if_else(hospitalized == "No" & ventilated2 == "No", 
+                               "NA", ventilated2)) %>% 
+   replace_with_na(replace = list(ventilated2 = "NA")) %>% 
+   mutate(ventilated2 = if_else(is.na(ventilated2) & hospitalized == "No", 
+                                "Not hospitalized", ventilated2)) %>% 
+   mutate(ventilated2 = if_else(is.na(ventilated2) & hospitalized == "Yes", 
+                               "No", ventilated2))
+   
+
+save_table <- data.frame(table(covid_data_table$hospitalized, 
+                               covid_data_table$ventilated2)) %>% 
+   filter(Freq > 0)
+
+plot_table <- save_table %>% 
+   mutate(Var1 = as.character(Var1),
+          Var2 = as.character(Var2)) %>% 
+   mutate(hospitalized = if_else(Var1 == "Yes" & Var2 == "Yes", 
+                                  "Hospitalized/ventilated", "Not hospitalized"),
+          hospitalized = if_else(Var1 == "Yes" & Var2 == "No", 
+                                  "Hospitalized/not ventilated", hospitalized)) %>% 
+   mutate(total_n = sum(Freq),
+          group_percent = round(Freq/total_n*100, digits = 0))
+   
+
+covid_piechart <- plot_table %>% 
+   ggplot(aes("", Freq, fill = hospitalized)) +
+     geom_bar(stat = "identity", color = "black", width = 1) +
+     coord_polar("y") +
+     geom_text(aes(label = Freq), 
+               position = position_stack(vjust = 0.5),
+               color = "white", size = 6) +
+     labs(title = "MCCHD COVID-19 infections", fill = "",
+          subtitle = "Hospitalized cases with ventilators (n)") + 
+     theme_void() +
+     theme(title = element_text(size = 16, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black")) +
+           scale_fill_manual(values = cbPalette)
+covid_piechart
+
+#ggsave("piechart_hosp_vent.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r, include=FALSE, eval=FALSE}
+# Hospitalized and chronic conditions
+save_table <- data.frame(table(covid_data_table$hospitalized, 
+                               covid_data_table$chronic_conditions))
+
+plot_table <- save_table %>% 
+   mutate(Var1 = as.character(Var1),
+          Var2 = as.character(Var2)) %>% 
+   mutate(hospitalized = if_else(Var1 == "Yes" & Var2 == "Yes", 
+                                  "Hospitalized/chronic condition", "Other"),
+          hospitalized = if_else(Var1 == "Yes" & Var2 == "No", 
+                                  "Hospitalized/no chronic condition", hospitalized),
+          hospitalized = if_else(Var1 == "No" & Var2 == "Yes", 
+                                  "Not hospitalized/chronic condition", hospitalized),
+          hospitalized = if_else(Var1 == "No" & Var2 == "No", 
+                                  "Not hospitalized/no chronic condition", hospitalized)) %>% 
+   mutate(total_n = sum(Freq),
+          group_percent = round(Freq/total_n*100, digits = 0))
+   
+
+covid_piechart <- plot_table %>% 
+   ggplot(aes("", Freq, fill = hospitalized)) +
+     geom_bar(stat = "identity", color = "black", width = 1) +
+     coord_polar("y") +
+     geom_text(aes(label = Freq), 
+               position = position_stack(vjust = 0.5),
+               color = "white", size = 6) +
+     labs(title = "MCCHD COVID-19 infections", fill = "",
+          subtitle = "Hospitalized cases with chronic conditions (n)") + 
+     theme_void() +
+     theme(title = element_text(size = 16, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black")) +
+           scale_fill_manual(values = cbPalette)
+covid_piechart
+
+#ggsave("piechart_hosp_chronic.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+piechart_function <- function(data = covid_data, plot_fill, var_label) {
+
+chart_data <- data %>% 
+   rename(chart_var = plot_fill) %>% 
+   filter(!is.na(chart_var)) %>% 
+   mutate(total_n = n()) %>% 
+   group_by(chart_var, total_n) %>% 
+   mutate(group_n = n()) %>% 
+   distinct(group_n) %>% 
+   mutate(group_percent = round(group_n/total_n*100)) %>% 
+   ungroup()
+   
+covid_piechart <- chart_data %>% 
+   ggplot(aes("", group_n, fill = chart_var)) +
+     geom_bar(stat = "identity", color = "black", width = 1) +
+     coord_polar("y") +
+     geom_text(aes(label = group_n), 
+               position = position_stack(vjust = 0.5),
+               color = "white", size = 6) +
+     labs(title = "MCCHD COVID-19 infections", fill = "",
+          subtitle = var_label) + 
+     theme_void() +
+     theme(title = element_text(size = 16, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black")) +
+           scale_fill_manual(values = cbPalette)
+covid_piechart
+
+}
+```
+
+
+```{r}
+piechart_function(plot_fill = "community_spread_new", var_label = "Community Spread (n)")
+
+#ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+piechart_function(plot_fill = "gender", var_label = "Gender (n)")
+
+#ggsave("piechart_gender.jpg", width = 10, height = 5)
+```
+
+
+\pagebreak  
+
+```{r}
+piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts (n)")
+
+#ggsave("piechart_contacts.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+sum_nums <- covid_data %>% 
+   rename("Age group" = age_group) %>% 
+   group_by(`Age group`) %>% 
+   filter(!is.na(`Age group`)) %>% 
+   summarize("Mean # contacts" = round(mean(number_contacts, na.rm = TRUE), digits = 1),
+             "Min # contacts" = round(min(number_contacts, na.rm = TRUE), digits = 1),
+             "Max # contacts" = round(max(number_contacts, na.rm = TRUE), digits = 1)) 
+
+kable(sum_nums, caption = "Number of contacts by age group, Missoula County",
+      format = "latex", align = "c") %>% 
+   kable_styling(font_size = 10) %>% 
+   row_spec(0, bold = TRUE, font_size = 10)
+```
+
+\clearpage
+
+```{r}
+contacts_plot <- covid_data %>% 
+   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
+   group_by(age_group, month_of_year) %>% 
+   mutate(mean_contacts = mean(number_contacts, na.rm = TRUE)) %>% 
+   filter(!is.na(age_group)) %>% 
+   filter(!is.na(month_of_year)) %>% 
+   ggplot() +
+      geom_line(aes(month_of_year, mean_contacts, group = age_group, 
+                    color = age_group), size = 1.5) +
+   theme_minimal() +
+   labs(title = "Mean number of contacts per COVID case, Missoula County",
+        subtitle = "By age group, per month since March, 2020",
+        color = "Age group") +
+   ylab("Mean # contacts") +
+   xlab("") +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 18, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 16, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 16, colour = "black"),
+         legend.text = element_text(size = 16, colour = "black"),
+         axis.title.y = element_text(size = 16, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 16, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = cbPalette)
+
+contacts_plot
+
+#ggsave("C:/R/covid19/contacts_plot.png", width = 10, height = 6)
+```
+
+\pagebreak  
+
+```{r, fig.width = 11, fig.height = 5}
+# Epi curve - date of onset
+
+total_cases <- sum(covid_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
+
+covid_plot_onset <- covid_data %>% 
+   filter(!is.na(symptom_onset_date_new)) %>% 
+   filter(symptom_onset_date_new > "2020-05-30") %>% 
+   group_by(symptom_onset_date_new) %>% 
+   ggplot() +
+     geom_rect(aes(xmin = Sys.Date() - 21, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-07-09")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
+                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-10, y = 8, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
+     labs(title = "COVID-19 Cases in Missoula County Since June 1, 2020",
+          subtitle = paste0("Total cases = ", total_cases),
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("Date") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-06-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "3 days"),
+                  labels = seq.Date(from = as.Date("2020-06-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "3 days"),
+                  date_labels = "%d-%b") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.position = "top",
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank())  +
+     scale_fill_manual(values = cbPalette) 
+
+
+covid_plot_onset 
+
+#ggsave("epi_curve_onset.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+## Missoula county R results
+inc_data <- covid_data %>% 
+   filter(symptom_onset_date > "2020-05-30" & symptom_onset_date < Sys.Date() - 21) 
+
+# create an incidence dataset
+missoula_inc_data <- incidence(inc_data$symptom_onset_date_new)
+
+# Use serial interval from MT data
+serial_interval_mean <- 6.3
+serial_interval_sd <- 5.4
+
+# save settings to do rolling 14-day averages
+county_n <- as.data.frame(missoula_inc_data$dates)
+time_var <- nrow(county_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
+# run analysis
+estimate_results <- estimate_R(missoula_inc_data, method="parametric_si", 
+                               config = make_config(list(mean_si = serial_interval_mean, 
+                                                         std_si = serial_interval_sd,
+                                                      t_start =  time_start,
+                                                      t_end = time_end)))
+
+# pull out results from analysis and save dataset
+colomns <- c(1:4, 8)
+county_r <- (estimate_results$R[,colomns]) %>% 
+   mutate(label = "14-day R-value") %>% 
+   rename(mean_r = `Mean(R)`,
+          sd_r = `Std(R)`,
+          median_r = `Median(R)`)
+
+county_dates <- as.data.frame(estimate_results$dates)
+county_i <- as.data.frame(estimate_results$I)
+county_cil <- as.data.frame(estimate_results$R$`Quantile.0.025(R)`)
+county_cih <- as.data.frame(estimate_results$R$`Quantile.0.975(R)`)
+county_dates_new <- cbind(county_dates, county_i) %>% 
+   rename(dates = 1,
+          incidence = 2) %>% 
+   mutate(dates = ymd(dates))
+county_dates_new <- county_dates_new[-(1:14), 1:2]
+county_dates_new <- cbind(county_dates_new, county_cil, county_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+county_r_clean <- cbind(county_r, county_dates_new)
+   
+# generic plot of R values
+estimate_plots <- estimate_R_plots(estimate_results, what = "R")
+# estimate_plots
+
+
+missoula_r_plot <- county_r_clean %>% 
+   filter(dates > "2020-07-01") %>% 
+   ggplot() +
+   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   #geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   #geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
+   labs(title = "COVID-19 Rolling 14-day R-values, Missoula County",
+        color = "") +
+   ylab("R-value") +
+   xlab("") +
+   geom_hline(yintercept = 1, color = "red", size = 1.2) +
+   scale_x_date(date_breaks = "1 days", date_labels = "%d-%b") +
+   #scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
+   theme_minimal() +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 18, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 16, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 16, colour = "black"),
+         legend.text = element_text(size = 16, colour = "black"),
+         axis.title.y = element_text(size = 16, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 16, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = c("black")) 
+missoula_r_plot
+
+#ggsave("C:/R/covid19/missoula_r_plot.png", width = 10, height = 6)
 ```
 
 \pagebreak  
@@ -332,502 +876,4 @@ covid_plot_test_date
 #ggsave("epi_curve_test_date.jpg", width = 10, height = 5)
 ```
 
-\pagebreak  
-
-```{r}
-#Symptoms and gender
-covid_plot <- covid_data %>% 
-   filter(!is.na(gender)) %>% 
-   pivot_longer(cols = c(symptom_taste_smell:symptom_respiratory),
-                names_to = "variable", values_to = "values") %>% 
-   group_by(variable, gender) %>% 
-   mutate(values = as.numeric(values),
-          values = sum(values)) %>% 
-   distinct(variable, .keep_all = TRUE) %>% 
-   ungroup() %>% 
-   arrange(gender, values) %>% 
-   mutate(variable = factor(variable,
-                            labels = c("Head/body aches", "Fatigue/lethargy",
-                                       "Fever/chills", "Nausea/Vomiting/Diarrhea",
-                                       "Cough/Short of breath", "Sinus/throat", 
-                                       "Taste/Smell Loss"))) %>% 
-   ggplot(aes(x = variable, y = values, fill = gender)) +   
-     geom_bar(stat = "identity", width = .6) +   
-     labs(title = "Symptoms reported at time of testing", y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 200, 10)), labels = c(seq(0, 200, 10))) +
-     coord_flip() +
-     theme_minimal() +
-     theme(plot.title = element_text(hjust = .5),
-           strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 18, colour = "black"),
-           panel.grid = element_blank(),
-           axis.text.x = element_text(size = 14, colour = "black", 
-                                     angle = 25, vjust = 0.75, hjust = 0.9),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black"),
-           axis.text.y = element_text(size = 16, colour = "black"),
-           axis.title.y = element_text(size = 16, colour = "white"),
-           axis.title.x = element_blank(),
-           axis.line.x = element_line(colour = "black", size = 1.2), 
-           axis.line.y = element_line(colour = "black", size = 1.2), 
-           axis.ticks = element_line(colour = "black")) + 
-     scale_fill_manual(values = cbPalette)
-covid_plot
-
-#ggsave("symptoms_plot_gender.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-#Symptoms and age group
-covid_plot <- covid_data %>% 
-   filter(!is.na(age_group)) %>% 
-   pivot_longer(cols = c(symptom_taste_smell:symptom_respiratory),
-                names_to = "variable", values_to = "values") %>% 
-   group_by(variable, age_group) %>% 
-   mutate(values = as.numeric(values),
-          values = sum(values)) %>% 
-   distinct(variable, .keep_all = TRUE) %>% 
-   ungroup() %>% 
-   arrange(age_group, values) %>% 
-   mutate(variable = factor(variable,
-                            labels = c("Head/body aches", "Fatigue/lethargy",
-                                       "Fever/chills", "Nausea/Vomiting/Diarrhea",
-                                       "Cough/Short of breath", "Sinus/throat", 
-                                       "Taste/Smell Loss"))) %>% 
-   ggplot(aes(x = variable, y = values, fill = age_group)) +   
-     geom_bar(stat = "identity", width = .6) +   
-     labs(title = "Cases with symptoms, by age group", y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 200, 10)), labels = c(seq(0, 200, 10))) +
-     coord_flip() +
-     theme_minimal() +
-     theme(plot.title = element_text(hjust = .5),
-           strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 18, colour = "black"),
-           panel.grid = element_blank(),
-           axis.text.x = element_text(size = 14, colour = "black", 
-                                     angle = 25, vjust = 0.75, hjust = 0.9),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black"),
-           axis.text.y = element_text(size = 16, colour = "black"),
-           axis.title.y = element_text(size = 16, colour = "white"),
-           axis.title.x = element_blank(),
-           axis.line.x = element_line(colour = "black", size = 1.2), 
-           axis.line.y = element_line(colour = "black", size = 1.2), 
-           axis.ticks = element_line(colour = "black")) + 
-     scale_fill_manual(values = cbPalette)
-covid_plot
-
-#ggsave("symptoms_plot_age.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r, include=FALSE, eval=FALSE}
-# Travel and previous contact
-covid_data_table <- covid_data %>% 
-   mutate(contact_with_case = as.character(contact_with_case),
-          contact_with_case = if_else(contact_with_case == "No",
-                                      "Unknown", contact_with_case))
-
-save_table <- data.frame(table(covid_data_table$travel_hx, covid_data_table$contact_with_case))
-
-plot_table <- save_table %>% 
-   mutate(Var1 = as.character(Var1),
-          Var2 = as.character(Var2)) %>% 
-   mutate(spread_method = if_else(Var1 == "Yes" & Var2 == "Yes", 
-                                  "Traveled/known contact with case", "Other"),
-          spread_method = if_else(Var1 == "No" & Var2 == "Yes", 
-                                  "No travel/known contact with case", spread_method),
-          spread_method = if_else(Var1 == "Yes" & Var2 == "Unknown", 
-                                  "Traveled/unknown contact", spread_method),
-          spread_method = if_else(Var1 == "No" & Var2 == "Unknown", 
-                                  "No travel/unknown contact", spread_method)) %>% 
-   mutate(total_n = sum(Freq),
-          group_percent = round(Freq/total_n*100, digits = 0))
-   
-
-covid_piechart <- plot_table %>% 
-   ggplot(aes("", Freq, fill = spread_method)) +
-     geom_bar(stat = "identity", color = "black", width = 1) +
-     coord_polar("y") +
-     geom_text(aes(label = Freq), 
-               position = position_stack(vjust = 0.5),
-               color = "white", size = 6) +
-     labs(title = "MCCHD COVID-19 infections", fill = "",
-          subtitle = "Travel and contact with known cases (n)") + 
-     theme_void() +
-     theme(title = element_text(size = 16, colour = "black"),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black")) +
-           scale_fill_manual(values = cbPalette)
-covid_piechart
-
-#ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-# Hospitalized and ventilated
-covid_data_table <- covid_data %>% 
-   mutate(ventilated2 = as.character(ventilated)) %>% 
-   mutate(ventilated2 = if_else(hospitalized == "No" & ventilated2 == "No", 
-                               "NA", ventilated2)) %>% 
-   replace_with_na(replace = list(ventilated2 = "NA")) %>% 
-   mutate(ventilated2 = if_else(is.na(ventilated2) & hospitalized == "No", 
-                                "Not hospitalized", ventilated2)) %>% 
-   mutate(ventilated2 = if_else(is.na(ventilated2) & hospitalized == "Yes", 
-                               "No", ventilated2))
-   
-
-save_table <- data.frame(table(covid_data_table$hospitalized, 
-                               covid_data_table$ventilated2)) %>% 
-   filter(Freq > 0)
-
-plot_table <- save_table %>% 
-   mutate(Var1 = as.character(Var1),
-          Var2 = as.character(Var2)) %>% 
-   mutate(hospitalized = if_else(Var1 == "Yes" & Var2 == "Yes", 
-                                  "Hospitalized/ventilated", "Not hospitalized"),
-          hospitalized = if_else(Var1 == "Yes" & Var2 == "No", 
-                                  "Hospitalized/not ventilated", hospitalized)) %>% 
-   mutate(total_n = sum(Freq),
-          group_percent = round(Freq/total_n*100, digits = 0))
-   
-
-covid_piechart <- plot_table %>% 
-   ggplot(aes("", Freq, fill = hospitalized)) +
-     geom_bar(stat = "identity", color = "black", width = 1) +
-     coord_polar("y") +
-     geom_text(aes(label = Freq), 
-               position = position_stack(vjust = 0.5),
-               color = "white", size = 6) +
-     labs(title = "MCCHD COVID-19 infections", fill = "",
-          subtitle = "Hospitalized cases with ventilators (n)") + 
-     theme_void() +
-     theme(title = element_text(size = 16, colour = "black"),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black")) +
-           scale_fill_manual(values = cbPalette)
-covid_piechart
-
-#ggsave("piechart_hosp_vent.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r, include=FALSE, eval=FALSE}
-# Hospitalized and chronic conditions
-save_table <- data.frame(table(covid_data_table$hospitalized, 
-                               covid_data_table$chronic_conditions))
-
-plot_table <- save_table %>% 
-   mutate(Var1 = as.character(Var1),
-          Var2 = as.character(Var2)) %>% 
-   mutate(hospitalized = if_else(Var1 == "Yes" & Var2 == "Yes", 
-                                  "Hospitalized/chronic condition", "Other"),
-          hospitalized = if_else(Var1 == "Yes" & Var2 == "No", 
-                                  "Hospitalized/no chronic condition", hospitalized),
-          hospitalized = if_else(Var1 == "No" & Var2 == "Yes", 
-                                  "Not hospitalized/chronic condition", hospitalized),
-          hospitalized = if_else(Var1 == "No" & Var2 == "No", 
-                                  "Not hospitalized/no chronic condition", hospitalized)) %>% 
-   mutate(total_n = sum(Freq),
-          group_percent = round(Freq/total_n*100, digits = 0))
-   
-
-covid_piechart <- plot_table %>% 
-   ggplot(aes("", Freq, fill = hospitalized)) +
-     geom_bar(stat = "identity", color = "black", width = 1) +
-     coord_polar("y") +
-     geom_text(aes(label = Freq), 
-               position = position_stack(vjust = 0.5),
-               color = "white", size = 6) +
-     labs(title = "MCCHD COVID-19 infections", fill = "",
-          subtitle = "Hospitalized cases with chronic conditions (n)") + 
-     theme_void() +
-     theme(title = element_text(size = 16, colour = "black"),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black")) +
-           scale_fill_manual(values = cbPalette)
-covid_piechart
-
-#ggsave("piechart_hosp_chronic.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-piechart_function <- function(data = covid_data, plot_fill, var_label) {
-
-chart_data <- data %>% 
-   rename(chart_var = plot_fill) %>% 
-   filter(!is.na(chart_var)) %>% 
-   mutate(total_n = n()) %>% 
-   group_by(chart_var, total_n) %>% 
-   mutate(group_n = n()) %>% 
-   distinct(group_n) %>% 
-   mutate(group_percent = round(group_n/total_n*100)) %>% 
-   ungroup()
-   
-covid_piechart <- chart_data %>% 
-   ggplot(aes("", group_n, fill = chart_var)) +
-     geom_bar(stat = "identity", color = "black", width = 1) +
-     coord_polar("y") +
-     geom_text(aes(label = group_n), 
-               position = position_stack(vjust = 0.5),
-               color = "white", size = 6) +
-     labs(title = "MCCHD COVID-19 infections", fill = "",
-          subtitle = var_label) + 
-     theme_void() +
-     theme(title = element_text(size = 16, colour = "black"),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black")) +
-           scale_fill_manual(values = cbPalette)
-covid_piechart
-
-}
-```
-
-```{r}
-piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts (n)")
-
-#ggsave("piechart_contacts.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-#CrossTable(covid_data$age_group, covid_data$number_contacts_categorical,
-#           digits = 1, prop.r=FALSE, prop.c=FALSE,
-#           prop.t=FALSE, prop.chisq=FALSE,
-#           dnn = c("Age group", "Number of contacts"), format = "SPSS")
-
-
-sum_nums <- covid_data %>% 
-   rename("Age group" = age_group) %>% 
-   group_by(`Age group`) %>% 
-   filter(!is.na(`Age group`)) %>% 
-   summarize("Mean # contacts" = round(mean(number_contacts, na.rm = TRUE), digits = 1),
-             "SD # contacts" = round(sd(number_contacts, na.rm = TRUE), digits = 1),
-             "Min # contacts" = round(min(number_contacts, na.rm = TRUE), digits = 1),
-             "Median # contacts" = round(median(number_contacts, na.rm = TRUE), digits = 1),
-             "Max # contacts" = round(max(number_contacts, na.rm = TRUE), digits = 1)) 
-kable(sum_nums)
-```
-
-\pagebreak  
-
-```{r}
-piechart_function(plot_fill = "community_spread_new", var_label = "Community Spread (n)")
-
-#ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-piechart_function(plot_fill = "gender", var_label = "Gender (n)")
-
-#ggsave("piechart_gender.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-piechart_function(plot_fill = "age_group", var_label = "Age group (n)")
-
-#ggsave("piechart_age.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r, fig.width = 11, fig.height = 5}
-# Epi curve - date of onset
-
-total_cases <- sum(covid_data$case)
-date_today <- format(Sys.Date(), "%d %b %Y")
-date_14 <- format(Sys.Date() - 14, "%d %b %Y")
-
-covid_plot_onset <- covid_data %>% 
-   filter(!is.na(symptom_onset_date_new)) %>% 
-   filter(symptom_onset_date_new > "2020-05-30") %>% 
-   group_by(symptom_onset_date_new) %>% 
-   ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 21, xmax = Sys.Date(), ymin=0, ymax=Inf),
-               fill = "gray80", alpha = 0.05) +
-     geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-07-09")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-10, y = 8, 
-                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
-                fill = NA) +
-     labs(title = "COVID-19 Cases in Missoula County Since June 1, 2020",
-          subtitle = paste0("Total cases = ", total_cases),
-          fill = " ") +
-     ylab("Number of Cases") +
-     xlab("Date") +
-     scale_x_date(breaks = seq.Date(from = as.Date("2020-06-01"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "3 days"),
-                  labels = seq.Date(from = as.Date("2020-06-01"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "3 days"),
-                  date_labels = "%d-%b") +
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 12, colour = "black"),
-           panel.grid = element_blank(),
-           panel.grid.major.y = element_line(colour = "gray75"),
-           axis.text.x = element_text(size = 12, colour = "black", 
-                                     angle = 90, vjust = 0.4),
-           axis.text.y = element_text(size = 12, colour = "black"),
-           legend.position = "top",
-           axis.title.y = element_text(size = 12, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 12, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           legend.text = element_text(size = 12, colour = "black"),
-           axis.line.x = element_blank(), 
-           axis.line.y = element_blank(), 
-           axis.ticks = element_blank())  +
-     scale_fill_manual(values = cbPalette) 
-
-
-covid_plot_onset 
-
-#ggsave("epi_curve_onset.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-## Missoula county R results
-inc_data <- covid_data %>% 
-   filter(symptom_onset_date > "2020-05-30" & symptom_onset_date < Sys.Date() - 21) 
-
-# create an incidence dataset
-missoula_inc_data <- incidence(inc_data$symptom_onset_date_new)
-
-# Use serial interval from MT data
-serial_interval_mean <- 6.3
-serial_interval_sd <- 5.4
-
-# save settings to do rolling 14-day averages
-county_n <- as.data.frame(missoula_inc_data$dates)
-time_var <- nrow(county_n)
-time_start <- seq(2, time_var-13)
-time_end <- time_start + 13
-
-# run analysis
-estimate_results <- estimate_R(missoula_inc_data, method="parametric_si", 
-                               config = make_config(list(mean_si = serial_interval_mean, 
-                                                         std_si = serial_interval_sd,
-                                                      t_start =  time_start,
-                                                      t_end = time_end)))
-
-# pull out results from analysis and save dataset
-colomns <- c(1:4, 8)
-county_r <- (estimate_results$R[,colomns]) %>% 
-   mutate(label = "14-day R-value") %>% 
-   rename(mean_r = `Mean(R)`,
-          sd_r = `Std(R)`,
-          median_r = `Median(R)`)
-
-county_dates <- as.data.frame(estimate_results$dates)
-county_i <- as.data.frame(estimate_results$I)
-county_cil <- as.data.frame(estimate_results$R$`Quantile.0.025(R)`)
-county_cih <- as.data.frame(estimate_results$R$`Quantile.0.975(R)`)
-county_dates_new <- cbind(county_dates, county_i) %>% 
-   rename(dates = 1,
-          incidence = 2) %>% 
-   mutate(dates = ymd(dates))
-county_dates_new <- county_dates_new[-(1:14), 1:2]
-county_dates_new <- cbind(county_dates_new, county_cil, county_cih) %>% 
-   rename(cl_low = 3,
-          cl_high = 4)
-county_r_clean <- cbind(county_r, county_dates_new)
-   
-# generic plot of R values
-estimate_plots <- estimate_R_plots(estimate_results, what = "R")
-# estimate_plots
-
-
-missoula_r_plot <- county_r_clean %>% 
-   filter(dates > Sys.Date() - 35) %>% 
-   ggplot() +
-   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
-   #geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
-   #geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-values, Missoula County",
-        color = "") +
-   ylab("R-value") +
-   xlab("") +
-   geom_hline(yintercept = 1, color = "red", size = 1.2) +
-   scale_x_date(date_breaks = "1 days", date_labels = "%d-%b") +
-   #scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 18, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 16, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 16, colour = "black"),
-         legend.text = element_text(size = 16, colour = "black"),
-         axis.title.y = element_text(size = 16, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 16, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = c("black")) 
-missoula_r_plot
-
-#ggsave("C:/R/covid19/missoula_r_plot.png", width = 10, height = 8)
-```
-
-
-```{r}
-contacts_plot <- covid_data %>% 
-   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
-   group_by(age_group, month_of_year) %>% 
-   mutate(mean_contacts = mean(number_contacts, na.rm = TRUE)) %>% 
-   filter(!is.na(age_group)) %>% 
-   filter(!is.na(month_of_year)) %>% 
-   ggplot() +
-      geom_line(aes(month_of_year, mean_contacts, group = age_group, 
-                    color = age_group), size = 1.5) +
-   theme_minimal() +
-   labs(title = "Mean number of contacts per COVID case, Missoula County",
-        subtitle = "By age group, per month since March, 2020",
-        color = "Age group") +
-   ylab("Mean # contacts") +
-   xlab("") +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 18, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 16, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 16, colour = "black"),
-         legend.text = element_text(size = 16, colour = "black"),
-         axis.title.y = element_text(size = 16, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 16, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = cbPalette)
-
-contacts_plot
-
-#ggsave("C:/R/covid19/contacts_plot.png", width = 10, height = 6)
-```
 
