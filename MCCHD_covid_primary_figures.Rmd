@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of August 18, 2020"
+date: "Data as of August 20, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -360,7 +360,7 @@ plot_table <- save_table %>%
           spread_method = if_else(Var1 == "No" & Var2 == "Unknown", 
                                   "No travel/unknown contact", spread_method)) %>% 
    mutate(total_n = sum(Freq),
-          group_percent = round(Freq/total_n*100, digits = 0))
+          group_percent = round(Freq/total_n*100, digits = 0)) 
    
 
 covid_piechart <- plot_table %>% 
@@ -484,14 +484,17 @@ chart_data <- data %>%
    group_by(chart_var, total_n) %>% 
    mutate(group_n = n()) %>% 
    distinct(group_n) %>% 
-   mutate(group_percent = round(group_n/total_n*100)) %>% 
-   ungroup()
+   mutate(group_percent = round(group_n/total_n*100),
+          right_par = " (",
+          left_par = "%)") %>% 
+   ungroup() %>% 
+   unite(group_lab, c("group_n", "right_par", "group_percent", "left_par"), sep = "", remove = FALSE)
    
 covid_piechart <- chart_data %>% 
    ggplot(aes("", group_n, fill = chart_var)) +
      geom_bar(stat = "identity", color = "black", width = 1) +
      coord_polar("y") +
-     geom_text(aes(label = group_n), 
+     geom_text(aes(label = group_lab), 
                position = position_stack(vjust = 0.5),
                color = "white", size = 6) +
      labs(title = "MCCHD COVID-19 infections", fill = "",
@@ -508,7 +511,7 @@ covid_piechart
 
 
 ```{r}
-piechart_function(plot_fill = "community_spread_new", var_label = "Community Spread (n)")
+piechart_function(plot_fill = "community_spread_new", var_label = "Community Spread")
 
 #ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
 ```
@@ -516,7 +519,7 @@ piechart_function(plot_fill = "community_spread_new", var_label = "Community Spr
 \pagebreak  
 
 ```{r}
-piechart_function(plot_fill = "gender", var_label = "Gender (n)")
+piechart_function(plot_fill = "gender", var_label = "Gender")
 
 #ggsave("piechart_gender.jpg", width = 10, height = 5)
 ```
@@ -525,7 +528,7 @@ piechart_function(plot_fill = "gender", var_label = "Gender (n)")
 \pagebreak  
 
 ```{r}
-piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts (n)")
+piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts")
 
 #ggsave("piechart_contacts.jpg", width = 10, height = 5)
 ```
@@ -538,7 +541,9 @@ sum_nums <- covid_data %>%
    group_by(`Age group`) %>% 
    filter(!is.na(`Age group`)) %>% 
    summarize("Mean # contacts" = round(mean(number_contacts, na.rm = TRUE), digits = 1),
+             "Std dev" = round(sd(number_contacts, na.rm = TRUE), digits = 1),
              "Min # contacts" = round(min(number_contacts, na.rm = TRUE), digits = 1),
+             "Median # contacts" = round(median(number_contacts, na.rm = TRUE), digits = 1),
              "Max # contacts" = round(max(number_contacts, na.rm = TRUE), digits = 1)) 
 
 kable(sum_nums, caption = "Number of contacts by age group, Missoula County",
