@@ -270,6 +270,7 @@ state_hosp_data <- state_data %>%
 
 state_hosp <- state_hosp_data %>% 
    filter(mt_case != "X") %>% 
+   filter(!is.na(age_group_new)) %>% 
    group_by(age_group_new) %>% 
    mutate(age_group_cases = sum(case)) %>% 
    mutate(hosp = if_else(hospitalization == "Hosp: Yes" | hospitalization == "Hosp: Past", 1, 0),
@@ -396,6 +397,10 @@ hosp_data_daily <- state_data_clean %>%
    filter(mt_case != "X") %>% 
    select(dates, hospitalization, case) %>% 
    mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Hosp: Yes",
+                                              "Hosp: No",
+                                              "Hosp: Past",
+                                              "Hosp: Unknown"),
                                    labels = c("hosp_active",
                                               "hosp_no",
                                               "hosp_past",
@@ -408,8 +413,7 @@ hosp_data_daily <- state_data_clean %>%
    pivot_wider(names_from = "hospitalization", values_from = "sum_hosp") %>% 
    mutate(hosp_active = if_else(is.na(hosp_active), 0, hosp_active),
           hosp_no = if_else(is.na(hosp_no), 0, hosp_no),
-          hosp_past = if_else(is.na(hosp_past), 0, hosp_past),
-          hosp_unknown = if_else(is.na(hosp_unknown), 0, hosp_unknown)) %>% 
+          hosp_past = if_else(is.na(hosp_past), 0, hosp_past)) %>% 
    group_by(dates) %>% 
    mutate(daily_hosp = hosp_active + hosp_past) %>% 
    ungroup() %>% 
@@ -507,7 +511,7 @@ gs4_auth(token = drive_token())
 
 
 
-# Write State/region R data to google
+# Write age case/rate data to google
 mt_data <- age_rates %>% 
    select(age_group, age_group_cases) %>% 
    rename("Age_Group" = age_group,
@@ -542,3 +546,57 @@ sheet_write(mt_data,
             ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
             sheet = 4)
 
+
+
+# Write case/hosp/death data to google
+mt_data <- case_hosp_test_outcome %>% 
+   select(dates, daily_cases, total_cases, daily_recovered, total_recovered) %>% 
+   rename("Date" = dates,
+          "Daily_Cases" = daily_cases,
+          "Total_Cases" = total_cases,
+          "Daily_Recovered" = daily_recovered,
+          "Total_Recovered" = total_recovered)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
+            sheet = 1)
+
+mt_data <- case_hosp_test_outcome %>% 
+   select(dates, daily_hosp, total_hosp) %>% 
+   rename("Date" = dates,
+          "Daily_Hospitalizations" = daily_hosp,
+          "Total_Hospitalizations" = total_hosp)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
+            sheet = 2)
+
+mt_data <- case_hosp_test_outcome %>% 
+   select(dates, daily_deceased, total_deceased) %>% 
+   rename("Date" = dates,
+          "Daily_Deceased" = daily_deceased,
+          "Total_Deceased" = total_deceased)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
+            sheet = 3)
+
+mt_data <- case_hosp_test_outcome %>% 
+   select(dates, daily_active, total_active) %>% 
+   rename("Date" = dates,
+          "Daily_Active" = daily_active,
+          "Total_Active" = total_active)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
+            sheet = 4)
+
+mt_data <- case_hosp_test_outcome %>% 
+   select(dates, total_tests, daily_tests) %>% 
+   rename("Date" = dates,
+          "Total_Tests_Completed" = total_tests,
+          "New_Tests_Completed" = daily_tests)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
+            sheet = 5)

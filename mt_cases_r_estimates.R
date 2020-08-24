@@ -420,6 +420,7 @@ lewisandclark_r <- county_analysis_function("Lewis and Clark", "Lewis and Clark 
 flathead_r <- county_analysis_function("Flathead", "Flathead County")
 cascade_r <- county_analysis_function("Cascade", "Cascade County")
 silverbow_r <- county_analysis_function("Silver Bow", "Silver Bow County")
+rosebud_r <- county_analysis_function("Rosebud", "Rosebud County")
 
 
 
@@ -428,7 +429,7 @@ silverbow_r <- county_analysis_function("Silver Bow", "Silver Bow County")
 all_regions_r <- rbind(state_r, reg1_r, reg2_r, reg3_r, reg4_r, reg5_r,
                        missoula_r, gallatin_r, yellowstone_r, bighorn_r,
                        lake_r, lewisandclark_r, flathead_r, cascade_r,
-                       silverbow_r) %>% 
+                       silverbow_r, rosebud_r) %>% 
    left_join(all_data_wide, by = c("region", "dates")) %>% 
    mutate(daily_cases = incidence) %>% 
    mutate(mean_r = round(mean_r, digits = 2),
@@ -717,6 +718,18 @@ sheet_write(sb_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 9)
 
+rosebud_data <- all_regions_r %>% 
+   filter(region == "Rosebud County") %>% 
+   select(dates, cl_low, mean_r, cl_high) %>% 
+   rename("Dates" = dates,
+          "Lower_Confidence_Limit" = cl_low,
+          "Mean_R" = mean_r,
+          "Upper_Confidence_Limit" = cl_high)
+
+sheet_write(rosebud_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
+            sheet = 10)
+
 
 
 # Write county case data to google
@@ -809,3 +822,13 @@ sb_data <- all_regions_r %>%
 sheet_write(sb_data, 
             ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
             sheet = 9)
+
+rosebud_data <- all_regions_r %>% 
+   filter(region == "Rosebud County") %>% 
+   select(dates, incidence) %>% 
+   rename("Dates" = dates,
+          "Cases" = incidence)
+
+sheet_write(rosebud_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
+            sheet = 10)
