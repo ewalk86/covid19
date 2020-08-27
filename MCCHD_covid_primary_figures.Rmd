@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of August 24, 2020"
+date: "Data as of August 27, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -511,7 +511,7 @@ covid_piechart
 
 
 ```{r}
-piechart_function(plot_fill = "community_spread_new", var_label = "Community Spread")
+piechart_function(plot_fill = "community_spread_new", var_label = "Community Spread - All Cases")
 
 #ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
 ```
@@ -519,7 +519,7 @@ piechart_function(plot_fill = "community_spread_new", var_label = "Community Spr
 \pagebreak  
 
 ```{r}
-piechart_function(plot_fill = "gender", var_label = "Gender")
+piechart_function(plot_fill = "gender", var_label = "Gender - All Cases")
 
 #ggsave("piechart_gender.jpg", width = 10, height = 5)
 ```
@@ -528,7 +528,7 @@ piechart_function(plot_fill = "gender", var_label = "Gender")
 \pagebreak  
 
 ```{r}
-piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts")
+piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts - All Cases")
 
 #ggsave("piechart_contacts.jpg", width = 10, height = 5)
 ```
@@ -606,14 +606,14 @@ covid_plot_onset <- covid_data %>%
    filter(symptom_onset_date_new > "2020-05-30") %>% 
    group_by(symptom_onset_date_new) %>% 
    ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 21, xmax = Sys.Date(), ymin=0, ymax=Inf),
+     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
      geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-07-09")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
                  y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-10, y = 8, 
+     geom_label(aes(x = Sys.Date()-7, y = 8, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County Since June 1, 2020",
@@ -657,57 +657,89 @@ covid_plot_onset
 
 ```{r}
 ## Missoula county R results
-inc_data <- covid_data %>% 
-   filter(symptom_onset_date > "2020-05-30" & symptom_onset_date < Sys.Date() - 14) 
+## Using State data to be able to incorporate local vs imported cases
+## Only updates once per week
 
-# create an incidence dataset
-missoula_inc_data <- incidence(inc_data$symptom_onset_date_new)
+case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_08.27.2020.xlsx"),
+                                 sheet = 2) %>% 
+   rename_all(tolower) %>% 
+   select(-case_no) %>% 
+   rownames_to_column(var = "case_no") %>% 
+   mutate(local = if_else(local_import == 0, 1, 0),
+          imported = local_import,
+          date_reported = ymd(date_reported),
+          dates = ymd(symptom_onset_date),
+          case = 1) %>% 
+   filter(!is.na(dates)) %>% 
+   filter(county == "Missoula") %>% 
+   filter(dates > "2020-05-30" & dates < Sys.Date() - 14) %>% 
+   arrange(dates) %>% 
+   ungroup() %>% 
+   select(dates, local, imported) %>% 
+   group_by(dates) %>% 
+   mutate(local = sum(local),
+          imported = sum(imported)) %>% 
+   distinct(dates, .keep_all = TRUE) %>% 
+   arrange(dates)
 
-# Use serial interval from MT data
-serial_interval_mean <- 6.3
-serial_interval_sd <- 5.4
 
-# save settings to do rolling 14-day averages
-county_n <- as.data.frame(missoula_inc_data$dates)
-time_var <- nrow(county_n)
+case_data_2 <- case_data %>% 
+   mutate(I = local + imported) %>% 
+   select(dates, I) 
+
+latest_date <- format(Sys.Date() - 14, "%Y-%m-%d")
+
+incidence_data <- incidence(case_data_2$dates, last_date = latest_date)
+
+li_inc_data <- as.data.frame(incidence_data$dates) %>% 
+   mutate(dates = ymd(incidence_data$dates)) %>% 
+   select(dates) %>% 
+   left_join(case_data, by = "dates") %>% 
+   mutate(local = if_else(is.na(local), 0, local),
+          imported = if_else(is.na(imported), 0, imported))
+
+
+# Set dates for 14-day rolling averages
+missoula_n <- as.data.frame(li_inc_data$dates)
+time_var <- nrow(missoula_n)
 time_start <- seq(2, time_var-13)
 time_end <- time_start + 13
 
-# run analysis
-estimate_results <- estimate_R(missoula_inc_data, method="parametric_si", 
-                               config = make_config(list(mean_si = serial_interval_mean, 
-                                                         std_si = serial_interval_sd,
-                                                      t_start =  time_start,
-                                                      t_end = time_end)))
 
-# pull out results from analysis and save dataset
+# Serial Interval derived from State of Montana paired case data
+serial_interval_mean <- 6.3
+serial_interval_sd <- 5.4
+
+r_results <- estimate_R(li_inc_data, method="parametric_si", 
+                           config = make_config(list(mean_si = serial_interval_mean, 
+                                                     std_si = serial_interval_sd,
+                                                     t_start =  time_start,
+                                                     t_end = time_end)))
+
+# Format and save analysis results
 colomns <- c(1:4, 8)
-county_r <- (estimate_results$R[,colomns]) %>% 
-   mutate(label = "14-day R-value") %>% 
+missoula_r <- (r_results$R[,colomns]) %>% 
+   mutate(region = "Missoula County") %>% 
    rename(mean_r = `Mean(R)`,
           sd_r = `Std(R)`,
           median_r = `Median(R)`)
 
-county_dates <- as.data.frame(estimate_results$dates)
-county_i <- as.data.frame(estimate_results$I)
-county_cil <- as.data.frame(estimate_results$R$`Quantile.0.025(R)`)
-county_cih <- as.data.frame(estimate_results$R$`Quantile.0.975(R)`)
-county_dates_new <- cbind(county_dates, county_i) %>% 
+missoula_dates <- as.data.frame(r_results$dates)
+missoula_i <- as.data.frame(r_results$I)
+missoula_cil <- as.data.frame(r_results$R$`Quantile.0.025(R)`)
+missoula_cih <- as.data.frame(r_results$R$`Quantile.0.975(R)`)
+missoula_dates_new <- cbind(missoula_dates, missoula_i) %>% 
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
-county_dates_new <- county_dates_new[-(1:14), 1:2]
-county_dates_new <- cbind(county_dates_new, county_cil, county_cih) %>% 
+missoula_dates_new <- missoula_dates_new[-(1:14), 1:2]
+missoula_dates_new <- cbind(missoula_dates_new, missoula_cil, missoula_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
-county_r_clean <- cbind(county_r, county_dates_new)
-   
-# generic plot of R values
-estimate_plots <- estimate_R_plots(estimate_results, what = "R")
-# estimate_plots
+missoula_r <- cbind(missoula_r, missoula_dates_new)
 
 
-missoula_r_plot <- county_r_clean %>% 
+missoula_r_plot <- missoula_r %>% 
    filter(dates > "2020-07-01") %>% 
    ggplot() +
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
@@ -754,7 +786,7 @@ date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 covid_plot_onset <- covid_data %>% 
    filter(!is.na(symptom_onset_date_new)) %>% 
    ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 21, xmax = Sys.Date(), ymin=0, ymax=Inf),
+     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
      geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
@@ -823,7 +855,7 @@ date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
 covid_plot_test_date <- covid_data %>% 
    ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 21, xmax = Sys.Date(), ymin=0, ymax=Inf),
+     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
      geom_col(aes(test_date_new, case, fill = test_date_indicator)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
