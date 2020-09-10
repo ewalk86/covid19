@@ -61,7 +61,7 @@ counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.02.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.10.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -113,7 +113,7 @@ state_data_wide <- mt_case_data %>%
 
 # Filter and format wide data for state and 5 health regions
 state_wide_date <- state_data_wide %>% 
-   select(region, dates, 8:76) %>% 
+   select(region, dates, 8:75) %>% 
    mutate(region = "state") %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
@@ -127,7 +127,7 @@ state_wide_date <- state_data_wide %>%
 
 reg1_wide_date <- state_data_wide %>% 
    filter(region == 1) %>% 
-   select(region, dates, 8:76) %>% 
+   select(region, dates, 8:75) %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
    mutate(case = 1,
@@ -140,7 +140,7 @@ reg1_wide_date <- state_data_wide %>%
 
 reg2_wide_date <- state_data_wide %>% 
    filter(region == 2) %>% 
-   select(region, dates, 8:76) %>% 
+   select(region, dates, 8:75) %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
    mutate(case = 1,
@@ -153,7 +153,7 @@ reg2_wide_date <- state_data_wide %>%
 
 reg3_wide_date <- state_data_wide %>% 
    filter(region == 3) %>% 
-   select(region, dates, 8:76) %>% 
+   select(region, dates, 8:75) %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
    mutate(case = 1,
@@ -166,7 +166,7 @@ reg3_wide_date <- state_data_wide %>%
 
 reg4_wide_date <- state_data_wide %>% 
    filter(region == 4) %>% 
-   select(region, dates, 8:76) %>% 
+   select(region, dates, 8:75) %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
    mutate(case = 1,
@@ -179,7 +179,7 @@ reg4_wide_date <- state_data_wide %>%
 
 reg5_wide_date <- state_data_wide %>% 
    filter(region == 5) %>% 
-   select(region, dates, 8:76) %>% 
+   select(region, dates, 8:75) %>% 
    group_by(region, dates) %>% 
    mutate_all(sum, na.rm = TRUE) %>% 
    mutate(case = 1,

@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of September 3, 2020"
+date: "Data as of September 10, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -660,7 +660,7 @@ covid_plot_onset
 ## Using State data to be able to incorporate local vs imported cases
 ## Only updates once per week
 
-case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.02.2020.xlsx"),
+case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.10.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -753,7 +753,7 @@ missoula_r_plot <- missoula_r %>%
    ylab("R-value") +
    xlab("") +
    geom_hline(yintercept = 1, color = "red", size = 1.2) +
-   scale_x_date(date_breaks = "1 days", date_labels = "%d-%b") +
+   scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
    #scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
