@@ -61,7 +61,7 @@ counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.10.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 

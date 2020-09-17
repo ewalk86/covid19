@@ -22,6 +22,7 @@ library(rlist)
 library(Rsftp)
 library(googledrive)
 library(googlesheets4)
+library(data.table)
 #library(sftp)
 
 
@@ -451,11 +452,13 @@ outcome_data_daily <- state_data_clean %>%
 
 case_data_daily <- state_data_clean %>% 
    filter(mt_case != "X") %>% 
+   arrange(dates) %>% 
    select(dates, case) %>% 
    group_by(dates) %>% 
    mutate(daily_cases = sum(case)) %>% 
    ungroup() %>% 
    distinct(dates, .keep_all = TRUE) %>% 
+   mutate(week_mean_cases = round(zoo::rollmean(daily_cases, 7, align = "right", fill = NA), digits = 1)) %>% 
    mutate(total_cases = cumsum(daily_cases)) %>% 
    select(-case)
 
@@ -476,7 +479,12 @@ case_hosp_test_outcome <- case_data_daily %>%
           total_tests_completed = if_else(total_tests_completed == 0, 
                                           lag(total_tests_completed), total_tests_completed),
           total_tests_completed = if_else(is.na(total_tests_completed), 
-                                          0, total_tests_completed)) %>% 
+                                          0, total_tests_completed),
+          week_mean_cases = if_else(week_mean_cases == 0, lag(week_mean_cases), week_mean_cases),
+          week_mean_cases = if_else(week_mean_cases == 0, lag(week_mean_cases), week_mean_cases),
+          week_mean_cases = if_else(week_mean_cases == 0, lag(week_mean_cases), week_mean_cases),
+          week_mean_cases = if_else(week_mean_cases == 0, lag(week_mean_cases), week_mean_cases),
+          week_mean_cases = if_else(week_mean_cases == 0, lag(week_mean_cases), week_mean_cases)) %>% 
    rename(total_tests = total_tests_completed,
           daily_tests = new_tests_completed) 
 
@@ -600,3 +608,12 @@ mt_data <- case_hosp_test_outcome %>%
 sheet_write(mt_data, 
             ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
             sheet = 5)
+
+mt_data <- case_hosp_test_outcome %>% 
+   select(dates, week_mean_cases) %>% 
+   rename("Date" = dates,
+          "7-Day Average New Cases" = week_mean_cases)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
+            sheet = 6)
