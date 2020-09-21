@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of September 17, 2020"
+date: "Data as of September 21, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -37,9 +37,9 @@ cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442",
 
 ```{r}
 # Load data
-file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+file_path <- c("C:/R/covid19/")
 
-covid_data <- read_rds(paste0(file_path, "Output/covid_data_clean.rds"))
+covid_data <- read_rds(paste0(file_path, "covid_data_clean.rds"))
 ```
 
 
@@ -325,7 +325,7 @@ covid_plot <- covid_data %>%
      labs(title = "Symptoms reported at time of testing", 
           subtitle = "By gender",
           y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 300, 10)), labels = c(seq(0, 300, 10))) +
+     scale_y_continuous(breaks = c(seq(0, 300, 20)), labels = c(seq(0, 300, 20))) +
      coord_flip() +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -379,7 +379,7 @@ covid_plot <- covid_data %>%
      labs(title = "Symptoms reported at time of testing", 
           subtitle = "By age group",
           y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 300, 10)), labels = c(seq(0, 300, 10))) +
+     scale_y_continuous(breaks = c(seq(0, 300, 20)), labels = c(seq(0, 300, 20))) +
      coord_flip() +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -677,7 +677,7 @@ covid_plot_onset <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
                  y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-7, y = 8, 
+     geom_label(aes(x = Sys.Date()-7, y = 20, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County Since June 1, 2020",
@@ -754,7 +754,7 @@ case_data_2 <- case_data %>%
 # Change latest_date depending on day of week
 # Use -15 for Thurs reports with new data
 # Use -18 for Mon reports with older data
-latest_date <- format(Sys.Date() - 15, "%Y-%m-%d")
+latest_date <- format(Sys.Date() - 18, "%Y-%m-%d")
 
 incidence_data <- incidence(case_data_2$dates, last_date = latest_date)
 
@@ -876,7 +876,7 @@ covid_plot_onset <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
                  y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-10, y = 8, 
+     geom_label(aes(x = Sys.Date()-10, y = 20, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
@@ -949,7 +949,7 @@ covid_plot_test_date <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
                  y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-10, y = 9, 
+     geom_label(aes(x = Sys.Date()-10, y = 20, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",

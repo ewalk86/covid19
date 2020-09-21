@@ -41,7 +41,8 @@ file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 ```{r}
 # Load serial interval data
-mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_08.05.2020.xlsx"),
+# explanation of data format: https://github.com/jstockwin/EpiEstimApp/wiki/Uploading-your-own-data
+mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.2020.xlsx"),
                           sheet = 1) %>% 
    select(-Pair_No) %>% 
    rename(EL = EL_Infector_Lower,
