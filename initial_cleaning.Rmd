@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 21 Sept 2020"
+date: "Started 2 April 2020, Updated 24 Sept 2020"
 output:
   pdf_document: default
   html_document:
@@ -31,7 +31,7 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 9.21.20.xlsx"), 
+   read_xlsx(paste0(input_path, "COVID data 9.24.20.xlsx"), 
              range = "A2:Y900", 
                         col_names = c("case_id", "age", "gender", "race", 
                                       "ethnicity", "zipcode", "healthcare_worker",
@@ -65,11 +65,15 @@ covid_clean <- covid_data_initial %>%
                                      "30 to 39, 0.14", "40 to 49, 0.12", "50 to 59, 0.11", 
                                      "60 to 69, 0.11", "70 to 79, 0.07", "80+, 0.03"), right = FALSE),
           age_group2 = cut(age, breaks = c(0, 18, 65, 110),
-                          labels = c("<18", "18 to 64", "65+"), right = FALSE)) %>% 
+                          labels = c("<18", "18 to 64", "65+"), right = FALSE),
+          age_group3 = cut(age, breaks = c(0, 10, 15, 25, 30, 40, 50, 60, 70, 80, 110),
+                          labels = c("0 to 9", "10 to 14", "15 to 24", "25 to 29", 
+                                     "30 to 39", "40 to 49", "50 to 59", 
+                                     "60 to 69", "70 to 79", "80+"), right = FALSE)) %>% 
    separate(age_group, c("age_group", "age_group_percent"), sep = ", ") %>% 
    mutate(age_group_percent = as.numeric(age_group_percent),
           county_pop = as.numeric(119000)) %>% 
-   select(case_id, age, age_group, age_group_percent, age_group2, 
+   select(case_id, age, age_group, age_group_percent, age_group2, age_group3,
           county_pop, gender:community_spread) %>% 
    mutate_if(is.character, tolower) %>% 
    mutate_if(is.factor, tolower) %>% 
@@ -176,11 +180,20 @@ covid_clean <- covid_data_initial %>%
           travel_hx = factor(travel_hx, levels = c("Yes", "No", "Unknown")),
           age_group = as.factor(age_group),
           age_group2 = as.factor(age_group2),
-          race = as.factor(race),
+          race = factor(race,
+                        levels = c("african american", "american indian or alaskan native",
+                                   "asian", "native hawaiian/pacific islander", "other",
+                                   "white"),
+                        labels = c("african american, 0.005", "american indian or alaskan native, 0.027",
+                                   "asian, 0.018", "native hawaiian/pacific islander, 0.001", "other, 0.031",
+                                   "white, 0.917")),
           ethnicity = fct_collapse(ethnicity,
-                                   "hispanic/latino" = c("hispanic/latino"),
-                                   "not hispanic or latino" = 
-                                    c("not hispanic or latino", "non hispanic")))
+                                   "hispanic/latino, 0.034" = c("hispanic/latino"),
+                                   "not hispanic or latino, 0.891" = 
+                                    c("not hispanic or latino", "non hispanic",
+                                      "not hispanic/latino"))) %>% 
+   separate(race, c("race", "race_percent"), sep = ", ") %>% 
+   separate(ethnicity, c("ethnicity", "ethnicity_percent"), sep = ", ") 
 
 summary(covid_clean)
 ```

@@ -59,7 +59,7 @@ mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.20
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_08.05.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -232,3 +232,116 @@ state_inc_plot
 #ggsave("C:/R/covid19/state_daily_results/state_inc_plot.png", width = 10, height = 8)
 ```
 
+
+# SI Publication Plots
+```{r, fig.width = 10, fig.height = 5}
+plot_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", 
+               "#0072B2", "#D55E00", "#CC79A7")
+
+# Epi curve - test date
+full_data <- mt_case_data %>% 
+   filter(dates < "2020-08-01")
+
+total_cases <- sum(mt_case_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
+
+epi_curve_full <- full_data %>% 
+   mutate(local_import = factor(local_import,
+                            levels = c(1, 0),
+                            labels = c("imported case", "local case"))) %>% 
+   ggplot() +
+     geom_rect(aes(xmin = as.Date("2020-05-01"), xmax = as.Date("2020-08-01"), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-03-01"), xmax = as.Date("2020-05-01"), ymin=0, ymax=Inf),
+               fill = "#F0E442", alpha = 0.05) +
+     geom_col(aes(dates, case, fill = local_import), width = 1) +
+     labs(title = "COVID-19 cases in Montana by date of symptom onset",
+          subtitle = paste0("Total cases = ", total_cases, ", SI = XX, R = YY"),
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-01"), 
+                                    to = as.Date("2020-08-01"), 
+                                    by = "5 days"),
+                  labels = seq.Date(from = as.Date("2020-03-01"), 
+                                    to = as.Date("2020-08-01"), 
+                                    by = "5 days"),
+                  date_labels = "%d-%b") +
+     scale_y_continuous(breaks = c(seq(0, 300, 25)), labels = c(seq(0, 300, 25))) +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.position = "top",
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) +
+     scale_fill_manual(values = plot_colors)   
+
+epi_curve_full
+
+#ggsave("epi_curve_test_date.jpg", width = 10, height = 5)
+```
+
+
+```{r, fig.width = 10, fig.height = 5}
+# Epi curve - test date
+early_data <- mt_case_data %>% 
+   filter(dates < "2020-05-01")
+
+total_cases <- sum(early_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
+
+epi_curve_early <- early_data %>% 
+   mutate(local_import = factor(local_import,
+                            levels = c(1, 0),
+                            labels = c("imported", "local"))) %>% 
+   ggplot() +
+     geom_col(aes(dates, case, fill = local_import), width = 1) +
+     labs(title = "COVID-19 cases in Montana by date of symptom onset",
+          subtitle = paste0("Total cases = ", total_cases),
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "5 days"),
+                  labels = seq.Date(from = as.Date("2020-03-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "5 days"),
+                  date_labels = "%d-%b") +
+     scale_y_continuous(breaks = c(seq(0, 300, 25)), labels = c(seq(0, 300, 25))) +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.position = "top",
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) +
+     scale_fill_manual(values = plot_colors)   
+
+epi_curve_early
+
+#ggsave("epi_curve_test_date.jpg", width = 10, height = 5)
+```

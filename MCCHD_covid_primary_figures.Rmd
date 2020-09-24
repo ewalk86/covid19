@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of September 21, 2020"
+date: "Data as of September 24, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -30,16 +30,18 @@ library(EpiEstim)
 jv_palette <- c("#330099","#CC0066","#FF6633", 
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
-cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", 
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#CC6633",
                "#0072B2", "#D55E00", "#CC79A7", "#999999", "#33CC99")
 ```
 
 
 ```{r}
 # Load data
-file_path <- c("C:/R/covid19/")
+input_path <- c("C:/R/covid19/")
+file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
-covid_data <- read_rds(paste0(file_path, "covid_data_clean.rds"))
+
+covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds"))
 ```
 
 
@@ -159,6 +161,40 @@ county_incidence <- covid_data %>%
           county_pop, age_group_percent) %>% 
    filter(!is.na(age_group)) %>% 
    arrange(age_group)
+
+race_incidence <- covid_data %>% 
+   select(case, race, race_percent, county_pop) %>% 
+   mutate(total_cases = n(),
+          race_percent = as.numeric(race_percent)) %>% 
+   group_by(race) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = race_percent*county_pop,
+          group_inc = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(race, .keep_all = TRUE) %>% 
+   mutate(region = "Missoula County") %>% 
+   select(region, race, group_cases, group_prop, group_inc, 
+          county_pop, race_percent) %>% 
+   filter(!is.na(race)) %>% 
+   arrange(race)
+
+ethnicity_incidence <- covid_data %>% 
+   select(case, ethnicity, ethnicity_percent, county_pop) %>% 
+   mutate(total_cases = n(),
+          ethnicity_percent = as.numeric(ethnicity_percent)) %>% 
+   group_by(ethnicity) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = ethnicity_percent*county_pop,
+          group_inc = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(ethnicity, .keep_all = TRUE) %>% 
+   mutate(region = "Missoula County") %>% 
+   select(region, ethnicity, group_cases, group_prop, group_inc, 
+          county_pop, ethnicity_percent) %>% 
+   filter(!is.na(ethnicity)) %>% 
+   arrange(ethnicity)
 ```
 
 \pagebreak  
@@ -198,8 +234,90 @@ covid_plot
 \pagebreak  
 
 ```{r}
+cases_age_plot <- covid_data %>% 
+   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
+   group_by(age_group, month_of_year) %>% 
+   mutate(group_cases = n()) %>% 
+   filter(!is.na(age_group)) %>% 
+   filter(!is.na(month_of_year)) %>% 
+   distinct(age_group, month_of_year, .keep_all = TRUE) %>% 
+   ggplot() +
+      geom_line(aes(month_of_year, group_cases, group = age_group, 
+                    color = age_group), size = 1.5) +
+   theme_minimal() +
+   labs(title = "Number of COVID-19 cases, Missoula County",
+        subtitle = "By age group, per month since March, 2020",
+        color = "Age group") +
+   ylab("Number of cases") +
+   xlab("") +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 18, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 16, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 16, colour = "black"),
+         legend.text = element_text(size = 16, colour = "black"),
+         axis.title.y = element_text(size = 16, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 16, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = cbPalette)
+
+cases_age_plot
+
+#ggsave("C:/R/covid19/cases_age_plot.png", width = 10, height = 6)
+```
+
+\pagebreak  
+
+```{r}
+cases_age_plot2 <- covid_data %>% 
+   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
+   group_by(age_group3, month_of_year) %>% 
+   mutate(group_cases = n()) %>% 
+   filter(!is.na(age_group3)) %>% 
+   filter(!is.na(month_of_year)) %>% 
+   distinct(age_group3, month_of_year, .keep_all = TRUE) %>% 
+   ggplot() +
+      geom_line(aes(month_of_year, group_cases, group = age_group3, 
+                    color = age_group3), size = 1.5) +
+   theme_minimal() +
+   labs(title = "Number of COVID-19 cases, Missoula County",
+        subtitle = "By age group, per month since March, 2020",
+        color = "Age group") +
+   ylab("Number of cases") +
+   xlab("") +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 18, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 16, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 16, colour = "black"),
+         legend.text = element_text(size = 16, colour = "black"),
+         axis.title.y = element_text(size = 16, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 16, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = cbPalette)
+
+cases_age_plot2
+
+#ggsave("C:/R/covid19/cases_age_plot.png", width = 10, height = 6)
+```
+
+\pagebreak  
+
+```{r}
 # Incidence plot by age
-covid_incidence <- county_incidence %>% 
+age_incidence <- county_incidence %>% 
    filter(region == "Missoula County") %>% 
    ggplot() +
      geom_col(aes(fct_rev(age_group), group_inc), fill = "steelblue", width = .6) +
@@ -224,7 +342,7 @@ covid_incidence <- county_incidence %>%
            axis.line.x = element_line(colour = "black", size = 1.2), 
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) 
-covid_incidence
+age_incidence
 
 #ggsave("incidence_plot.jpg", width = 10, height = 5)
 ```
@@ -232,8 +350,58 @@ covid_incidence
 \pagebreak  
 
 ```{r}
-#Symptoms and gender
-covid_plot <- covid_data %>% 
+incidence_age_plot <- covid_data %>% 
+   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
+   select(case, age_group, age_group_percent, county_pop, month_of_year) %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(age_group, month_of_year) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group_percent*county_pop,
+          group_inc = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(age_group, month_of_year, .keep_all = TRUE) %>% 
+   mutate(region = "Missoula County") %>% 
+   select(region, age_group, month_of_year, group_cases, group_prop, group_inc, 
+          county_pop, age_group_percent) %>% 
+   filter(!is.na(age_group)) %>% 
+   arrange(age_group, month_of_year) %>% 
+   filter(!is.na(month_of_year)) %>% 
+   ggplot() +
+      geom_line(aes(month_of_year, group_inc, group = age_group, 
+                    color = age_group), size = 1.5) +
+   theme_minimal() +
+   labs(title = "COVID-19 Incidence, Missoula County",
+        subtitle = "By age group, per month since March, 2020",
+        color = "Age group") +
+   ylab("Incidence per 100,000") +
+   xlab("") +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 18, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 16, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 16, colour = "black"),
+         legend.text = element_text(size = 16, colour = "black"),
+         axis.title.y = element_text(size = 16, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 16, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = cbPalette)
+
+incidence_age_plot
+
+#ggsave("C:/R/covid19/incidence_age_plot.png", width = 10, height = 6)
+```
+
+\pagebreak  
+
+```{r}
+race_plot <- covid_data %>% 
    filter(!is.na(race)) %>% 
    ggplot() +   
      geom_bar(aes(x = fct_rev(race)), fill = "steelblue", width = .6) +   
@@ -256,7 +424,7 @@ covid_plot <- covid_data %>%
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) + 
      scale_fill_manual(values = cbPalette)
-covid_plot
+race_plot
 
 #ggsave("race_plot.jpg", width = 10, height = 5)
 ```
@@ -264,8 +432,41 @@ covid_plot
 \pagebreak  
 
 ```{r}
+race_incidence_plot <- race_incidence %>% 
+   filter(region == "Missoula County") %>% 
+   ggplot() +
+     geom_col(aes(fct_rev(race), group_inc), fill = "steelblue", width = .6) +
+     coord_flip() +
+     labs(title = "COVID-19 Incidence in Missoula County", 
+          subtitle = "By Self-reported Race",
+          y = "Incidence per 100,000 Population", x = "") +
+     scale_y_continuous(breaks = c(seq(0, 6000, 500)), labels = c(seq(0, 6000, 500))) +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 45, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 14, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 14, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black"))
+race_incidence_plot
+
+#ggsave("race_incidence_plot.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
 #Symptoms and gender
-covid_plot <- covid_data %>% 
+ethnicity_plot <- covid_data %>% 
    filter(!is.na(ethnicity)) %>% 
    ggplot() +   
      geom_bar(aes(x = fct_rev(ethnicity)), fill = "steelblue", width = .6) +   
@@ -288,9 +489,43 @@ covid_plot <- covid_data %>%
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) + 
      scale_fill_manual(values = cbPalette)
-covid_plot
+ethnicity_plot
 
 #ggsave("ethnicity_plot.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+#Symptoms and gender
+ethnicity_incidence_plot <- ethnicity_incidence %>% 
+   filter(region == "Missoula County") %>% 
+   ggplot() +
+     geom_col(aes(fct_rev(ethnicity), group_inc), fill = "steelblue", width = .6) +
+     coord_flip() +
+     labs(title = "COVID-19 Incidence in Missoula County by Ethnicity", 
+          subtitle = "By Self-reported Ethnicity",
+          y = "Incidence per 100,000 Population", x = "") +
+     scale_y_continuous(breaks = c(seq(0, 800, 50)), labels = c(seq(0, 800, 50))) +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 45, vjust = 0.75, hjust = 0.9),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 14, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 14, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black"))
+ethnicity_incidence_plot
+
+#ggsave("ethnicity_incidence_plot.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
@@ -625,6 +860,7 @@ contacts_plot <- covid_data %>%
    mutate(mean_contacts = mean(number_contacts, na.rm = TRUE)) %>% 
    filter(!is.na(age_group)) %>% 
    filter(!is.na(month_of_year)) %>% 
+   distinct(age_group, month_of_year, .keep_all = TRUE) %>% 
    ggplot() +
       geom_line(aes(month_of_year, mean_contacts, group = age_group, 
                     color = age_group), size = 1.5) +
@@ -724,7 +960,7 @@ covid_plot_onset
 ## Using State data to be able to incorporate local vs imported cases
 ## Only updates once per week
 
-case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.2020.xlsx"),
+case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.24.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -736,7 +972,7 @@ case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.202
           case = 1) %>% 
    filter(!is.na(dates)) %>% 
    filter(county == "Missoula") %>% 
-   filter(dates > "2020-05-30" & dates < Sys.Date() - 14) %>% 
+   filter(dates > "2020-05-30" & dates < Sys.Date() - 13) %>% 
    arrange(dates) %>% 
    ungroup() %>% 
    select(dates, local, imported) %>% 
@@ -754,7 +990,7 @@ case_data_2 <- case_data %>%
 # Change latest_date depending on day of week
 # Use -15 for Thurs reports with new data
 # Use -18 for Mon reports with older data
-latest_date <- format(Sys.Date() - 18, "%Y-%m-%d")
+latest_date <- format(Sys.Date() - 14, "%Y-%m-%d")
 
 incidence_data <- incidence(case_data_2$dates, last_date = latest_date)
 
@@ -812,13 +1048,13 @@ missoula_r_plot <- missoula_r %>%
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
    #geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
    #geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-values, Missoula County",
+   labs(title = "COVID-19 Rolling 14-day R-number, Missoula County",
         color = "") +
-   ylab("R-value") +
+   ylab("R-number") +
    xlab("") +
    geom_hline(yintercept = 1, color = "red", size = 1.2) +
-   scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   #scale_y_continuous(breaks = seq(0, 10, 0.5), labels = seq(0, 10, 0.5)) +
+   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
+   scale_y_continuous(breaks = seq(0, 2, 0.1), labels = seq(0, 2, 0.1)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 18, colour = "black"),
