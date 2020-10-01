@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 28 Sept 2020"
+date: "Started 2 April 2020, Updated 1 Oct 2020"
 output:
   pdf_document: default
   html_document:
@@ -31,8 +31,8 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 9.28.20.xlsx"), 
-             range = "A2:Y900", 
+   read_xlsx(paste0(input_path, "COVID data 10.1.20.xlsx"), 
+             range = "A2:Y1000", 
                         col_names = c("case_id", "age", "gender", "race", 
                                       "ethnicity", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
@@ -66,8 +66,8 @@ covid_clean <- covid_data_initial %>%
                                      "60 to 69, 0.11", "70 to 79, 0.07", "80+, 0.03"), right = FALSE),
           age_group2 = cut(age, breaks = c(0, 18, 65, 110),
                           labels = c("<18", "18 to 64", "65+"), right = FALSE),
-          age_group3 = cut(age, breaks = c(0, 10, 15, 25, 30, 40, 50, 60, 70, 80, 110),
-                          labels = c("0 to 9", "10 to 14", "15 to 24", "25 to 29", 
+          age_group3 = cut(age, breaks = c(0, 10, 15, 19, 25, 30, 40, 50, 60, 70, 80, 110),
+                          labels = c("0 to 9", "10 to 14", "15 to 18", "19 to 24", "25 to 29", 
                                      "30 to 39", "40 to 49", "50 to 59", 
                                      "60 to 69", "70 to 79", "80+"), right = FALSE)) %>% 
    separate(age_group, c("age_group", "age_group_percent"), sep = ", ") %>% 
@@ -79,14 +79,14 @@ covid_clean <- covid_data_initial %>%
    mutate_if(is.factor, tolower) %>% 
    mutate(symptom_fever_chill = grepl("FEVER|CHILL|CHILLS|NIGHT SWEAT", symptom_type, ignore.case = TRUE),
           symptom_cough = grepl("COUGH|MILD COUGH", symptom_type, ignore.case = TRUE),
-          symptom_sob = grepl("SOB|SHORTNESS OF BREATH|BREATH|BREATHING", symptom_type, ignore.case = TRUE),
+          symptom_sob = grepl("SOB|SHORTNESS OF BREATH|BREATH|BREATHING|WINDED", symptom_type, ignore.case = TRUE),
           symptom_fatigue_lethargy = grepl("FATIGUE|LETHARGY|MALAISE|TIRED", symptom_type, ignore.case = TRUE),
           symptom_body_aches = grepl("BODY ACHES|ACHES|ACHINESS|MYALGIA|ACHE|MUSCLE ACHE", symptom_type, ignore.case = TRUE),
           symptom_headache = grepl("HEADACHE|HA|H/A", symptom_type, ignore.case = TRUE),
           symptom_taste_smell = grepl("TASTE|SMELL", symptom_type, ignore.case = TRUE),
           symptom_sorethroat = grepl("SORE THROAT|SCRATCHY THROAT|THROAT", symptom_type, ignore.case = TRUE),
-          symptom_congestion = grepl("CONGESTION|RUNNY NOSE|SNEEZING|RHINORRHEA|SINUS", symptom_type, ignore.case = TRUE),
-          symptom_nv = grepl("NAUSEA|N/V|N/V/D", symptom_type, ignore.case = TRUE),
+          symptom_congestion = grepl("CONGESTION|RUNNY NOSE|SNEEZING|RHINORRHEA|SINUS|NOSE", symptom_type, ignore.case = TRUE),
+          symptom_nv = grepl("NAUSEA|N/V|N/V/D|VOMITING", symptom_type, ignore.case = TRUE),
           symptom_diarrhea = grepl("DIARRHEA|ABDOMINAL|STOMACH|GI", symptom_type, ignore.case = TRUE),
           symptom_chest_pain = grepl("CHEST PAIN|CHEST TIGHTNESS|CHEST", symptom_type, ignore.case = TRUE)) %>% 
    separate(healthcare_worker, c("healthcare_worker", "healthcare_worker_comment"), sep = " ") %>% 
@@ -193,7 +193,9 @@ covid_clean <- covid_data_initial %>%
                                     c("not hispanic or latino", "non hispanic",
                                       "not hispanic/latino"))) %>% 
    separate(race, c("race", "race_percent"), sep = ", ") %>% 
-   separate(ethnicity, c("ethnicity", "ethnicity_percent"), sep = ", ") 
+   separate(ethnicity, c("ethnicity", "ethnicity_percent"), sep = ", ") %>% 
+   mutate(race = as.factor(race),
+          ethnicity = as.factor(ethnicity))
 
 summary(covid_clean)
 ```

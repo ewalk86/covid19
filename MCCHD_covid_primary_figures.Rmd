@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of September 28, 2020"
+date: "Data as of October 1, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -27,11 +27,15 @@ library(kableExtra)
 library(gmodels)
 library(incidence)
 library(EpiEstim)
+library(viridis)
+library(ggthemes)
 jv_palette <- c("#330099","#CC0066","#FF6633", 
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#CC6633",
-               "#0072B2", "#D55E00", "#CC79A7", "#999999", "#33CC99")
+               "#0072B2", "#D55E00", "#CC79A7", "#999999")
+colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                        "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
 ```
 
 
@@ -147,14 +151,15 @@ kable(covid_summary, caption = "Missoula County COVID-19 Cases",
    pack_rows("Contact with Known Case", 10, 12) %>% 
    pack_rows("Community Spread", 13, 14) %>% 
    footnote(c("Travel History: case left Missoula County.",
-     "Community Spread: no history of travel and no known contact with a known case."))
+     "Community Spread: no history of travel and no known contact with a known case.",
+     "Data is still being collected. Percentages may not add to 100% in some cases."))
 ```
 
 \clearpage
 
 ```{r}
 # Incidence data
-county_incidence <- covid_data %>% 
+age_incidence <- covid_data %>% 
    select(case, age_group, age_group_percent, county_pop) %>% 
    mutate(total_cases = n()) %>% 
    group_by(age_group) %>% 
@@ -208,18 +213,18 @@ ethnicity_incidence <- covid_data %>%
 \pagebreak  
 
 ```{r}
-# Age group table - counts
-covid_plot <- covid_data %>% 
+# Age group bar plot - counts
+age_count_plot <- covid_data %>% 
    filter(!is.na(age_group)) %>% 
    ggplot() +   
      geom_bar(aes(fct_rev(age_group)), fill = "steelblue", width = .6) +   
-     labs(title = "COVID-19 Cases in Missoula County by Age Group", 
+     labs(title = "COVID-19 Cases by age group",
+          subtitle = "Missoula County, since March 2020", 
           y = "Number of cases", x = "Age Group (years)") +
      scale_y_continuous(breaks = c(seq(0, 400, 10)), labels = c(seq(0, 400, 10))) +
      coord_flip() +
      theme_minimal() +
-     theme(plot.title = element_text(hjust = .5),
-           strip.text = element_text(size = 16, colour = "black"),
+     theme(strip.text = element_text(size = 16, colour = "black"),
            title = element_text(size = 18, colour = "black"),
            panel.grid = element_blank(),
            axis.text.x = element_text(size = 14, colour = "black", 
@@ -234,15 +239,16 @@ covid_plot <- covid_data %>%
            axis.line.x = element_line(colour = "black", size = 1.2), 
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) 
-covid_plot
+age_count_plot
 
-#ggsave("cases_plot.jpg", width = 10, height = 5)
+#ggsave("age_count_plot.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
 
 ```{r}
-cases_age_plot <- covid_data %>% 
+# Age group line plot - counts by month
+age_count_month_plot <- covid_data %>% 
    mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
    group_by(age_group, month_of_year) %>% 
    mutate(group_cases = n()) %>% 
@@ -253,8 +259,8 @@ cases_age_plot <- covid_data %>%
       geom_line(aes(month_of_year, group_cases, group = age_group, 
                     color = age_group), size = 1.5) +
    theme_minimal() +
-   labs(title = "Number of COVID-19 cases, Missoula County",
-        subtitle = "By age group, per month since March, 2020",
+   labs(title = "Monthly COVID-19 cases by age group",
+        subtitle = "Missoula County, since March 2020",
         color = "Age group") +
    ylab("Number of cases") +
    xlab("") +
@@ -273,17 +279,18 @@ cases_age_plot <- covid_data %>%
          axis.line.x = element_blank(), 
          axis.line.y = element_blank(), 
          axis.ticks = element_blank()) +
-   scale_color_manual(values = cbPalette)
+   scale_color_manual(values = colorblind_palette)
 
-cases_age_plot
+age_count_month_plot
 
-#ggsave("C:/R/covid19/cases_age_plot.png", width = 10, height = 6)
+#ggsave("C:/R/covid19/age_count_month_plot.png", width = 10, height = 6)
 ```
 
 \pagebreak  
 
 ```{r}
-cases_age_plot2 <- covid_data %>% 
+# Age group line plot - counts by month
+age_count_month_plot2 <- covid_data %>% 
    mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
    group_by(age_group3, month_of_year) %>% 
    mutate(group_cases = n()) %>% 
@@ -294,8 +301,8 @@ cases_age_plot2 <- covid_data %>%
       geom_line(aes(month_of_year, group_cases, group = age_group3, 
                     color = age_group3), size = 1.5) +
    theme_minimal() +
-   labs(title = "Number of COVID-19 cases, Missoula County",
-        subtitle = "By age group, per month since March, 2020",
+   labs(title = "Monthly COVID-19 cases by age group",
+        subtitle = "Missoula County, since March 2020",
         color = "Age group") +
    ylab("Number of cases") +
    xlab("") +
@@ -314,28 +321,30 @@ cases_age_plot2 <- covid_data %>%
          axis.line.x = element_blank(), 
          axis.line.y = element_blank(), 
          axis.ticks = element_blank()) +
-   scale_color_manual(values = cbPalette)
+   scale_color_manual(values = colorblind_palette)
 
-cases_age_plot2
+age_count_month_plot2
 
-#ggsave("C:/R/covid19/cases_age_plot.png", width = 10, height = 6)
+#table(age_count_month_plot2$month_of_year, age_count_month_plot2$age_group3)
+
+#ggsave("C:/R/covid19/age_count_month_plot2.png", width = 10, height = 6)
 ```
 
 \pagebreak  
 
 ```{r}
-# Incidence plot by age
-age_incidence <- county_incidence %>% 
+# Incidence bar plot by age
+age_incidence_plot_bar <- age_incidence %>% 
    filter(region == "Missoula County") %>% 
    ggplot() +
      geom_col(aes(fct_rev(age_group), group_inc), fill = "steelblue", width = .6) +
      coord_flip() +
-     labs(title = "COVID-19 Incidence in Missoula County by Age Group", 
+     labs(title = "COVID-19 incidence by age group",
+          subtitle = "Missoula County, since March 2020",
           y = "Incidence per 100,000 Population", x = "Age Group (years)") +
      scale_y_continuous(breaks = c(seq(0, 1500, 50)), labels = c(seq(0, 1500, 50))) +
      theme_minimal() +
-     theme(plot.title = element_text(hjust = .5),
-           strip.text = element_text(size = 16, colour = "black"),
+     theme(strip.text = element_text(size = 16, colour = "black"),
            title = element_text(size = 18, colour = "black"),
            panel.grid = element_blank(),
            axis.text.x = element_text(size = 14, colour = "black", 
@@ -350,15 +359,16 @@ age_incidence <- county_incidence %>%
            axis.line.x = element_line(colour = "black", size = 1.2), 
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) 
-age_incidence
+age_incidence_plot_bar
 
-#ggsave("incidence_plot.jpg", width = 10, height = 5)
+#ggsave("age_incidence_plot_bar.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
 
 ```{r}
-incidence_age_plot <- covid_data %>% 
+# Incidence line plot by age and month
+age_incidence_plot_line <- covid_data %>% 
    mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
    select(case, age_group, age_group_percent, county_pop, month_of_year) %>% 
    mutate(total_cases = n()) %>% 
@@ -379,8 +389,8 @@ incidence_age_plot <- covid_data %>%
       geom_line(aes(month_of_year, group_inc, group = age_group, 
                     color = age_group), size = 1.5) +
    theme_minimal() +
-   labs(title = "COVID-19 Incidence, Missoula County",
-        subtitle = "By age group, per month since March, 2020",
+   labs(title = "COVID-19 incidence per month by age group",
+        subtitle = "Missoula County, since March 2020",
         color = "Age group") +
    ylab("Incidence per 100,000") +
    xlab("") +
@@ -399,21 +409,23 @@ incidence_age_plot <- covid_data %>%
          axis.line.x = element_blank(), 
          axis.line.y = element_blank(), 
          axis.ticks = element_blank()) +
-   scale_color_manual(values = cbPalette)
+   scale_color_manual(values = colorblind_palette)
 
-incidence_age_plot
+age_incidence_plot_line
 
-#ggsave("C:/R/covid19/incidence_age_plot.png", width = 10, height = 6)
+#ggsave("C:/R/covid19/age_incidence_plot_line.png", width = 10, height = 6)
 ```
 
 \pagebreak  
 
 ```{r}
-race_plot <- covid_data %>% 
+#Bar plot of race count data
+race_plot_count <- covid_data %>% 
    filter(!is.na(race)) %>% 
    ggplot() +   
      geom_bar(aes(x = fct_rev(race)), fill = "steelblue", width = .6) +   
-     labs(title = "Confirmed cases by self-reported race",
+     labs(title = "COVID-19 cases by self-reported race",
+          subtitle = "Missoula County",
           y = "Count", x = "", fill = "") +
      scale_y_continuous(breaks = c(seq(0, 1000, 50)), labels = c(seq(0, 1000, 50))) +
      coord_flip() +
@@ -431,24 +443,25 @@ race_plot <- covid_data %>%
            axis.line.x = element_line(colour = "black", size = 1.2), 
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) + 
-     scale_fill_manual(values = cbPalette)
-race_plot
+     scale_fill_manual(values = colorblind_palette)
+race_plot_count
 
-#ggsave("race_plot.jpg", width = 10, height = 5)
+#ggsave("race_plot_count.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
 
 ```{r}
+#Bar plot of race incidence data
 race_incidence_plot <- race_incidence %>% 
    filter(region == "Missoula County") %>% 
    ggplot() +
      geom_col(aes(fct_rev(race), group_inc), fill = "steelblue", width = .6) +
      coord_flip() +
-     labs(title = "COVID-19 Incidence in Missoula County", 
-          subtitle = "By Self-reported Race",
+     labs(title = "COVID-19 incidence by self-reported race",
+          subtitle = "Missoula County",
           y = "Incidence per 100,000 Population", x = "") +
-     scale_y_continuous(breaks = c(seq(0, 7000, 500)), labels = c(seq(0, 7000, 500))) +
+     scale_y_continuous(breaks = c(seq(0, 10000, 500)), labels = c(seq(0, 10000, 500))) +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
            title = element_text(size = 18, colour = "black"),
@@ -473,12 +486,13 @@ race_incidence_plot
 \pagebreak  
 
 ```{r}
-#Symptoms and gender
+#Bar plot of ethnicity count data
 ethnicity_plot <- covid_data %>% 
    filter(!is.na(ethnicity)) %>% 
    ggplot() +   
      geom_bar(aes(x = fct_rev(ethnicity)), fill = "steelblue", width = .6) +   
-     labs(title = "Confirmed cases by self-reported ethnicity",
+     labs(title = "COVID-19 cases by self-reported ethnicity",
+          subtitle = "Missoula County",
           y = "Count", x = "", fill = "") +
      scale_y_continuous(breaks = c(seq(0, 1000, 50)), labels = c(seq(0, 1000, 50))) +
      coord_flip() +
@@ -496,7 +510,7 @@ ethnicity_plot <- covid_data %>%
            axis.line.x = element_line(colour = "black", size = 1.2), 
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) + 
-     scale_fill_manual(values = cbPalette)
+     scale_fill_manual(values = colorblind_palette)
 ethnicity_plot
 
 #ggsave("ethnicity_plot.jpg", width = 10, height = 5)
@@ -505,14 +519,14 @@ ethnicity_plot
 \pagebreak  
 
 ```{r}
-#Symptoms and gender
+#Bar plot of ethnicity incidence data
 ethnicity_incidence_plot <- ethnicity_incidence %>% 
    filter(region == "Missoula County") %>% 
    ggplot() +
      geom_col(aes(fct_rev(ethnicity), group_inc), fill = "steelblue", width = .6) +
      coord_flip() +
-     labs(title = "COVID-19 Incidence in Missoula County by Ethnicity", 
-          subtitle = "By Self-reported Ethnicity",
+     labs(title = "COVID-19 incidence by self-reported ethnicity",
+          subtitle = "Missoula County",
           y = "Incidence per 100,000 Population", x = "") +
      scale_y_continuous(breaks = c(seq(0, 1000, 50)), labels = c(seq(0, 1000, 50))) +
      theme_minimal() +
@@ -539,8 +553,8 @@ ethnicity_incidence_plot
 \pagebreak  
 
 ```{r}
-#Symptoms and gender
-covid_plot <- covid_data %>% 
+#Symptoms and gender bar plot
+symptoms_gender_plot <- covid_data %>% 
    filter(!is.na(gender)) %>% 
    pivot_longer(cols = c(symptom_fever_chill:symptom_diarrhea),
                 names_to = "variable", values_to = "values") %>% 
@@ -566,7 +580,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x = fct_rev(variable), y = values, fill = gender)) +   
      geom_bar(stat = "identity", width = .6) +   
      labs(title = "Symptoms reported at time of testing", 
-          subtitle = "By gender",
+          subtitle = "By gender, Missoula County, 2020",
           y = "Count", x = "", fill = "") +
      scale_y_continuous(breaks = c(seq(0, 500, 20)), labels = c(seq(0, 500, 20))) +
      coord_flip() +
@@ -585,16 +599,16 @@ covid_plot <- covid_data %>%
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) + 
      scale_fill_manual(values = cbPalette)
-covid_plot
+symptoms_gender_plot
 
-#ggsave("symptoms_plot_gender.jpg", width = 10, height = 5)
+#ggsave("symptoms_gender_plot.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
 
 ```{r}
-#Symptoms and age group
-covid_plot <- covid_data %>% 
+#Symptoms and age group bar plot
+symptoms_age_plot <- covid_data %>% 
    filter(!is.na(age_group)) %>% 
    pivot_longer(cols = c(symptom_fever_chill:symptom_diarrhea),
                 names_to = "variable", values_to = "values") %>% 
@@ -620,7 +634,7 @@ covid_plot <- covid_data %>%
    ggplot(aes(x = fct_rev(variable), y = values, fill = age_group)) +   
      geom_bar(stat = "identity", width = .6) +   
      labs(title = "Symptoms reported at time of testing", 
-          subtitle = "By age group",
+          subtitle = "By age group, Missoula County, 2020",
           y = "Count", x = "", fill = "") +
      scale_y_continuous(breaks = c(seq(0, 500, 20)), labels = c(seq(0, 500, 20))) +
      coord_flip() +
@@ -638,15 +652,455 @@ covid_plot <- covid_data %>%
            axis.line.x = element_line(colour = "black", size = 1.2), 
            axis.line.y = element_line(colour = "black", size = 1.2), 
            axis.ticks = element_line(colour = "black")) + 
-     scale_fill_manual(values = cbPalette)
-covid_plot
+     scale_fill_manual(values = colorblind_palette)
+symptoms_age_plot
 
-#ggsave("symptoms_plot_age.jpg", width = 10, height = 5)
+#ggsave("symptoms_age_plot.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
 
+```{r}
+piechart_function <- function(data = covid_data, plot_fill, var_label) {
+
+chart_data <- data %>% 
+   rename(chart_var = plot_fill) %>% 
+   filter(!is.na(chart_var)) %>% 
+   mutate(total_n = n()) %>% 
+   group_by(chart_var, total_n) %>% 
+   mutate(group_n = n()) %>% 
+   distinct(group_n) %>% 
+   mutate(group_percent = round(group_n/total_n*100),
+          right_par = " (",
+          left_par = "%)") %>% 
+   ungroup() %>% 
+   unite(group_lab, c("group_n", "right_par", "group_percent", "left_par"), sep = "", remove = FALSE)
+   
+covid_piechart <- chart_data %>% 
+   ggplot(aes("", group_n, fill = chart_var)) +
+     geom_bar(stat = "identity", color = "black", width = 1) +
+     coord_polar("y") +
+     geom_text(aes(label = group_lab), 
+               position = position_stack(vjust = 0.5),
+               color = "white", size = 6) +
+     labs(title = "Missoula County COVID-19 cases", fill = "",
+          subtitle = var_label) + 
+     theme_void() +
+     theme(title = element_text(size = 16, colour = "black"),
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black")) +
+           scale_fill_manual(values = colorblind_palette)
+covid_piechart
+
+}
+```
+
+
+```{r}
+piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts - all cases")
+
+#ggsave("piechart_contacts.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+# Table with summary stats on number of contacts per case
+sum_nums <- covid_data %>% 
+   rename("Age group" = age_group) %>% 
+   group_by(`Age group`) %>% 
+   filter(!is.na(`Age group`)) %>% 
+   summarize("Mean # contacts" = round(mean(number_contacts, na.rm = TRUE), digits = 1),
+             "Std dev" = round(sd(number_contacts, na.rm = TRUE), digits = 1),
+             "Min # contacts" = round(min(number_contacts, na.rm = TRUE), digits = 1),
+             "Median # contacts" = round(median(number_contacts, na.rm = TRUE), digits = 1),
+             "Max # contacts" = round(max(number_contacts, na.rm = TRUE), digits = 1)) 
+
+kable(sum_nums, caption = "Number of contacts by age group, Missoula County",
+      format = "latex", align = "c") %>% 
+   kable_styling(font_size = 10) %>% 
+   row_spec(0, bold = TRUE, font_size = 10)
+```
+
+\clearpage
+
+```{r}
+# Line plot of number of contacts per age group by month
+contacts_age_plot <- covid_data %>% 
+   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
+   group_by(age_group, month_of_year) %>% 
+   mutate(mean_contacts = mean(number_contacts, na.rm = TRUE)) %>% 
+   filter(!is.na(age_group)) %>% 
+   filter(!is.na(month_of_year)) %>% 
+   distinct(age_group, month_of_year, .keep_all = TRUE) %>% 
+   ggplot() +
+      geom_line(aes(month_of_year, mean_contacts, group = age_group, 
+                    color = age_group), size = 1.5) +
+   theme_minimal() +
+   labs(title = "Mean number of contacts per COVID case, Missoula County",
+        subtitle = "By age group, per month since March, 2020",
+        color = "Age group") +
+   ylab("Mean # contacts") +
+   xlab("") +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 18, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 16, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 16, colour = "black"),
+         legend.text = element_text(size = 16, colour = "black"),
+         axis.title.y = element_text(size = 16, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 16, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = colorblind_palette)
+
+contacts_age_plot
+
+#ggsave("C:/R/covid19/contacts_age_plot.png", width = 10, height = 6)
+```
+
+\pagebreak  
+
+```{r, fig.width = 11, fig.height = 5}
+# Epi curve - date of onset - recent data
+
+total_cases <- sum(covid_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
+
+epi_curve_onset_recent <- covid_data %>% 
+   filter(!is.na(symptom_onset_date_new)) %>% 
+   filter(symptom_onset_date_new > "2020-06-30") %>% 
+   group_by(symptom_onset_date_new) %>% 
+   ggplot() +
+     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-07-09")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-7, y = 20, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
+     labs(title = "COVID-19 Cases in Missoula County Since July 1, 2020",
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-07-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "3 days"),
+                  labels = seq.Date(from = as.Date("2020-07-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "3 days"),
+                  date_labels = "%d-%b") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.position = "top",
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank())  +
+     scale_fill_manual(values = cbPalette) 
+epi_curve_onset_recent 
+
+#ggsave("ep_curve_onset_recent.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r}
+## Missoula county R results
+## Using State data to be able to incorporate local vs imported cases
+## Only updates once per week
+
+case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.01.2020.xlsx"),
+                                 sheet = 2) %>% 
+   rename_all(tolower) %>% 
+   select(-case_no) %>% 
+   rownames_to_column(var = "case_no") %>% 
+   mutate(local = if_else(local_import == 0, 1, 0),
+          imported = local_import,
+          date_reported = ymd(date_reported),
+          dates = as.Date(symptom_onset_date),
+          dates = ymd(dates),
+          case = 1) %>% 
+   filter(!is.na(dates)) %>% 
+   filter(county == "Missoula") %>% 
+   filter(dates > "2020-05-30" & dates < Sys.Date() - 13) %>% 
+   arrange(dates) %>% 
+   ungroup() %>% 
+   select(dates, local, imported) %>% 
+   group_by(dates) %>% 
+   mutate(local = sum(local),
+          imported = sum(imported)) %>% 
+   distinct(dates, .keep_all = TRUE) %>% 
+   arrange(dates)
+
+
+case_data_2 <- case_data %>% 
+   mutate(I = local + imported) %>% 
+   select(dates, I) 
+
+# Change latest_date depending on day of week
+# Use -14 for Thurs reports with new data
+# Use -18 for Mon reports with older data
+latest_date <- format(Sys.Date() - 14, "%Y-%m-%d")
+
+incidence_data <- incidence(case_data_2$dates, last_date = latest_date)
+
+li_inc_data <- as.data.frame(incidence_data$dates) %>% 
+   mutate(dates = ymd(incidence_data$dates)) %>% 
+   select(dates) %>% 
+   left_join(case_data, by = "dates") %>% 
+   mutate(local = if_else(is.na(local), 0, local),
+          imported = if_else(is.na(imported), 0, imported))
+
+
+# Set dates for 14-day rolling averages
+missoula_n <- as.data.frame(li_inc_data$dates)
+time_var <- nrow(missoula_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
+
+# Serial Interval derived from State of Montana paired case data
+serial_interval_mean <- 6.3
+serial_interval_sd <- 5.4
+
+r_results <- estimate_R(li_inc_data, method="parametric_si", 
+                           config = make_config(list(mean_si = serial_interval_mean, 
+                                                     std_si = serial_interval_sd,
+                                                     t_start =  time_start,
+                                                     t_end = time_end)))
+
+# Format and save analysis results
+colomns <- c(1:4, 8)
+missoula_r <- (r_results$R[,colomns]) %>% 
+   mutate(region = "Missoula County") %>% 
+   rename(mean_r = `Mean(R)`,
+          sd_r = `Std(R)`,
+          median_r = `Median(R)`)
+
+missoula_dates <- as.data.frame(r_results$dates)
+missoula_i <- as.data.frame(r_results$I)
+missoula_cil <- as.data.frame(r_results$R$`Quantile.0.025(R)`)
+missoula_cih <- as.data.frame(r_results$R$`Quantile.0.975(R)`)
+missoula_dates_new <- cbind(missoula_dates, missoula_i) %>% 
+   rename(dates = 1,
+          incidence = 2) %>% 
+   mutate(dates = ymd(dates))
+missoula_dates_new <- missoula_dates_new[-(1:14), 1:2]
+missoula_dates_new <- cbind(missoula_dates_new, missoula_cil, missoula_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+missoula_r <- cbind(missoula_r, missoula_dates_new)
+
+
+missoula_r_plot <- missoula_r %>% 
+   filter(dates > "2020-07-01") %>% 
+   ggplot() +
+   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   #geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   #geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
+   labs(title = "COVID-19 Rolling 14-day R-number, Missoula County",
+        color = "") +
+   ylab("R-number") +
+   xlab("") +
+   geom_hline(yintercept = 1, color = "red", size = 1.2) +
+   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
+   scale_y_continuous(breaks = seq(0, 2, 0.1), labels = seq(0, 2, 0.1)) +
+   theme_minimal() +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 18, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 16, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 16, colour = "black"),
+         legend.text = element_text(size = 16, colour = "black"),
+         axis.title.y = element_text(size = 16, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 16, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = c("black")) 
+missoula_r_plot
+
+#ggsave("C:/R/covid19/missoula_r_plot.png", width = 10, height = 6)
+```
+
+\pagebreak  
+
+```{r, fig.width = 11, fig.height = 5}
+# Epi curve - date of onset
+
+total_cases <- sum(covid_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
+
+epi_curve_onset <- covid_data %>% 
+   filter(!is.na(symptom_onset_date_new)) %>% 
+   ggplot() +
+     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-07-09")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-10, y = 20, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
+     labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
+          subtitle = paste0("Total cases = ", total_cases),
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "5 days"),
+                  labels = seq.Date(from = as.Date("2020-03-06"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "5 days"),
+                  date_labels = "%d-%b") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.position = "top",
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank())  +
+     scale_fill_manual(values = cbPalette) 
+
+epi_curve_onset
+
+#ggsave("epi_curve_onset.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r, fig.width = 10, fig.height = 5}
+# Epi curve - test date
+
+total_cases <- sum(covid_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
+
+epi_curve_test_date <- covid_data %>% 
+   ggplot() +
+     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_col(aes(test_date_new, case, fill = test_date_indicator)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-07-09")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
+                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-12, y = 20, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
+     labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
+          subtitle = paste0("Total cases = ", total_cases),
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "5 days"),
+                  labels = seq.Date(from = as.Date("2020-03-06"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "5 days"),
+                  date_labels = "%d-%b") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.position = "top",
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) +
+     scale_fill_manual(values = cbPalette)   
+
+epi_curve_test_date
+
+#ggsave("epi_curve_test_date.jpg", width = 10, height = 5)
+```
+
+
+
+
+
 ```{r, include=FALSE, eval=FALSE}
+############### Older plots included here for future reference #########################
+
 # Travel and previous contact
 covid_data_table <- covid_data %>% 
    mutate(contact_with_case = as.character(contact_with_case),
@@ -782,43 +1236,7 @@ covid_piechart
 \pagebreak  
 
 ```{r}
-piechart_function <- function(data = covid_data, plot_fill, var_label) {
-
-chart_data <- data %>% 
-   rename(chart_var = plot_fill) %>% 
-   filter(!is.na(chart_var)) %>% 
-   mutate(total_n = n()) %>% 
-   group_by(chart_var, total_n) %>% 
-   mutate(group_n = n()) %>% 
-   distinct(group_n) %>% 
-   mutate(group_percent = round(group_n/total_n*100),
-          right_par = " (",
-          left_par = "%)") %>% 
-   ungroup() %>% 
-   unite(group_lab, c("group_n", "right_par", "group_percent", "left_par"), sep = "", remove = FALSE)
-   
-covid_piechart <- chart_data %>% 
-   ggplot(aes("", group_n, fill = chart_var)) +
-     geom_bar(stat = "identity", color = "black", width = 1) +
-     coord_polar("y") +
-     geom_text(aes(label = group_lab), 
-               position = position_stack(vjust = 0.5),
-               color = "white", size = 6) +
-     labs(title = "MCCHD COVID-19 infections", fill = "",
-          subtitle = var_label) + 
-     theme_void() +
-     theme(title = element_text(size = 16, colour = "black"),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black")) +
-           scale_fill_manual(values = cbPalette)
-covid_piechart
-
-}
-```
-
-
-```{r}
-piechart_function(plot_fill = "community_spread_new", var_label = "Community Spread - All Cases")
+#piechart_function(plot_fill = "community_spread_new", var_label = "Community Spread - All Cases")
 
 #ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
 ```
@@ -826,410 +1244,10 @@ piechart_function(plot_fill = "community_spread_new", var_label = "Community Spr
 \pagebreak  
 
 ```{r}
-piechart_function(plot_fill = "gender", var_label = "Gender - All Cases")
+#piechart_function(plot_fill = "gender", var_label = "Gender - All Cases")
 
 #ggsave("piechart_gender.jpg", width = 10, height = 5)
 ```
 
-
-\pagebreak  
-
-```{r}
-piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts - All Cases")
-
-#ggsave("piechart_contacts.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-sum_nums <- covid_data %>% 
-   rename("Age group" = age_group) %>% 
-   group_by(`Age group`) %>% 
-   filter(!is.na(`Age group`)) %>% 
-   summarize("Mean # contacts" = round(mean(number_contacts, na.rm = TRUE), digits = 1),
-             "Std dev" = round(sd(number_contacts, na.rm = TRUE), digits = 1),
-             "Min # contacts" = round(min(number_contacts, na.rm = TRUE), digits = 1),
-             "Median # contacts" = round(median(number_contacts, na.rm = TRUE), digits = 1),
-             "Max # contacts" = round(max(number_contacts, na.rm = TRUE), digits = 1)) 
-
-kable(sum_nums, caption = "Number of contacts by age group, Missoula County",
-      format = "latex", align = "c") %>% 
-   kable_styling(font_size = 10) %>% 
-   row_spec(0, bold = TRUE, font_size = 10)
-```
-
-\clearpage
-
-```{r}
-contacts_plot <- covid_data %>% 
-   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
-   group_by(age_group, month_of_year) %>% 
-   mutate(mean_contacts = mean(number_contacts, na.rm = TRUE)) %>% 
-   filter(!is.na(age_group)) %>% 
-   filter(!is.na(month_of_year)) %>% 
-   distinct(age_group, month_of_year, .keep_all = TRUE) %>% 
-   ggplot() +
-      geom_line(aes(month_of_year, mean_contacts, group = age_group, 
-                    color = age_group), size = 1.5) +
-   theme_minimal() +
-   labs(title = "Mean number of contacts per COVID case, Missoula County",
-        subtitle = "By age group, per month since March, 2020",
-        color = "Age group") +
-   ylab("Mean # contacts") +
-   xlab("") +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 18, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 16, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 16, colour = "black"),
-         legend.text = element_text(size = 16, colour = "black"),
-         axis.title.y = element_text(size = 16, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 16, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = cbPalette)
-
-contacts_plot
-
-#ggsave("C:/R/covid19/contacts_plot.png", width = 10, height = 6)
-```
-
-\pagebreak  
-
-```{r, fig.width = 11, fig.height = 5}
-# Epi curve - date of onset
-
-total_cases <- sum(covid_data$case)
-date_today <- format(Sys.Date(), "%d %b %Y")
-date_14 <- format(Sys.Date() - 14, "%d %b %Y")
-
-covid_plot_onset <- covid_data %>% 
-   filter(!is.na(symptom_onset_date_new)) %>% 
-   filter(symptom_onset_date_new > "2020-06-30") %>% 
-   group_by(symptom_onset_date_new) %>% 
-   ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
-               fill = "gray80", alpha = 0.05) +
-     geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-07-09")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-7, y = 20, 
-                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
-                fill = NA) +
-     labs(title = "COVID-19 Cases in Missoula County Since June 1, 2020",
-          subtitle = paste0("Total cases = ", total_cases),
-          fill = " ") +
-     ylab("Number of Cases") +
-     xlab("Date") +
-     scale_x_date(breaks = seq.Date(from = as.Date("2020-07-01"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "3 days"),
-                  labels = seq.Date(from = as.Date("2020-07-01"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "3 days"),
-                  date_labels = "%d-%b") +
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 12, colour = "black"),
-           panel.grid = element_blank(),
-           panel.grid.major.y = element_line(colour = "gray75"),
-           axis.text.x = element_text(size = 12, colour = "black", 
-                                     angle = 90, vjust = 0.4),
-           axis.text.y = element_text(size = 12, colour = "black"),
-           legend.position = "top",
-           axis.title.y = element_text(size = 12, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 12, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           legend.text = element_text(size = 12, colour = "black"),
-           axis.line.x = element_blank(), 
-           axis.line.y = element_blank(), 
-           axis.ticks = element_blank())  +
-     scale_fill_manual(values = cbPalette) 
-
-
-covid_plot_onset 
-
-#ggsave("epi_curve_onset.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-## Missoula county R results
-## Using State data to be able to incorporate local vs imported cases
-## Only updates once per week
-
-case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.24.2020.xlsx"),
-                                 sheet = 2) %>% 
-   rename_all(tolower) %>% 
-   select(-case_no) %>% 
-   rownames_to_column(var = "case_no") %>% 
-   mutate(local = if_else(local_import == 0, 1, 0),
-          imported = local_import,
-          date_reported = ymd(date_reported),
-          dates = ymd(symptom_onset_date),
-          case = 1) %>% 
-   filter(!is.na(dates)) %>% 
-   filter(county == "Missoula") %>% 
-   filter(dates > "2020-05-30" & dates < Sys.Date() - 13) %>% 
-   arrange(dates) %>% 
-   ungroup() %>% 
-   select(dates, local, imported) %>% 
-   group_by(dates) %>% 
-   mutate(local = sum(local),
-          imported = sum(imported)) %>% 
-   distinct(dates, .keep_all = TRUE) %>% 
-   arrange(dates)
-
-
-case_data_2 <- case_data %>% 
-   mutate(I = local + imported) %>% 
-   select(dates, I) 
-
-# Change latest_date depending on day of week
-# Use -14 for Thurs reports with new data
-# Use -18 for Mon reports with older data
-latest_date <- format(Sys.Date() - 18, "%Y-%m-%d")
-
-incidence_data <- incidence(case_data_2$dates, last_date = latest_date)
-
-li_inc_data <- as.data.frame(incidence_data$dates) %>% 
-   mutate(dates = ymd(incidence_data$dates)) %>% 
-   select(dates) %>% 
-   left_join(case_data, by = "dates") %>% 
-   mutate(local = if_else(is.na(local), 0, local),
-          imported = if_else(is.na(imported), 0, imported))
-
-
-# Set dates for 14-day rolling averages
-missoula_n <- as.data.frame(li_inc_data$dates)
-time_var <- nrow(missoula_n)
-time_start <- seq(2, time_var-13)
-time_end <- time_start + 13
-
-
-# Serial Interval derived from State of Montana paired case data
-serial_interval_mean <- 6.3
-serial_interval_sd <- 5.4
-
-r_results <- estimate_R(li_inc_data, method="parametric_si", 
-                           config = make_config(list(mean_si = serial_interval_mean, 
-                                                     std_si = serial_interval_sd,
-                                                     t_start =  time_start,
-                                                     t_end = time_end)))
-
-# Format and save analysis results
-colomns <- c(1:4, 8)
-missoula_r <- (r_results$R[,colomns]) %>% 
-   mutate(region = "Missoula County") %>% 
-   rename(mean_r = `Mean(R)`,
-          sd_r = `Std(R)`,
-          median_r = `Median(R)`)
-
-missoula_dates <- as.data.frame(r_results$dates)
-missoula_i <- as.data.frame(r_results$I)
-missoula_cil <- as.data.frame(r_results$R$`Quantile.0.025(R)`)
-missoula_cih <- as.data.frame(r_results$R$`Quantile.0.975(R)`)
-missoula_dates_new <- cbind(missoula_dates, missoula_i) %>% 
-   rename(dates = 1,
-          incidence = 2) %>% 
-   mutate(dates = ymd(dates))
-missoula_dates_new <- missoula_dates_new[-(1:14), 1:2]
-missoula_dates_new <- cbind(missoula_dates_new, missoula_cil, missoula_cih) %>% 
-   rename(cl_low = 3,
-          cl_high = 4)
-missoula_r <- cbind(missoula_r, missoula_dates_new)
-
-
-missoula_r_plot <- missoula_r %>% 
-   filter(dates > "2020-07-01") %>% 
-   ggplot() +
-   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
-   #geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
-   #geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-number, Missoula County",
-        color = "") +
-   ylab("R-number") +
-   xlab("") +
-   geom_hline(yintercept = 1, color = "red", size = 1.2) +
-   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 2, 0.1), labels = seq(0, 2, 0.1)) +
-   theme_minimal() +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 18, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 16, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 16, colour = "black"),
-         legend.text = element_text(size = 16, colour = "black"),
-         axis.title.y = element_text(size = 16, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 16, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = c("black")) 
-missoula_r_plot
-
-#ggsave("C:/R/covid19/missoula_r_plot.png", width = 10, height = 6)
-```
-
-\pagebreak  
-
-```{r, fig.width = 11, fig.height = 5}
-# Epi curve - date of onset
-
-total_cases <- sum(covid_data$case)
-date_today <- format(Sys.Date(), "%d %b %Y")
-date_14 <- format(Sys.Date() - 14, "%d %b %Y")
-
-covid_plot_onset <- covid_data %>% 
-   filter(!is.na(symptom_onset_date_new)) %>% 
-   ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
-               fill = "gray80", alpha = 0.05) +
-     geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-07-09")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-10, y = 20, 
-                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
-                fill = NA) +
-     labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
-          subtitle = paste0("Total cases = ", total_cases),
-          fill = " ") +
-     ylab("Number of Cases") +
-     xlab("Date") +
-     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "5 days"),
-                  labels = seq.Date(from = as.Date("2020-03-06"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "5 days"),
-                  date_labels = "%d-%b") +
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 12, colour = "black"),
-           panel.grid = element_blank(),
-           panel.grid.major.y = element_line(colour = "gray75"),
-           axis.text.x = element_text(size = 12, colour = "black", 
-                                     angle = 90, vjust = 0.4),
-           axis.text.y = element_text(size = 12, colour = "black"),
-           legend.position = "top",
-           axis.title.y = element_text(size = 12, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 12, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           legend.text = element_text(size = 12, colour = "black"),
-           axis.line.x = element_blank(), 
-           axis.line.y = element_blank(), 
-           axis.ticks = element_blank())  +
-     scale_fill_manual(values = cbPalette) 
-
-covid_plot_onset
-
-#ggsave("epi_curve_onset.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r, fig.width = 10, fig.height = 5}
-# Epi curve - test date
-
-total_cases <- sum(covid_data$case)
-date_today <- format(Sys.Date(), "%d %b %Y")
-date_14 <- format(Sys.Date() - 14, "%d %b %Y")
-
-covid_plot_test_date <- covid_data %>% 
-   ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
-               fill = "gray80", alpha = 0.05) +
-     geom_col(aes(test_date_new, case, fill = test_date_indicator)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-07-09")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-10, y = 20, 
-                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
-                fill = NA) +
-     labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
-          subtitle = paste0("Total cases = ", total_cases),
-          fill = " ") +
-     ylab("Number of Cases") +
-     xlab("Date") +
-     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-06"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "5 days"),
-                  labels = seq.Date(from = as.Date("2020-03-06"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "5 days"),
-                  date_labels = "%d-%b") +
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 12, colour = "black"),
-           panel.grid = element_blank(),
-           panel.grid.major.y = element_line(colour = "gray75"),
-           axis.text.x = element_text(size = 12, colour = "black", 
-                                     angle = 90, vjust = 0.4),
-           axis.text.y = element_text(size = 12, colour = "black"),
-           legend.position = "top",
-           axis.title.y = element_text(size = 12, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 12, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           legend.text = element_text(size = 12, colour = "black"),
-           axis.line.x = element_blank(), 
-           axis.line.y = element_blank(), 
-           axis.ticks = element_blank()) +
-     scale_fill_manual(values = cbPalette)   
-
-covid_plot_test_date
-
-#ggsave("epi_curve_test_date.jpg", width = 10, height = 5)
-```
 
 

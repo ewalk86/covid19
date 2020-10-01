@@ -34,6 +34,8 @@ library(rlist)
 library(Rsftp)
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", 
                "#0072B2", "#D55E00", "#CC79A7")
+colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                        "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
 
 file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 ```
@@ -42,13 +44,18 @@ file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 ```{r}
 # Load serial interval data
 # explanation of data format: https://github.com/jstockwin/EpiEstimApp/wiki/Uploading-your-own-data
-mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.2020.xlsx"),
-                          sheet = 1) %>% 
-   select(-Pair_No) %>% 
-   rename(EL = EL_Infector_Lower,
-          ER = ER_Infector_Upper,
-          SL = SL_Infected_Lower,
-          SR = SR_Infected_Upper) %>% 
+mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
+                        col_names = c("pair_no", "cluster", "infector",
+                                      "infector_date", "infected", "infected_date",
+                                      "EL", "ER", "SL", "SR"),
+                        col_types = c("text", "text", "text",
+                                      "date", "text", "date",
+                                      "numeric", "numeric", "numeric", "numeric")) %>% 
+   filter(infector_date < "2020-05-01" & infected_date < "2020-05-01") %>% 
+   select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   mutate_all(as.integer)
+
    mutate(SL2 = if_else(SL<1, SL + (1 - SL), SL),
           SR2 = if_else(SL<1, SR + (1 - SL), SR),
           type = 0) %>% 
@@ -59,7 +66,7 @@ mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.20
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.01.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -67,7 +74,8 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.
    mutate(local = if_else(local_import == 0, 1, 0),
           imported = local_import,
           date_reported = ymd(date_reported),
-          dates = ymd(symptom_onset_date),
+          dates = as.Date(symptom_onset_date),
+          dates = ymd(dates),
           case = 1) %>% 
    rename(hospitalization = "ever_hospitalized") %>% 
    mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99",
@@ -95,6 +103,7 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.17.
 ## State results
 # Format analysis data
 mt_li_analysis_data <- mt_case_data %>% 
+   filter(dates < "2020-05-01") %>% 
    group_by(dates) %>% 
    mutate(local = sum(local),
           imported = sum(imported)) %>% 
@@ -109,7 +118,7 @@ mt_data <- mt_li_analysis_data %>%
 
 latest_date <- format(Sys.Date() - 14, "%Y-%m-%d")
 
-mt_incidence_data <- incidence(mt_data$dates, last_date = latest_date)
+mt_incidence_data <- incidence(mt_data$dates, last_date = "2020-04-30")
 
 mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
    mutate(dates = ymd(mt_incidence_data$dates)) %>% 
@@ -130,14 +139,23 @@ time_end <- time_start + 13
 ## This code only needs to be used if we want to update the SI with new paired cases
 MCMC_seed <- 1
 overall_seed <- 2
-mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 1000, thin = 10)
+mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 10000, thin = 10)
 dist <- "G"  # fitting a Gamma distribution for the SI
 si_config <- make_config(list(si_parametric_distr = dist, 
-                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 500, n2 = 50,
+                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 5000, n2 = 500,
                               t_start = time_start, t_end = time_end))
 
 mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
                            si_data = mt_si_data, config = si_config)
+
+serial_interval_mean <- 6.53
+serial_interval_sd <- 5.44
+
+mt_r_results <- estimate_R(mt_li_inc_data, method = "parametric_si", 
+                              config = make_config(list(mean_si = serial_interval_mean, 
+                                                        std_si = serial_interval_sd,
+                                                        t_start =  2,
+                                                        t_end = 61)))
 
 
 # calculate mean serial interval using SI data
@@ -235,8 +253,10 @@ state_inc_plot
 
 # SI Publication Plots
 ```{r, fig.width = 10, fig.height = 5}
-plot_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", 
-               "#0072B2", "#D55E00", "#CC79A7")
+colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                        "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+plot_colors <- c("#332288", "#882255", "#661100", "#6699CC", "#888888")
 
 # Epi curve - test date
 full_data <- mt_case_data %>% 
@@ -252,12 +272,18 @@ epi_curve_full <- full_data %>%
                             labels = c("imported case", "local case"))) %>% 
    ggplot() +
      geom_rect(aes(xmin = as.Date("2020-05-01"), xmax = as.Date("2020-08-01"), ymin=0, ymax=Inf),
-               fill = "gray80", alpha = 0.05) +
-     geom_rect(aes(xmin = as.Date("2020-03-01"), xmax = as.Date("2020-05-01"), ymin=0, ymax=Inf),
-               fill = "#F0E442", alpha = 0.05) +
+               fill = "gray70", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-02-28"), xmax = as.Date("2020-05-01"), ymin=0, ymax=Inf),
+               fill = "gray50", alpha = 0.05) +
      geom_col(aes(dates, case, fill = local_import), width = 1) +
+     geom_label(aes(x = as.Date("2020-03-31"), y = 125,
+                    label = "Early cases: \n n = 462 \n Pairs = 116 \n Mean SI = 6.53 \n SD SI = 5.44 \n Mean R = 0.67"),
+                fill = NA, color = "black") +
+     geom_label(aes(x = as.Date("2020-06-15"), y = 125, 
+                    label = "Later cases: \n n = xx \n Pairs = xx \n Mean SI = xx \n SD SI = xx \n Mean R = xx"),
+                fill = NA, color = "black") +
      labs(title = "COVID-19 cases in Montana by date of symptom onset",
-          subtitle = paste0("Total cases = ", total_cases, ", SI = XX, R = YY"),
+          subtitle = paste0("Total cases: n = xx, Pairs = xx, Mean SI = xx, SD SI = xx, Mean R = xx"),
           fill = " ") +
      ylab("Number of Cases") +
      xlab("") +
@@ -290,58 +316,7 @@ epi_curve_full <- full_data %>%
 
 epi_curve_full
 
-#ggsave("epi_curve_test_date.jpg", width = 10, height = 5)
+#ggsave("si_pub_epi_curve.jpg", width = 10, height = 5)
 ```
 
 
-```{r, fig.width = 10, fig.height = 5}
-# Epi curve - test date
-early_data <- mt_case_data %>% 
-   filter(dates < "2020-05-01")
-
-total_cases <- sum(early_data$case)
-date_today <- format(Sys.Date(), "%d %b %Y")
-date_14 <- format(Sys.Date() - 14, "%d %b %Y")
-
-epi_curve_early <- early_data %>% 
-   mutate(local_import = factor(local_import,
-                            levels = c(1, 0),
-                            labels = c("imported", "local"))) %>% 
-   ggplot() +
-     geom_col(aes(dates, case, fill = local_import), width = 1) +
-     labs(title = "COVID-19 cases in Montana by date of symptom onset",
-          subtitle = paste0("Total cases = ", total_cases),
-          fill = " ") +
-     ylab("Number of Cases") +
-     xlab("") +
-     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-01"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "5 days"),
-                  labels = seq.Date(from = as.Date("2020-03-01"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "5 days"),
-                  date_labels = "%d-%b") +
-     scale_y_continuous(breaks = c(seq(0, 300, 25)), labels = c(seq(0, 300, 25))) +
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 12, colour = "black"),
-           panel.grid = element_blank(),
-           panel.grid.major.y = element_line(colour = "gray75"),
-           axis.text.x = element_text(size = 12, colour = "black", 
-                                     angle = 90, vjust = 0.4),
-           axis.text.y = element_text(size = 12, colour = "black"),
-           legend.position = "top",
-           axis.title.y = element_text(size = 12, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 12, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           legend.text = element_text(size = 12, colour = "black"),
-           axis.line.x = element_blank(), 
-           axis.line.y = element_blank(), 
-           axis.ticks = element_blank()) +
-     scale_fill_manual(values = plot_colors)   
-
-epi_curve_early
-
-#ggsave("epi_curve_test_date.jpg", width = 10, height = 5)
-```
