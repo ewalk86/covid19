@@ -1,0 +1,147 @@
+---
+title: "Montana COVID-19 Sociodemographic/Spatial Analysis"
+author: "Ethan Walker, University of Montana"
+date: "Started Oct 2, 2020, Updated Oct 2, 2020"
+output: pdf_document
+header-includes:
+    - \usepackage[labelformat=empty, font={Large, bf}]{caption}
+    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, 
+                      include = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 10, fig.height = 6)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+library(readxl)
+library(naniar)
+library(lubridate)
+library(zoo)
+library(eeptools)
+library(knitr)
+library(incidence)
+library(EpiEstim)
+library(earlyR)
+library(projections)
+library(distcrete)
+library(epitrix)
+library(jsonlite)
+library(httr)
+library(rlist)
+library(Rsftp)
+library(googledrive)
+library(googlesheets4)
+library(data.table)
+jv_palette <- c("#330099","#CC0066","#FF6633", 
+                 "#0099CC", "#FF9900","#CC6633",
+                  "#FF3366", "#33CC99", "#33999")
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#CC6633",
+               "#0072B2", "#D55E00", "#CC79A7", "#999999")
+colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                        "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+```
+
+
+```{r}
+############## Query and prep state case data
+query_url <- "https://services.arcgis.com/qnjIrwR8z5Izc0ij/ArcGIS/rest/services/COVID_Cases_Production_View/FeatureServer/2/query?where=1%3D1&objectIds=&time=&resultType=none&outFields=OBJECTID%2C+Case_No%2C+Date_Reported_to_CDEpi%2C+County%2C+Age_Group%2C+Sex%2C+Hospitalization%2C+Outcome%2C+MT_case&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&sqlFormat=none&f=pjson&token="
+
+initial_pull <- GET(query_url)
+
+text_data <- content(initial_pull, as = "text")
+
+parsed_data <- content(initial_pull, as = "parsed")
+
+json_data <- fromJSON(text_data)
+
+state_data <- as.data.frame(json_data$features$attributes) 
+
+reg1 <- as.data.frame(c("Carter", "Custer", "Daniels", "Dawson", "Fallon", "Garfield", "McCone",
+                        "Phillips", "Powder River", "Prairie", "Richland", "Roosevelt", "Rosebud",
+                        "Sheridan", "Treasure", "Valley", "Wibaux")) %>% 
+   rename_at(1, ~"county") %>% 
+   mutate(region = 1)
+
+reg2 <- as.data.frame(c("Blaine", "Cascade", "Chouteau", "Glacier", "Hill", "Liberty", "Pondera",
+                        "Teton", "Toole")) %>% 
+   rename_at(1, ~"county") %>% 
+   mutate(region = 2)
+
+reg3 <- as.data.frame(c("Big Horn", "Carbon", "Fergus", "Golden Valley", "Judith Basin",
+                        "Musselshell", "Petroleum", "Stillwater", "Sweet Grass", "Wheatland",
+                        "Yellowstone")) %>% 
+   rename_at(1, ~"county") %>% 
+   mutate(region = 3)
+
+reg4 <- as.data.frame(c("Beaverhead", "Broadwater", "Deer Lodge", "Gallatin", "Granite", "Jefferson",
+                        "Lewis and Clark", "Madison", "Meagher", "Park", "Powell", "Silver Bow")) %>% 
+   rename_at(1, ~"county") %>% 
+   mutate(region = 4)
+
+reg5 <- as.data.frame(c("Flathead", "Lake", "Lincoln", "Mineral", "Missoula", 
+                        "Ravalli", "Sanders")) %>% 
+   rename_at(1, ~"county") %>% 
+   mutate(region = 5)
+
+counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
+
+state_data_clean <- state_data %>% 
+   rename_all(tolower) %>% 
+   mutate(date_reported_to_cdepi = date_reported_to_cdepi/1000,
+          dates = as.POSIXct(date_reported_to_cdepi, origin = "1970-01-01")) %>% 
+   separate(dates, c("dates", "trash"), sep = " ") %>% 
+   mutate(dates = ymd(dates)) %>% 
+   select(case_no, dates, county:mt_case) %>% 
+   left_join(counties_regions, by = "county") %>% 
+   mutate(case = 1) %>% 
+   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99",
+                               "80+", age_group),
+          age_group_new = factor(age_group2, 
+                                 levels = c("0-9", "10-19", "20-29", 
+                                            "30-39", "40-49", "50-59", 
+                                            "60-69", "70-79", "80+"),
+                                 labels = c("0 to 9, 0.12", "10 to 19, 0.12", "20 to 29, 0.13", 
+                                            "30 to 39, 0.13", "40 to 49, 0.11", "50 to 59, 0.12", 
+                                            "60 to 69, 0.14", "70 to 79, 0.08", "80+, 0.04"))) %>% 
+   separate(age_group_new, c("age_group_new", "age_group_new_percent"), sep = ",") %>% 
+   mutate(age_group_new_percent = as.numeric(age_group_new_percent),
+          state_pop = as.numeric(1068778)) %>% 
+   select(-age_group2, -age_group_new, -age_group_new_percent, -state_pop) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Y", "N", "P", "U"),
+                                   labels = c("Hosp: Yes", "Hosp: No", 
+                                              "Hosp: Past", "Hosp: Unknown"))) %>% 
+   select(-case_no) %>% 
+   rownames_to_column(var = "case_no")
+```
+
+
+```{r}
+# Pull in and merge other data files
+file_path1 <- c("C:/Users/ethan.walker/Box/COVID19 Spatial/")
+file_path2 <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+
+county_data_initial <- read_csv(paste0(file_path1, "MASTERfiles/Montana_COUNTY_Master.csv")) %>% 
+   rename_all(tolower)
+
+covid_county_merged <- state_data_clean %>% 
+   left_join(county_data_initial, by = "county") %>% 
+   ungroup() %>% 
+   arrange(county, dates)
+
+write_csv(covid_county_merged, paste0(file_path1, "merged_data/covid_county_merged.csv"))
+write_rds(covid_county_merged, paste0(file_path2, "Output/covid_county_merged.rds"))
+```
+
+
+```{r}
+# Initial analysis and summary results
+file_path2 <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+covid_county_merged <- read_rds(paste0(file_path2, "Output/covid_county_merged.rds"))
+
+
+```
+

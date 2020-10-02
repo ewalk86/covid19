@@ -121,7 +121,10 @@ county_function <- function(county_name, data = state_data_clean){
       rename_at(1, ~"dates")
    
    county_cases <- as.data.frame(county_incidence$counts) %>% 
-      rename_at(1, ~"Daily total cases")
+      rename_at(1, ~"daily_total_cases") %>% 
+      mutate(week_mean_cases = round(zoo::rollmean(daily_total_cases, 7, align = "right", fill = NA), digits = 1)) %>% 
+      rename("Daily total cases" = daily_total_cases,
+             "7-day Ave Cases" = week_mean_cases)
    
    county_data_new <<- county_dates %>% 
       left_join(county_data, by = "dates") %>% 
