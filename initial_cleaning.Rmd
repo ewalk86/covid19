@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 1 Oct 2020"
+date: "Started 2 April 2020, Updated 5 Oct 2020"
 output:
   pdf_document: default
   html_document:
@@ -31,10 +31,10 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 10.1.20.xlsx"), 
-             range = "A2:Y1000", 
+   read_xlsx(paste0(input_path, "COVID data 10.5.20.xlsx"), 
+             range = "A2:Z2000", 
                         col_names = c("case_id", "age", "gender", "race", 
-                                      "ethnicity", "zipcode", "healthcare_worker",
+                                      "ethnicity", "zipcode", "healthcare_worker", "um_case",
                                       "symptoms", "symptom_type", "symptom_onset_date",
                                       "test_date", "contact_with_case", "contact_case_number", 
                                       "epi_linked", "epi_linked_number", "travel_hx",
@@ -43,7 +43,7 @@ covid_data_initial <-
                                       "number_contacts", "patient_died", 
                                       "suspected_source", "community_spread"),
                         col_types = c("text", "text", "text", "text", 
-                                      "text", "text", "text",
+                                      "text", "text", "text", "text",
                                       "text", "text", "date",
                                       "date", "text", "text",
                                       "text", "text", "text",
@@ -191,11 +191,12 @@ covid_clean <- covid_data_initial %>%
                                    "hispanic/latino, 0.034" = c("hispanic/latino"),
                                    "not hispanic or latino, 0.891" = 
                                     c("not hispanic or latino", "non hispanic",
-                                      "not hispanic/latino"))) %>% 
+                                      "not hispanic/latino", "nonhispanic"))) %>% 
    separate(race, c("race", "race_percent"), sep = ", ") %>% 
    separate(ethnicity, c("ethnicity", "ethnicity_percent"), sep = ", ") %>% 
    mutate(race = as.factor(race),
-          ethnicity = as.factor(ethnicity))
+          ethnicity = as.factor(ethnicity),
+          um_case = as.factor(um_case))
 
 summary(covid_clean)
 ```
