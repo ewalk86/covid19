@@ -184,12 +184,12 @@ covid_clean <- covid_data_initial %>%
                         levels = c("african american", "american indian or alaskan native",
                                    "asian", "native hawaiian/pacific islander", "other",
                                    "white"),
-                        labels = c("african american, 0.005", "american indian or alaskan native, 0.027",
-                                   "asian, 0.018", "native hawaiian/pacific islander, 0.001", "other, 0.031",
+                        labels = c("african american, 0.005", "american indian or alaskan native, 0.023",
+                                   "asian, 0.016", "native hawaiian/pacific islander, 0.001", "other, 0.038",
                                    "white, 0.917")),
           ethnicity = fct_collapse(ethnicity,
-                                   "hispanic/latino, 0.034" = c("hispanic/latino"),
-                                   "not hispanic or latino, 0.891" = 
+                                   "hispanic/latino, 0.032" = c("hispanic/latino"),
+                                   "not hispanic or latino, 0.968" = 
                                     c("not hispanic or latino", "non hispanic",
                                       "not hispanic/latino", "nonhispanic"))) %>% 
    separate(race, c("race", "race_percent"), sep = ", ") %>% 

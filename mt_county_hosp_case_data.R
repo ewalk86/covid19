@@ -102,6 +102,8 @@ output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 write_rds(state_data_clean, paste0(output_path, "Output/state_data_clean.rds"))
 write_csv(state_data_clean, paste0(output_path, "Output/state_data_clean.csv"), na = " ")
 
+county_fips <- read_csv(paste0(output_path, "Input/mt_county_fips.csv"))
+
 
 ########## Function to get county-specific outcomes
 county_function <- function(county_name, data = state_data_clean){
@@ -244,9 +246,10 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
    mutate("Cumulative total cases" = cumsum(`Daily total cases`),
           "Cumulative active cases" = cumsum(Active),
           "Cumulative recovered cases" = cumsum(Recovered),
-          "Cumulative deseased cases" = cumsum(Deceased))
+          "Cumulative deseased cases" = cumsum(Deceased)) %>% 
+   left_join(county_fips, by = "county")
 
-write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_combined.csv")
+write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_combined.csv", na = "0")
 
 
 #################### Run and save state hospitalization data

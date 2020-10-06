@@ -253,7 +253,7 @@ age_count_plot
 ```{r}
 # Age group line plot - counts by month
 age_count_month_plot <- covid_data %>% 
-   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
+   mutate(month_of_year = month(test_date_new, label = TRUE)) %>% 
    group_by(age_group, month_of_year) %>% 
    mutate(group_cases = n()) %>% 
    filter(!is.na(age_group)) %>% 
@@ -329,7 +329,7 @@ age_incidence_plot_bar
 ```{r}
 # Incidence line plot by age and month
 age_incidence_plot_line <- covid_data %>% 
-   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
+   mutate(month_of_year = month(test_date_new, label = TRUE)) %>% 
    select(case, age_group, age_group_percent, county_pop, month_of_year) %>% 
    mutate(total_cases = n()) %>% 
    group_by(age_group, month_of_year) %>% 
@@ -695,7 +695,7 @@ kable(sum_nums, caption = "Number of contacts by age group, University of Montan
 ```{r}
 # Line plot of number of contacts per age group by month
 contacts_age_plot <- covid_data %>% 
-   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
+   mutate(month_of_year = month(test_date_new, label = TRUE)) %>% 
    group_by(age_group, month_of_year) %>% 
    mutate(mean_contacts = mean(number_contacts, na.rm = TRUE)) %>% 
    filter(!is.na(age_group)) %>% 
@@ -753,6 +753,64 @@ epi_curve_onset_recent <- covid_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-08-19"), label = "Semester start", vjust = -0.5,
                  y = 10), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-7, y = 10, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
+     labs(title = "University of Montana COVID-19 Cases Since August 1, 2020",
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-07-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "3 days"),
+                  labels = seq.Date(from = as.Date("2020-07-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "3 days"),
+                  date_labels = "%d-%b") +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.position = "top",
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank())  +
+     scale_fill_manual(values = cbPalette) 
+epi_curve_onset_recent 
+
+#ggsave("ep_curve_onset_recent.jpg", width = 10, height = 5)
+```
+
+\pagebreak  
+
+```{r, fig.width = 11, fig.height = 5}
+# Epi curve - date of onset - recent data
+
+total_cases <- sum(covid_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
+
+epi_curve_onset_recent <- covid_data %>% 
+   filter(!is.na(test_date_new)) %>% 
+   filter(test_date_new > "2020-07-31") %>% 
+   group_by(test_date_new) %>% 
+   ggplot() +
+     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_col(aes(test_date_new, case, fill = test_date_indicator)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-08-19")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-08-19"), label = "UM semester start", vjust = -0.5,
+                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_label(aes(x = Sys.Date()-7, y = 10, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
