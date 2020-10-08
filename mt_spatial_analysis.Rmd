@@ -1,7 +1,7 @@
 ---
 title: "Montana COVID-19 Sociodemographic/Spatial Analysis"
 author: "Ethan Walker, University of Montana"
-date: "Started Oct 2, 2020, Updated Oct 2, 2020"
+date: "Started Oct 2, 2020, Updated Oct 7, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -116,16 +116,15 @@ state_data_clean <- state_data %>%
                                               "Hosp: Past", "Hosp: Unknown"))) %>% 
    select(-case_no) %>% 
    rownames_to_column(var = "case_no")
-```
 
 
-```{r}
 # Pull in and merge other data files
 file_path1 <- c("C:/Users/ethan.walker/Box/COVID19 Spatial/")
 file_path2 <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 county_data_initial <- read_csv(paste0(file_path1, "MASTERfiles/Montana_COUNTY_Master.csv")) %>% 
-   rename_all(tolower)
+   rename_all(tolower) %>% 
+   mutate(state_pop = sum(e_totpop))
 
 covid_county_merged <- state_data_clean %>% 
    left_join(county_data_initial, by = "county") %>% 
@@ -142,6 +141,73 @@ write_rds(covid_county_merged, paste0(file_path2, "Output/covid_county_merged.rd
 file_path2 <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 covid_county_merged <- read_rds(paste0(file_path2, "Output/covid_county_merged.rds"))
 
+cleaning_data <- covid_county_merged %>% 
+   mutate(month_of_year = lubridate::month(dates, label = TRUE)) %>% 
+   ungroup() %>% 
+   mutate(state_cases = sum(case)) %>% 
+   group_by(month_of_year) %>% 
+   mutate(state_month_cases = sum(case)) %>% 
+   group_by(age_group) %>% 
+   mutate(state_age_group_cases = sum(case)) %>% 
+   group_by(sex) %>% 
+   mutate(state_sex_cases = sum(case)) %>% 
+   group_by(hospitalization) %>% 
+   mutate(state_hospitalization_cases = sum(case)) %>% 
+   group_by(outcome) %>% 
+   mutate(state_outcome_cases = sum(case)) %>% 
+   group_by(county) %>% 
+   mutate(county_cases = sum(case)) %>% 
+   group_by(county, month_of_year) %>% 
+   mutate(county_month_cases = sum(case)) %>% 
+   group_by(county, age_group) %>% 
+   mutate(county_age_group_cases = sum(case)) %>% 
+   group_by(county, sex) %>% 
+   mutate(county_sex_cases = sum(case)) %>% 
+   group_by(county, hospitalization) %>% 
+   mutate(county_hospitalization_cases = sum(case)) %>% 
+   group_by(county, outcome) %>% 
+   mutate(county_outcome_cases = sum(case)) %>% 
+   group_by(region) %>% 
+   mutate(region_cases = sum(case)) %>% 
+   group_by(region, month_of_year) %>% 
+   mutate(region_month_cases = sum(case)) %>% 
+   group_by(region, age_group) %>% 
+   mutate(region_age_group_cases = sum(case)) %>% 
+   group_by(region, sex) %>% 
+   mutate(region_sex_cases = sum(case)) %>% 
+   group_by(region, hospitalization) %>% 
+   mutate(region_hospitalization_cases = sum(case)) %>% 
+   group_by(region, outcome) %>% 
+   mutate(region_outcome_cases = sum(case)) %>% 
+   ungroup()
 
+county_data <- cleaning_data %>% 
+   distinct(county, month_of_year, age_group, sex, hospitalization, outcome, .keep_all = TRUE) %>% 
+   select(-mt_case, -case, -case_no, -dates) %>% 
+   arrange(county, month_of_year, age_group, sex, hospitalization, outcome) %>% 
+   mutate(state_inc = state_cases/state_pop*100000) %>% 
+   group_by(county) %>% 
+   mutate(county_inc = county_cases/e_totpop*100000) %>% 
+   ungroup() %>% 
+   mutate(county_state_inc_ratio = round(county_inc/state_inc, digits = 2)) %>% 
+   select(state_cases, state_inc, county, region, county_cases, county_inc, county_state_inc_ratio,
+          month_of_year, state_month_cases, county_month_cases, region_month_cases,
+          age_group, state_age_group_cases, county_age_group_cases, region_age_group_cases,
+          sex, state_sex_cases, county_sex_cases, region_sex_cases,
+          hospitalization, state_hospitalization_cases, county_hospitalization_cases, region_hospitalization_cases,
+          outcome, state_outcome_cases, county_outcome_cases, region_outcome_cases,
+          st:region_outcome_cases) 
+
+inc_ratio_summary <- county_data %>% 
+   select(county, county_state_inc_ratio) %>% 
+   distinct(county, .keep_all = TRUE) %>% 
+   arrange(county_state_inc_ratio)
+head(inc_ratio_summary, 10)
+
+inc_ratio_summary <- county_data %>% 
+   select(county, county_state_inc_ratio) %>% 
+   distinct(county, .keep_all = TRUE) %>% 
+   arrange(desc(county_state_inc_ratio))
+head(inc_ratio_summary, 10)
 ```
 
