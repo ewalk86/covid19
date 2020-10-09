@@ -1,7 +1,7 @@
 ---
 title: "University of Montana COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of October 5, 2020"
+date: "Data as of October 8, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -44,16 +44,11 @@ colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "
 input_path <- c("C:/R/covid19/")
 file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
-
 covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
-   filter(um_case == "um")
+   mutate(um_case = if_else(is.na(um_case), "Non-UM Case", "UM Case"))
 
-summary_data <- covid_data %>% 
-   mutate(month_of_year = month(symptom_onset_date_new, label = TRUE)) %>% 
-   filter(month_of_year == "Sep") %>% 
-   #group_by(age_group3) %>% 
-   count()
-#summary_data
+um_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
+   filter(um_case == "um")
 
 ```
 
@@ -61,87 +56,124 @@ summary_data <- covid_data %>%
 ```{r}
 # Incidence table
 
-overall_summary <- covid_data %>% 
+county_overall_summary <- covid_data %>% 
    mutate(total_cases = n()) %>% 
-   summarize("Number of Cases" = n()) %>% 
-   mutate("Proportion of Cases (%)" = 
-          round(`Number of Cases`/(sum(`Number of Cases`))*100),
-          "Incidence per 100,000 Population" = 
-          round(`Number of Cases`/119600*100000, digits = 1)) %>% 
+   summarize("County Cases" = n()) %>% 
+   mutate("County Cases (%)" = 
+          round(`County Cases`/(sum(`County Cases`))*100)) %>% 
    mutate("Data Category" = "Total") %>%
    na.exclude()
 
-age_group_summary <- covid_data %>% 
-   mutate(total_cases = n(),
-          age_group_pop = if_else(age_group2 == "<18", 119600*0.188, 119600*0.656),
-          age_group_pop = if_else(age_group2 == "65+", 119600*0.156, age_group_pop)) %>% 
-   group_by(age_group2, age_group_pop) %>% 
-   summarize("Number of Cases" = n()) %>% 
-   ungroup() %>% 
-   mutate("Proportion of Cases (%)" = 
-          round(`Number of Cases`/(sum(`Number of Cases`))*100),
-          "Incidence per 100,000 Population" = 
-          round(`Number of Cases`/age_group_pop*100000, digits = 1)) %>% 
-   rename("Data Category" = age_group2) %>% 
-   select(-age_group_pop) %>% 
+um_overall_summary <- um_data %>% 
+   mutate(total_cases = n()) %>% 
+   summarize("UM Cases" = n()) %>% 
+   mutate("UM Cases (%)" = 
+          round(`UM Cases`/(sum(`UM Cases`))*100)) %>% 
    na.exclude()
 
-gender_summary <- covid_data %>% 
-   mutate(total_cases = n(),
-          gender_pop = if_else(gender == "Female", 119600*0.499, 119600*0.501)) %>% 
-   group_by(gender, gender_pop) %>% 
-   summarize("Number of Cases" = n()) %>% 
-   ungroup() %>% 
-   mutate("Proportion of Cases (%)" = 
-          round(`Number of Cases`/(sum(`Number of Cases`))*100),
-          "Incidence per 100,000 Population" = 
-          round(`Number of Cases`/gender_pop*100000, digits = 1)) %>% 
-   rename("Data Category" = gender) %>% 
-   select(-gender_pop) %>% 
-   na.exclude()
+overall_summary <- cbind(county_overall_summary, um_overall_summary)
 
-travel_summary <- covid_data %>% 
+county_gender_summary <- covid_data %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(gender) %>% 
+   summarize("County Cases" = n()) %>% 
+   ungroup() %>% 
+   mutate("County Cases (%)" = 
+          round(`County Cases`/(sum(`County Cases`))*100)) %>% 
+   mutate("Data Category" = gender) %>%
+   na.exclude() %>% 
+   select(-gender)
+
+um_gender_summary <- um_data %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(gender) %>% 
+   summarize("UM Cases" = n()) %>% 
+   ungroup() %>% 
+   mutate("UM Cases (%)" = 
+          round(`UM Cases`/(sum(`UM Cases`))*100)) %>% 
+   na.exclude() %>% 
+   select(-gender)
+
+gender_summary <- cbind(county_gender_summary, um_gender_summary)
+
+county_travel_summary <- covid_data %>% 
    mutate(total_cases = n()) %>% 
    group_by(travel_hx) %>% 
-   summarize("Number of Cases" = n()) %>% 
+   summarize("County Cases" = n()) %>% 
    ungroup() %>% 
-   mutate("Proportion of Cases (%)" = 
-          round(`Number of Cases`/(sum(`Number of Cases`))*100),
-          "Incidence per 100,000 Population" = "NA") %>% 
-   rename("Data Category" = travel_hx) %>% 
-   na.exclude()
+   mutate("County Cases (%)" = 
+          round(`County Cases`/(sum(`County Cases`))*100)) %>% 
+   mutate("Data Category" = travel_hx) %>%
+   na.exclude() %>% 
+   select(-travel_hx)
 
-contact_summary <- covid_data %>% 
+um_travel_summary <- um_data %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(travel_hx) %>% 
+   summarize("UM Cases" = n()) %>% 
+   ungroup() %>% 
+   mutate("UM Cases (%)" = 
+          round(`UM Cases`/(sum(`UM Cases`))*100)) %>% 
+   na.exclude() %>% 
+   select(-travel_hx)
+
+travel_summary <- cbind(county_travel_summary, um_travel_summary)
+
+county_contact_summary <- covid_data %>% 
    mutate(total_cases = n()) %>% 
    group_by(contact_with_case) %>% 
-   summarize("Number of Cases" = n()) %>% 
+   summarize("County Cases" = n()) %>% 
    ungroup() %>% 
-   mutate("Proportion of Cases (%)" = 
-          round(`Number of Cases`/(sum(`Number of Cases`))*100),
-          "Incidence per 100,000 Population" = "NA") %>% 
-   rename("Data Category" = contact_with_case) %>% 
-   na.exclude()
+   mutate("County Cases (%)" = 
+          round(`County Cases`/(sum(`County Cases`))*100)) %>% 
+   mutate("Data Category" = contact_with_case) %>%
+   na.exclude() %>% 
+   select(-contact_with_case)
 
-community_spread_summary <- covid_data %>% 
+um_contact_summary <- um_data %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(contact_with_case) %>% 
+   summarize("UM Cases" = n()) %>% 
+   ungroup() %>% 
+   mutate("UM Cases (%)" = 
+          round(`UM Cases`/(sum(`UM Cases`))*100)) %>% 
+   na.exclude() %>% 
+   select(-contact_with_case)
+
+contact_summary <- cbind(county_contact_summary, um_contact_summary)
+
+county_community_spread_summary <- covid_data %>% 
    mutate(total_cases = n()) %>% 
    group_by(community_spread_new) %>% 
-   summarize("Number of Cases" = n()) %>% 
+   summarize("County Cases" = n()) %>% 
    ungroup() %>% 
-   mutate("Proportion of Cases (%)" = 
-          round(`Number of Cases`/(sum(`Number of Cases`))*100),
-          "Incidence per 100,000 Population" = "NA") %>% 
-   rename("Data Category" = community_spread_new) %>% 
-   na.exclude()
+   mutate("County Cases (%)" = 
+          round(`County Cases`/(sum(`County Cases`))*100)) %>% 
+   mutate("Data Category" = community_spread_new) %>%
+   na.exclude() %>% 
+   select(-community_spread_new)
+
+um_community_spread_summary <- um_data %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(community_spread_new) %>% 
+   summarize("UM Cases" = n()) %>% 
+   ungroup() %>% 
+   mutate("UM Cases (%)" = 
+          round(`UM Cases`/(sum(`UM Cases`))*100)) %>% 
+   na.exclude() %>% 
+   select(-community_spread_new)
+
+community_spread_summary <- cbind(county_community_spread_summary, um_community_spread_summary)
 
 
 covid_summary <- rbind(overall_summary, gender_summary,
                        travel_summary, contact_summary,
                        community_spread_summary) %>% 
-   select("Data Category", "Number of Cases", 
-          "Proportion of Cases (%)", "Incidence per 100,000 Population")
+   select("Data Category", "County Cases", "County Cases (%)", 
+          "UM Cases", "UM Cases (%)")
 
 
-kable(covid_summary, caption = "University of Montana COVID-19 Cases",
+kable(covid_summary, caption = "Missoula County COVID-19 Cases",
       format = "latex", align = "c") %>% 
    kable_styling(font_size = 10) %>% 
    row_spec(0, bold = TRUE, font_size = 10) %>% 
@@ -157,59 +189,6 @@ kable(covid_summary, caption = "University of Montana COVID-19 Cases",
 
 \clearpage
 
-```{r}
-# Incidence data
-age_incidence <- covid_data %>% 
-   select(case, age_group, age_group_percent, county_pop) %>% 
-   mutate(total_cases = n()) %>% 
-   group_by(age_group) %>% 
-   mutate(group_cases = n(),
-          group_prop = group_cases/total_cases*100,
-          group_pop = age_group_percent*county_pop,
-          group_inc = group_cases/group_pop*100000) %>% 
-   ungroup() %>% 
-   distinct(age_group, .keep_all = TRUE) %>% 
-   mutate(region = "Missoula County") %>% 
-   select(region, age_group, group_cases, group_prop, group_inc, 
-          county_pop, age_group_percent) %>% 
-   filter(!is.na(age_group)) %>% 
-   arrange(age_group)
-
-race_incidence <- covid_data %>% 
-   select(case, race, race_percent, county_pop) %>% 
-   mutate(total_cases = n(),
-          race_percent = as.numeric(race_percent)) %>% 
-   group_by(race) %>% 
-   mutate(group_cases = n(),
-          group_prop = group_cases/total_cases*100,
-          group_pop = race_percent*county_pop,
-          group_inc = group_cases/group_pop*100000) %>% 
-   ungroup() %>% 
-   distinct(race, .keep_all = TRUE) %>% 
-   mutate(region = "Missoula County") %>% 
-   select(region, race, group_cases, group_prop, group_inc, 
-          county_pop, race_percent) %>% 
-   filter(!is.na(race)) %>% 
-   arrange(race)
-
-ethnicity_incidence <- covid_data %>% 
-   select(case, ethnicity, ethnicity_percent, county_pop) %>% 
-   mutate(total_cases = n(),
-          ethnicity_percent = as.numeric(ethnicity_percent)) %>% 
-   group_by(ethnicity) %>% 
-   mutate(group_cases = n(),
-          group_prop = group_cases/total_cases*100,
-          group_pop = ethnicity_percent*county_pop,
-          group_inc = group_cases/group_pop*100000) %>% 
-   ungroup() %>% 
-   distinct(ethnicity, .keep_all = TRUE) %>% 
-   mutate(region = "Missoula County") %>% 
-   select(region, ethnicity, group_cases, group_prop, group_inc, 
-          county_pop, ethnicity_percent) %>% 
-   filter(!is.na(ethnicity)) %>% 
-   arrange(ethnicity)
-```
-
 \pagebreak  
 
 ```{r}
@@ -221,10 +200,10 @@ age_na <- sum(age_n$case)
 age_count_plot <- covid_data %>% 
    filter(!is.na(age_group)) %>% 
    ggplot() +   
-     geom_bar(aes(fct_rev(age_group)), fill = "steelblue", width = .6) +   
+     geom_bar(aes(fct_rev(age_group), fill = um_case), width = .6) +   
      labs(title = "COVID-19 Cases by age group",
-          subtitle = paste0("University of Montana, since Aug 2020. Age under investigation for ", age_na, " cases."), 
-          y = "Number of cases", x = "Age Group (years)") +
+          subtitle = paste0("Missoula County, 2020. Age under investigation for ", age_na, " cases."), 
+          y = "Number of cases", x = "Age Group (years)", fill = "") +
      scale_y_continuous(breaks = c(seq(0, 500, 25)), labels = c(seq(0, 500, 25))) +
      coord_flip() +
      theme_minimal() +
@@ -242,7 +221,8 @@ age_count_plot <- covid_data %>%
                                        margin = unit(c(5, 0, 0, 0), "mm")),
            axis.line.x = element_line(colour = "black", size = 1.2), 
            axis.line.y = element_line(colour = "black", size = 1.2), 
-           axis.ticks = element_line(colour = "black")) 
+           axis.ticks = element_line(colour = "black")) +
+   scale_fill_manual(values = colorblind_palette)
 age_count_plot
 
 #ggsave("age_count_plot.jpg", width = 10, height = 5)
@@ -252,23 +232,39 @@ age_count_plot
 
 ```{r}
 # Age group line plot - counts by month
-age_count_month_plot <- covid_data %>% 
+age_count_month_plot <- um_data %>% 
+   filter(test_date_new > "2020-08-01") %>% 
    mutate(month_of_year = month(test_date_new, label = TRUE)) %>% 
-   group_by(age_group, month_of_year) %>% 
+   mutate(week_of_year = cut.Date(test_date_new, breaks = "1 week", start.on.monday = FALSE),
+          week_of_year = ymd(week_of_year)) %>% 
+   group_by(age_group3, week_of_year) %>% 
    mutate(group_cases = n()) %>% 
-   filter(!is.na(age_group)) %>% 
-   filter(!is.na(month_of_year)) %>% 
-   distinct(age_group, month_of_year, .keep_all = TRUE) %>% 
+   filter(!is.na(age_group3)) %>% 
+   filter(!is.na(week_of_year)) %>% 
+   distinct(age_group3, week_of_year, .keep_all = TRUE) %>% 
    ggplot() +
-      geom_line(aes(month_of_year, group_cases, group = age_group, 
-                    color = age_group), size = 1.5) +
-   theme_minimal() +
-   labs(title = "Monthly COVID-19 cases by age group",
-        subtitle = paste0("University of Montana, since Aug 2020. Age under investigation for ", age_na, " cases."),
+      geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+      geom_line(aes(week_of_year, group_cases, group = age_group3, 
+                    color = age_group3), size = 1.5) +
+      geom_label(aes(x = Sys.Date()-7, y = 50, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
+      theme_minimal() +
+      labs(title = "Weekly COVID-19 cases by age group",
+        subtitle = paste0("University of Montana, 2020. Data incomplete for ", age_na, " cases."),
         color = "Age group") +
-   ylab("Number of cases") +
-   xlab("") +
-   theme(strip.text = element_text(size = 16, colour = "black"),
+      ylab("Number of cases per week") +
+      xlab("") +
+      scale_x_date(breaks = seq.Date(from = as.Date("2020-08-02"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "7 days"),
+                  labels = seq.Date(from = as.Date("2020-08-02"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "7 days"),
+                  date_labels = "%d-%b") +
+      scale_y_continuous(breaks = c(seq(0, 200, 10)), labels = c(seq(0, 200, 10))) +
+      theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 18, colour = "black"),
          panel.grid = element_blank(),
          panel.grid.major.y = element_line(colour = "grey"),
@@ -293,98 +289,12 @@ age_count_month_plot
 \pagebreak  
 
 ```{r}
-# Incidence bar plot by age
-age_incidence_plot_bar <- age_incidence %>% 
-   filter(region == "Missoula County") %>% 
-   ggplot() +
-     geom_col(aes(fct_rev(age_group), group_inc), fill = "steelblue", width = .6) +
-     coord_flip() +
-     labs(title = "COVID-19 incidence by age group",
-          subtitle = paste0("University of Montana, since Aug 2020. Age under investigation for ", age_na, " cases."),
-          y = "Incidence per 100,000 Missoula County Population", x = "Age Group (years)") +
-     scale_y_continuous(breaks = c(seq(0, 1000, 50)), labels = c(seq(0, 1000, 50))) +
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 18, colour = "black"),
-           panel.grid = element_blank(),
-           axis.text.x = element_text(size = 14, colour = "black", 
-                                     angle = 45, vjust = 0.75, hjust = 0.9),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black"),
-           axis.text.y = element_text(size = 16, colour = "black"),
-           axis.title.y = element_text(size = 14, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 14, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           axis.line.x = element_line(colour = "black", size = 1.2), 
-           axis.line.y = element_line(colour = "black", size = 1.2), 
-           axis.ticks = element_line(colour = "black")) 
-age_incidence_plot_bar
-
-#ggsave("age_incidence_plot_bar.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-# Incidence line plot by age and month
-age_incidence_plot_line <- covid_data %>% 
-   mutate(month_of_year = month(test_date_new, label = TRUE)) %>% 
-   select(case, age_group, age_group_percent, county_pop, month_of_year) %>% 
-   mutate(total_cases = n()) %>% 
-   group_by(age_group, month_of_year) %>% 
-   mutate(group_cases = n(),
-          group_prop = group_cases/total_cases*100,
-          group_pop = age_group_percent*county_pop,
-          group_inc = group_cases/group_pop*100000) %>% 
-   ungroup() %>% 
-   distinct(age_group, month_of_year, .keep_all = TRUE) %>% 
-   mutate(region = "Missoula County") %>% 
-   select(region, age_group, month_of_year, group_cases, group_prop, group_inc, 
-          county_pop, age_group_percent) %>% 
-   filter(!is.na(age_group)) %>% 
-   arrange(age_group, month_of_year) %>% 
-   filter(!is.na(month_of_year)) %>% 
-   ggplot() +
-      geom_line(aes(month_of_year, group_inc, group = age_group, 
-                    color = age_group), size = 1.5) +
-   theme_minimal() +
-   labs(title = "COVID-19 incidence per month by age group",
-        subtitle = paste0("University of Montana, since Aug 2020. Age under investigation for ", age_na, " cases."),
-        color = "Age group") +
-   ylab("Incidence per 100,000") +
-   xlab("") +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 18, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 16, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 16, colour = "black"),
-         legend.text = element_text(size = 16, colour = "black"),
-         axis.title.y = element_text(size = 16, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 16, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = colorblind_palette)
-
-age_incidence_plot_line
-
-#ggsave("C:/R/covid19/age_incidence_plot_line.png", width = 10, height = 6)
-```
-
-\pagebreak  
-
-```{r}
-race_n <- covid_data %>% 
+race_n <- um_data %>% 
    filter(is.na(race))
 race_na <- sum(race_n$case)
 
 #Bar plot of race count data
-race_plot_count <- covid_data %>% 
+race_plot_count <- um_data %>% 
    filter(!is.na(race)) %>% 
    ggplot() +   
      geom_bar(aes(x = fct_rev(race)), fill = "steelblue", width = .6) +   
@@ -416,46 +326,12 @@ race_plot_count
 \pagebreak  
 
 ```{r}
-#Bar plot of race incidence data
-race_incidence_plot <- race_incidence %>% 
-   filter(region == "Missoula County") %>% 
-   ggplot() +
-     geom_col(aes(fct_rev(race), group_inc), fill = "steelblue", width = .6) +
-     coord_flip() +
-     labs(title = "COVID-19 incidence by self-reported race",
-          subtitle = paste0("University of Montana. Race unknown for ", race_na, " cases."),
-          y = "Incidence per 100,000 Missoula County Population", x = "") +
-     scale_y_continuous(breaks = c(seq(0, 2000, 200)), labels = c(seq(0, 2000, 200))) +
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 18, colour = "black"),
-           panel.grid = element_blank(),
-           axis.text.x = element_text(size = 14, colour = "black", 
-                                     angle = 45, vjust = 0.75, hjust = 0.9),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black"),
-           axis.text.y = element_text(size = 16, colour = "black"),
-           axis.title.y = element_text(size = 14, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 14, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           axis.line.x = element_line(colour = "black", size = 1.2), 
-           axis.line.y = element_line(colour = "black", size = 1.2), 
-           axis.ticks = element_line(colour = "black"))
-race_incidence_plot
-
-#ggsave("race_incidence_plot.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-ethnicity_n <- covid_data %>% 
+ethnicity_n <- um_data %>% 
    filter(is.na(ethnicity))
 ethnicity_na <- sum(ethnicity_n$case)
 
 #Bar plot of ethnicity count data
-ethnicity_plot <- covid_data %>% 
+ethnicity_plot <- um_data %>% 
    filter(!is.na(ethnicity)) %>% 
    ggplot() +   
      geom_bar(aes(x = fct_rev(ethnicity)), fill = "steelblue", width = .6) +   
@@ -487,42 +363,8 @@ ethnicity_plot
 \pagebreak  
 
 ```{r}
-#Bar plot of ethnicity incidence data
-ethnicity_incidence_plot <- ethnicity_incidence %>% 
-   filter(region == "Missoula County") %>% 
-   ggplot() +
-     geom_col(aes(fct_rev(ethnicity), group_inc), fill = "steelblue", width = .6) +
-     coord_flip() +
-     labs(title = "COVID-19 incidence by self-reported ethnicity",
-          subtitle = paste0("University of Montana. Ethnicity unknown for ", race_na, " cases."),
-          y = "Incidence per 100,000 Missoula County Population", x = "") +
-     scale_y_continuous(breaks = c(seq(0, 400, 25)), labels = c(seq(0, 400, 25))) +
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 18, colour = "black"),
-           panel.grid = element_blank(),
-           axis.text.x = element_text(size = 14, colour = "black", 
-                                     angle = 45, vjust = 0.75, hjust = 0.9),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black"),
-           axis.text.y = element_text(size = 16, colour = "black"),
-           axis.title.y = element_text(size = 14, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 14, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           axis.line.x = element_line(colour = "black", size = 1.2), 
-           axis.line.y = element_line(colour = "black", size = 1.2), 
-           axis.ticks = element_line(colour = "black"))
-ethnicity_incidence_plot
-
-#ggsave("ethnicity_incidence_plot.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
 #Symptoms and gender bar plot
-symptoms_gender_plot <- covid_data %>% 
+symptoms_gender_plot <- um_data %>% 
    filter(!is.na(gender)) %>% 
    pivot_longer(cols = c(symptom_fever_chill:symptom_diarrhea),
                 names_to = "variable", values_to = "values") %>% 
@@ -576,7 +418,7 @@ symptoms_gender_plot
 
 ```{r}
 #Symptoms and age group bar plot
-symptoms_age_plot <- covid_data %>% 
+symptoms_age_plot <- um_data %>% 
    filter(!is.na(age_group)) %>% 
    pivot_longer(cols = c(symptom_fever_chill:symptom_diarrhea),
                 names_to = "variable", values_to = "values") %>% 
@@ -629,7 +471,7 @@ symptoms_age_plot
 \pagebreak  
 
 ```{r}
-piechart_function <- function(data = covid_data, plot_fill, var_label) {
+piechart_function <- function(data, plot_fill, title_label) {
 
 chart_data <- data %>% 
    rename(chart_var = plot_fill) %>% 
@@ -651,8 +493,7 @@ covid_piechart <- chart_data %>%
      geom_text(aes(label = group_lab), 
                position = position_stack(vjust = 0.5),
                color = "white", size = 6) +
-     labs(title = "University of Montana COVID-19 cases", fill = "",
-          subtitle = var_label) + 
+     labs(title = title_label, fill = "") + 
      theme_void() +
      theme(title = element_text(size = 16, colour = "black"),
            legend.text = element_text(size = 16, colour = "black"),
@@ -665,7 +506,15 @@ covid_piechart
 
 
 ```{r}
-piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number of contacts - all cases")
+piechart_function(data = covid_data, plot_fill = "number_contacts_categorical", 
+                  title_label = "Number of reported contacts, Missoula County COVID-19 cases")
+
+#ggsave("piechart_contacts.jpg", width = 10, height = 5)
+```
+
+```{r}
+piechart_function(data = um_data, plot_fill = "number_contacts_categorical", 
+                  title_label = "Number of reported contacts, University of Montana COVID-19 cases")
 
 #ggsave("piechart_contacts.jpg", width = 10, height = 5)
 ```
@@ -674,7 +523,7 @@ piechart_function(plot_fill = "number_contacts_categorical", var_label = "Number
 
 ```{r}
 # Table with summary stats on number of contacts per case
-sum_nums <- covid_data %>% 
+sum_nums <- um_data %>% 
    rename("Age group" = age_group) %>% 
    group_by(`Age group`) %>% 
    filter(!is.na(`Age group`)) %>% 
@@ -692,56 +541,16 @@ kable(sum_nums, caption = "Number of contacts by age group, University of Montan
 
 \clearpage
 
-```{r}
-# Line plot of number of contacts per age group by month
-contacts_age_plot <- covid_data %>% 
-   mutate(month_of_year = month(test_date_new, label = TRUE)) %>% 
-   group_by(age_group, month_of_year) %>% 
-   mutate(mean_contacts = mean(number_contacts, na.rm = TRUE)) %>% 
-   filter(!is.na(age_group)) %>% 
-   filter(!is.na(month_of_year)) %>% 
-   distinct(age_group, month_of_year, .keep_all = TRUE) %>% 
-   ggplot() +
-      geom_line(aes(month_of_year, mean_contacts, group = age_group, 
-                    color = age_group), size = 1.5) +
-   theme_minimal() +
-   labs(title = "Mean number of contacts per COVID case, University of Montana",
-        subtitle = "By age group, per month, since Aug 2020",
-        color = "Age group") +
-   ylab("Mean # contacts") +
-   xlab("") +
-   theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 18, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 16, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 16, colour = "black"),
-         legend.text = element_text(size = 16, colour = "black"),
-         axis.title.y = element_text(size = 16, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 16, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) +
-   scale_color_manual(values = colorblind_palette)
-
-contacts_age_plot
-
-#ggsave("C:/R/covid19/contacts_age_plot.png", width = 10, height = 6)
-```
-
 \pagebreak  
 
 ```{r, fig.width = 11, fig.height = 5}
 # Epi curve - date of onset - recent data
 
-total_cases <- sum(covid_data$case)
+total_cases <- sum(um_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
 date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
-epi_curve_onset_recent <- covid_data %>% 
+epi_curve_onset_recent <- um_data %>% 
    filter(!is.na(symptom_onset_date_new)) %>% 
    filter(symptom_onset_date_new > "2020-07-31") %>% 
    group_by(symptom_onset_date_new) %>% 
@@ -795,11 +604,11 @@ epi_curve_onset_recent
 ```{r, fig.width = 11, fig.height = 5}
 # Epi curve - date of onset - recent data
 
-total_cases <- sum(covid_data$case)
+total_cases <- sum(um_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
 date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
-epi_curve_onset_recent <- covid_data %>% 
+epi_curve_onset_recent <- um_data %>% 
    filter(!is.na(test_date_new)) %>% 
    filter(test_date_new > "2020-07-31") %>% 
    group_by(test_date_new) %>% 
@@ -851,21 +660,47 @@ epi_curve_onset_recent
 \pagebreak  
 
 ```{r}
-## Missoula county R results
+## Missoula county R results using county data
 ## Using State data to be able to incorporate local vs imported cases
 ## Only updates once per week
 
-um_data <- covid_data %>% 
-   select(symptom_onset_date_new) %>% 
-   filter(!is.na(symptom_onset_date_new)) %>% 
-   filter(symptom_onset_date_new < Sys.Date() -14)
+case_data <- covid_data %>% 
+   rename(dates = symptom_onset_date_new) %>% 
+   mutate(local = if_else(suspected_source != "travel" | is.na(suspected_source), 1, 0),
+          imported = if_else(suspected_source == "travel", 1, 0)) %>% 
+   filter(!is.na(dates)) %>% 
+   filter(dates > "2020-07-31" & dates < Sys.Date() - 13) %>% 
+   arrange(dates) %>% 
+   select(dates, local, imported, case) %>% 
+   group_by(dates) %>% 
+   mutate(local = sum(local, na.rm = TRUE),
+          imported = sum(imported, na.rm = TRUE),
+          total_cases = sum(case, na.rm = TRUE)) %>% 
+   distinct(dates, .keep_all = TRUE) %>% 
+   arrange(dates) %>% 
+   ungroup() 
 
-um_incidence <- incidence(um_data$symptom_onset_date_new)
+
+case_data_2 <- case_data %>% 
+   mutate(I = local + imported) %>% 
+   select(dates, I) 
+
+latest_date <- format(Sys.Date() - 14, "%Y-%m-%d")
+
+incidence_data <- incidence(case_data_2$dates, last_date = latest_date)
+
+li_inc_data <- as.data.frame(incidence_data$dates) %>% 
+   mutate(dates = ymd(incidence_data$dates)) %>% 
+   select(dates) %>% 
+   left_join(case_data, by = "dates") %>% 
+   mutate(local = if_else(is.na(local), 0, local),
+          imported = if_else(is.na(imported), 0, imported)) %>% 
+   select(-case, -total_cases)
 
 
 # Set dates for 14-day rolling averages
-um_n <- as.data.frame(um_incidence$dates)
-time_var <- nrow(um_n)
+county_n <- as.data.frame(li_inc_data$dates)
+time_var <- nrow(county_n)
 time_start <- seq(2, time_var-13)
 time_end <- time_start + 13
 
@@ -874,7 +709,7 @@ time_end <- time_start + 13
 serial_interval_mean <- 6.3
 serial_interval_sd <- 5.4
 
-r_results <- estimate_R(um_incidence, method="parametric_si", 
+r_results <- estimate_R(li_inc_data, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
                                                      std_si = serial_interval_sd,
                                                      t_start =  time_start,
@@ -882,39 +717,122 @@ r_results <- estimate_R(um_incidence, method="parametric_si",
 
 # Format and save analysis results
 colomns <- c(1:4, 8)
-um_r <- (r_results$R[,colomns]) %>% 
-   mutate(region = "University of Montana") %>% 
+county_r <- (r_results$R[,colomns]) %>% 
+   mutate(region = "Missoula County") %>% 
    rename(mean_r = `Mean(R)`,
           sd_r = `Std(R)`,
           median_r = `Median(R)`)
 
-um_dates <- as.data.frame(r_results$dates)
-um_i <- as.data.frame(r_results$I)
-um_cil <- as.data.frame(r_results$R$`Quantile.0.025(R)`)
-um_cih <- as.data.frame(r_results$R$`Quantile.0.975(R)`)
-um_dates_new <- cbind(um_dates, um_i) %>% 
+county_dates <- as.data.frame(r_results$dates)
+county_i <- as.data.frame(r_results$I)
+county_cil <- as.data.frame(r_results$R$`Quantile.0.025(R)`)
+county_cih <- as.data.frame(r_results$R$`Quantile.0.975(R)`)
+county_dates_new <- cbind(county_dates, county_i) %>% 
    rename(dates = 1,
           incidence = 2) %>% 
    mutate(dates = ymd(dates))
-um_dates_new <- um_dates_new[-(1:14), 1:2]
-um_dates_new <- cbind(um_dates_new, um_cil, um_cih) %>% 
+county_dates_new <- county_dates_new[-(1:14), 1:2]
+county_dates_new <- cbind(county_dates_new, county_cil, county_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
-um_r <- cbind(um_r, um_dates_new)
+mc_r <- cbind(county_r, county_dates_new)
+```
+
+\pagebreak  
+
+```{r}
+## Missoula county R results using county data
+## Using State data to be able to incorporate local vs imported cases
+## Only updates once per week
+
+case_data <- um_data %>% 
+   rename(dates = symptom_onset_date_new) %>% 
+   mutate(local = if_else(suspected_source != "travel" | is.na(suspected_source), 1, 0),
+          imported = if_else(suspected_source == "travel", 1, 0)) %>% 
+   filter(!is.na(dates)) %>% 
+   filter(dates > "2020-07-31" & dates < Sys.Date() - 13) %>% 
+   arrange(dates) %>% 
+   select(dates, local, imported, case) %>% 
+   group_by(dates) %>% 
+   mutate(local = sum(local, na.rm = TRUE),
+          imported = sum(imported, na.rm = TRUE),
+          total_cases = sum(case, na.rm = TRUE)) %>% 
+   distinct(dates, .keep_all = TRUE) %>% 
+   arrange(dates) %>% 
+   ungroup() 
 
 
-um_r_plot <- um_r %>% 
+case_data_2 <- case_data %>% 
+   mutate(I = local + imported) %>% 
+   select(dates, I) 
+
+latest_date <- format(Sys.Date() - 14, "%Y-%m-%d")
+
+incidence_data <- incidence(case_data_2$dates, last_date = latest_date)
+
+li_inc_data <- as.data.frame(incidence_data$dates) %>% 
+   mutate(dates = ymd(incidence_data$dates)) %>% 
+   select(dates) %>% 
+   left_join(case_data, by = "dates") %>% 
+   mutate(local = if_else(is.na(local), 0, local),
+          imported = if_else(is.na(imported), 0, imported)) %>% 
+   select(-case, -total_cases)
+
+
+# Set dates for 14-day rolling averages
+county_n <- as.data.frame(li_inc_data$dates)
+time_var <- nrow(county_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
+
+
+# Serial Interval derived from State of Montana paired case data
+serial_interval_mean <- 6.3
+serial_interval_sd <- 5.4
+
+r_results <- estimate_R(li_inc_data, method="parametric_si", 
+                           config = make_config(list(mean_si = serial_interval_mean, 
+                                                     std_si = serial_interval_sd,
+                                                     t_start =  time_start,
+                                                     t_end = time_end)))
+
+# Format and save analysis results
+colomns <- c(1:4, 8)
+county_r <- (r_results$R[,colomns]) %>% 
+   mutate(region = "Missoula County") %>% 
+   rename(mean_r = `Mean(R)`,
+          sd_r = `Std(R)`,
+          median_r = `Median(R)`)
+
+county_dates <- as.data.frame(r_results$dates)
+county_i <- as.data.frame(r_results$I)
+county_cil <- as.data.frame(r_results$R$`Quantile.0.025(R)`)
+county_cih <- as.data.frame(r_results$R$`Quantile.0.975(R)`)
+county_dates_new <- cbind(county_dates, county_i) %>% 
+   rename(dates = 1,
+          incidence = 2) %>% 
+   mutate(dates = ymd(dates))
+county_dates_new <- county_dates_new[-(1:14), 1:2]
+county_dates_new <- cbind(county_dates_new, county_cil, county_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+um_r <- cbind(county_r, county_dates_new)
+
+
+county_r_plot <- um_r %>% 
    filter(dates > "2020-07-31") %>% 
    ggplot() +
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   geom_line(data = mc_r, aes(dates, mean_r), size = 1.5, color = "blue") +
    #geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
    #geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
-   labs(title = "COVID-19 Rolling 14-day R-number, University of Montana",
+   labs(title = "COVID-19 Rolling 14-day R-number, Missoula County",
+        subtitle = "UM = black line, Missoula County = blue line",
         color = "") +
    ylab("R-number") +
    xlab("") +
    geom_hline(yintercept = 1, color = "red", size = 1.2) +
-   scale_x_date(date_breaks = "1 days", date_labels = "%d-%b") +
+   scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
    scale_y_continuous(breaks = seq(0, 5, 0.25), labels = seq(0, 5, 0.25)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
@@ -933,9 +851,8 @@ um_r_plot <- um_r %>%
          axis.line.y = element_blank(), 
          axis.ticks = element_blank()) +
    scale_color_manual(values = c("black")) 
-um_r_plot
+county_r_plot
 
 #ggsave("C:/R/covid19/missoula_r_plot.png", width = 10, height = 6)
 ```
-
 

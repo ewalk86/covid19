@@ -35,6 +35,12 @@ library(Rsftp)
 library(googledrive)
 library(googlesheets4)
 library(data.table)
+library(ggmap)
+library(maps)
+library(tigris)
+library(usmap)
+library(GISTools)
+library(geosphere)
 jv_palette <- c("#330099","#CC0066","#FF6633", 
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
@@ -183,14 +189,14 @@ cleaning_data <- covid_county_merged %>%
 
 county_data <- cleaning_data %>% 
    distinct(county, month_of_year, age_group, sex, hospitalization, outcome, .keep_all = TRUE) %>% 
-   select(-mt_case, -case, -case_no, -dates) %>% 
+   dplyr::select(-mt_case, -case, -case_no, -dates) %>% 
    arrange(county, month_of_year, age_group, sex, hospitalization, outcome) %>% 
    mutate(state_inc = state_cases/state_pop*100000) %>% 
    group_by(county) %>% 
    mutate(county_inc = county_cases/e_totpop*100000) %>% 
    ungroup() %>% 
    mutate(county_state_inc_ratio = round(county_inc/state_inc, digits = 2)) %>% 
-   select(state_cases, state_inc, county, region, county_cases, county_inc, county_state_inc_ratio,
+   dplyr::select(state_cases, state_inc, county, region, county_cases, county_inc, county_state_inc_ratio,
           month_of_year, state_month_cases, county_month_cases, region_month_cases,
           age_group, state_age_group_cases, county_age_group_cases, region_age_group_cases,
           sex, state_sex_cases, county_sex_cases, region_sex_cases,
@@ -199,15 +205,67 @@ county_data <- cleaning_data %>%
           st:region_outcome_cases) 
 
 inc_ratio_summary <- county_data %>% 
-   select(county, county_state_inc_ratio) %>% 
+   dplyr::select(county, county_inc, county_state_inc_ratio) %>% 
    distinct(county, .keep_all = TRUE) %>% 
+   mutate(county = tolower(county)) %>% 
    arrange(county_state_inc_ratio)
 head(inc_ratio_summary, 10)
 
 inc_ratio_summary <- county_data %>% 
-   select(county, county_state_inc_ratio) %>% 
+   dplyr::select(county, county_inc, county_state_inc_ratio) %>% 
    distinct(county, .keep_all = TRUE) %>% 
    arrange(desc(county_state_inc_ratio))
 head(inc_ratio_summary, 10)
+```
+
+
+```{r}
+# Montana map
+mt_map <- map_data("county") %>% 
+   filter(region == "montana") %>% 
+   rename(county = subregion) %>% 
+   filter(county != "yellowstone national") %>% 
+   left_join(inc_ratio_summary, by = "county") %>% 
+   mutate(inc_cat = gtools::quantcut(county_inc, 4),
+          inc_cat = gsub("\\(", "", inc_cat),
+          inc_cat = gsub("]", "", inc_cat),
+          inc_cat = gsub("\\[", "", inc_cat)) %>% 
+   separate(inc_cat, c("range1", "range2"), sep = ",") %>% 
+   mutate(range1 = as.numeric(range1),
+          range2 = as.numeric(range2)) %>% 
+   unite(inc_cat, c("range1", "range2"), sep = " to ", remove = FALSE) %>% 
+   arrange(range1) %>% 
+   mutate(inc_cat = factor(inc_cat,
+                           levels = c("166 to 754", "754 to 1180",
+                                      "1180 to 1660", "1660 to 7590")))
+
+
+mt_map <- us_map(regions = "counties") %>% 
+   filter(full == "Montana") %>% 
+   mutate(fips = as.numeric(fips)) %>% 
+   select(-county) %>% 
+   left_join(inc_ratio_summary, by = "fips") %>% 
+   group_by(county) %>% 
+   mutate(mean_x = mean(x),
+          mean_y = mean(y)) %>% 
+   ungroup() %>% 
+   mutate(inc_ratio_cat = cut(county_state_inc_ratio,
+                              breaks = c(0, 0.48, 0.75, 1.06, 4.86),
+                              labels = c("0 to 0.47", "0.48 to 0.74",
+                                         "0.75 to 1.05", "1.06 to 4.85"),
+                              right = FALSE)) 
+mt_map
+
+
+mt_plot <- mt_map %>% 
+  ggplot() +
+    geom_polygon(aes(long, lat, group=group, fill = inc_cat), 
+                 colour="black", size = 1.2, angle = 90) +
+    #geom_point(aes(x=mean_x, y=mean_y, size = county_state_inc_ratio)) +
+    theme_void() +
+    labs(title = "  Montana COVID-19 incidence, by quartile", fill = "Incidence") +
+    scale_fill_brewer(palette = "Blues")
+mt_plot
+
 ```
 

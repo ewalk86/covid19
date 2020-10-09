@@ -211,7 +211,7 @@ phillips_county <- county_function("Phillips")
 prairie_county <- county_function("Prairie")
 mineral_county <- county_function("Mineral")
 carter_county <- county_function("Carter")
-
+petroleum_county <- county_function("Petroleum")
 
 
 county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
@@ -241,7 +241,7 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          sweetgrass_county, sanders_county,
                                          powell_county, phillips_county,
                                          prairie_county, mineral_county,
-                                         carter_county) %>% 
+                                         carter_county, petroleum_county) %>% 
    group_by(county) %>% 
    mutate("Cumulative total cases" = cumsum(`Daily total cases`),
           "Cumulative active cases" = cumsum(Active),

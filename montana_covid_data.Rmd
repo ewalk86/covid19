@@ -219,6 +219,7 @@ phillips_county <- county_function("Phillips")
 prairie_county <- county_function("Prairie")
 mineral_county <- county_function("Mineral")
 carter_county <- county_function("Carter")
+petroleum_county <- county_function("Petroleum")
 
 
 
@@ -249,7 +250,7 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
                                          sweetgrass_county, sanders_county,
                                          powell_county, phillips_county,
                                          prairie_county, mineral_county,
-                                         carter_county) %>% 
+                                         carter_county, petroleum_county) %>% 
    group_by(county) %>% 
    mutate("Cumulative total cases" = cumsum(`Daily total cases`),
           "Cumulative active cases" = cumsum(Active),
@@ -259,9 +260,6 @@ county_data_combined <- plyr::rbind.fill(missoula_county, gallatin_county,
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 write_csv(county_data_combined, paste0(output_path, "Output/county_data_combined.csv"))
-
-
-petroleum_county <- county_function("Petroleum")
 ```
 
 

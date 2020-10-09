@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 5 Oct 2020"
+date: "Started 2 April 2020, Updated 8 Oct 2020"
 output:
   pdf_document: default
   html_document:
@@ -31,7 +31,7 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 10.5.20.xlsx"), 
+   read_xlsx(paste0(input_path, "COVID data 10.8.20.xlsx"), sheet = 2,
              range = "A2:Z2000", 
                         col_names = c("case_id", "age", "gender", "race", 
                                       "ethnicity", "zipcode", "healthcare_worker", "um_case",
@@ -158,13 +158,13 @@ covid_clean <- covid_data_initial %>%
           symptom_onset_date_new = if_else(is.na(symptom_onset_date), 
                                        test_date - mean_symptom_test_diff,
                                        symptom_onset_date),
-          symptom_onset_date_new = if_else(symptoms == "No", test_date,
+          symptom_onset_date_new = if_else(symptoms != "No" & !is.na(symptoms), test_date,
                                            symptom_onset_date_new),
           symptom_onset_date_new = ymd(symptom_onset_date_new),
           symptom_onset_date_indicator = if_else(is.na(symptom_onset_date),
                                                  "Symptomatic: onset date estimated by test date",
                                                  "Symptomatic: onset date by self-report"),
-          symptom_onset_date_indicator = if_else(symptoms == "No",
+          symptom_onset_date_indicator = if_else(symptoms == "No" & !is.na(symptoms),
                                                  "Asymptomatic: test date",
                                                  symptom_onset_date_indicator),
           symptom_onset_date_indicator = as.factor(symptom_onset_date_indicator),
