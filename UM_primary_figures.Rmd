@@ -1,7 +1,7 @@
 ---
 title: "University of Montana COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of October 8, 2020"
+date: "Data as of October 12, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -45,10 +45,12 @@ input_path <- c("C:/R/covid19/")
 file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
-   mutate(um_case = if_else(is.na(um_case), "Non-UM Case", "UM Case"))
+   mutate(um_case = if_else(is.na(um_case), "Non-UM Case", "UM Case")) %>% 
+   filter(gender != "nb")
 
 um_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
-   filter(um_case == "um")
+   filter(um_case == "um") %>% 
+   filter(gender != "nb")
 
 ```
 
@@ -202,7 +204,7 @@ age_count_plot <- covid_data %>%
    ggplot() +   
      geom_bar(aes(fct_rev(age_group), fill = um_case), width = .6) +   
      labs(title = "COVID-19 Cases by age group",
-          subtitle = paste0("Missoula County, 2020. Age under investigation for ", age_na, " cases."), 
+          subtitle = paste0("Missoula County, 2020. Data incomplete for ", age_na, " cases."), 
           y = "Number of cases", x = "Age Group (years)", fill = "") +
      scale_y_continuous(breaks = c(seq(0, 500, 25)), labels = c(seq(0, 500, 25))) +
      coord_flip() +
@@ -299,7 +301,7 @@ race_plot_count <- um_data %>%
    ggplot() +   
      geom_bar(aes(x = fct_rev(race)), fill = "steelblue", width = .6) +   
      labs(title = "COVID-19 cases by self-reported race",
-          subtitle = paste0("University of Montana. Race unknown for ", race_na, " cases."),
+          subtitle = paste0("University of Montana. Data incomplete for ", race_na, " cases."),
           y = "Count", x = "", fill = "") +
      scale_y_continuous(breaks = c(seq(0, 200, 25)), labels = c(seq(0, 200, 25))) +
      coord_flip() +
@@ -336,7 +338,7 @@ ethnicity_plot <- um_data %>%
    ggplot() +   
      geom_bar(aes(x = fct_rev(ethnicity)), fill = "steelblue", width = .6) +   
      labs(title = "COVID-19 cases by self-reported ethnicity",
-          subtitle = paste0("University of Montana. Ethnicity unknown for ", race_na, " cases."),
+          subtitle = paste0("University of Montana. Data incomplete for ", race_na, " cases."),
           y = "Count", x = "", fill = "") +
      scale_y_continuous(breaks = c(seq(0, 200, 10)), labels = c(seq(0, 200, 10))) +
      coord_flip() +

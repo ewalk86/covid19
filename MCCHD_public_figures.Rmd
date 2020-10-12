@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Report"
 author: "Ethan Walker, University of Montana"
-date: "Data as of October 8, 2020"
+date: "Data as of October 12, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -46,7 +46,8 @@ input_path <- c("C:/R/covid19/")
 file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 
-covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) 
+covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
+   filter(gender != "nb")
 ```
 
 
@@ -221,7 +222,7 @@ age_count_plot <- covid_data %>%
      labs(title = "COVID-19 Cases by age group",
           subtitle = paste0("Missoula County, since March 2020. Data incomplete for ", age_na, " cases."), 
           y = "Number of cases", x = "Age Group (years)") +
-     scale_y_continuous(breaks = c(seq(0, 500, 25)), labels = c(seq(0, 500, 25))) +
+     scale_y_continuous(breaks = c(seq(0, 1000, 25)), labels = c(seq(0, 1000, 25))) +
      coord_flip() +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -322,7 +323,7 @@ age_incidence_plot_bar <- age_incidence %>%
      labs(title = "COVID-19 incidence by age group",
           subtitle = paste0("Missoula County, since March 2020. Data incomplete for ", age_na, " cases."),
           y = "Incidence per 100,000 Population", x = "Age Group (years)") +
-     scale_y_continuous(breaks = c(seq(0, 2000, 100)), labels = c(seq(0, 2000, 100))) +
+     scale_y_continuous(breaks = c(seq(0, 3000, 100)), labels = c(seq(0, 3000, 100))) +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
            title = element_text(size = 18, colour = "black"),
@@ -431,7 +432,7 @@ ethnicity_plot <- covid_data %>%
      labs(title = "COVID-19 cases by self-reported ethnicity",
           subtitle = paste0("Missoula County. Data incomplete for ", ethnicity_na, " cases."),
           y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 1000, 50)), labels = c(seq(0, 1000, 50))) +
+     scale_y_continuous(breaks = c(seq(0, 2000, 100)), labels = c(seq(0, 2000, 100))) +
      coord_flip() +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -465,7 +466,7 @@ ethnicity_incidence_plot <- ethnicity_incidence %>%
      labs(title = "COVID-19 incidence by self-reported ethnicity",
           subtitle = paste0("Missoula County. Data incomplete for ", ethnicity_na, " cases."),
           y = "Incidence per 100,000 Population", x = "") +
-     scale_y_continuous(breaks = c(seq(0, 1200, 50)), labels = c(seq(0, 1200, 50))) +
+     scale_y_continuous(breaks = c(seq(0, 2000, 100)), labels = c(seq(0, 2000, 100))) +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
            title = element_text(size = 18, colour = "black"),
@@ -519,7 +520,7 @@ symptoms_gender_plot <- covid_data %>%
      labs(title = "Symptoms reported at time of testing", 
           subtitle = "By gender, Missoula County, 2020",
           y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 600, 25)), labels = c(seq(0, 600, 25))) +
+     scale_y_continuous(breaks = c(seq(0, 1000, 50)), labels = c(seq(0, 1000, 50))) +
      coord_flip() +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -573,7 +574,7 @@ symptoms_age_plot <- covid_data %>%
      labs(title = "Symptoms reported at time of testing", 
           subtitle = "By age group, Missoula County, 2020",
           y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 600, 25)), labels = c(seq(0, 600, 25))) +
+     scale_y_continuous(breaks = c(seq(0, 1000, 50)), labels = c(seq(0, 1000, 50))) +
      coord_flip() +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
