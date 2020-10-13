@@ -128,8 +128,7 @@ community_spread_summary <- covid_data %>%
 
 
 covid_summary <- rbind(overall_summary, age_group_summary, gender_summary,
-                       travel_summary, contact_summary,
-                       community_spread_summary) %>% 
+                       travel_summary, contact_summary) %>% 
    select("Data Category", "Number of Cases", 
           "Proportion of Cases (%)", "Incidence per 100,000 Population")
 
@@ -143,9 +142,7 @@ kable(covid_summary, caption = "Missoula County COVID-19 Cases",
    pack_rows("Gender", 5, 6) %>% 
    pack_rows("Travel History", 7, 9) %>% 
    pack_rows("Contact with Known Case", 10, 12) %>% 
-   pack_rows("Community Spread", 13, 14) %>% 
    footnote(c("Travel History: case left Missoula County.",
-     "Community Spread: no history of travel and no known contact with a known case.",
      "Data is still being collected. Percentages may not add to 100% in some cases."))
 ```
 
@@ -208,8 +205,8 @@ ethnicity_incidence <- covid_data %>%
 
 ```{r}
 age_n <- covid_data %>% 
-   filter(is.na(age_group))
-age_na <- sum(age_n$case)
+   filter(!is.na(age_group))
+age_cases <- sum(age_n$case)
 
 # Age group bar plot - counts
 age_count_plot <- covid_data %>% 
@@ -220,7 +217,7 @@ age_count_plot <- covid_data %>%
    ggplot() +   
      geom_bar(aes(fct_rev(age_group)), fill = "steelblue", width = .6) +   
      labs(title = "COVID-19 Cases by age group",
-          subtitle = paste0("Missoula County, since March 2020. Data incomplete for ", age_na, " cases."), 
+          subtitle = paste0("Missoula County, since March 2020. N = ", age_cases, " cases."), 
           y = "Number of cases", x = "Age Group (years)") +
      scale_y_continuous(breaks = c(seq(0, 1000, 25)), labels = c(seq(0, 1000, 25))) +
      coord_flip() +
@@ -249,8 +246,8 @@ age_count_plot
 
 ```{r}
 age_n <- covid_data %>% 
-   filter(is.na(age_group) | is.na(test_date_new))
-age_na <- sum(age_n$case)
+   filter(!is.na(age_group) & !is.na(test_date_new))
+age_cases <- sum(age_n$case)
 
 # Age group line plot - counts by month
 age_count_month_plot <- covid_data %>% 
@@ -273,7 +270,7 @@ age_count_month_plot <- covid_data %>%
                 fill = NA) +
       theme_minimal() +
       labs(title = "Weekly COVID-19 cases by age group",
-        subtitle = paste0("Missoula County, 2020. Data incomplete for ", age_na, " cases."),
+        subtitle = paste0("Missoula County, 2020. N = ", age_cases, " cases."),
         color = "Age group") +
       ylab("Number of cases per week") +
       xlab("") +
@@ -311,8 +308,8 @@ age_count_month_plot
 
 ```{r}
 age_n <- covid_data %>% 
-   filter(is.na(age_group))
-age_na <- sum(age_n$case)
+   filter(!is.na(age_group))
+age_cases <- sum(age_n$case)
 
 # Incidence bar plot by age
 age_incidence_plot_bar <- age_incidence %>% 
@@ -321,7 +318,7 @@ age_incidence_plot_bar <- age_incidence %>%
      geom_col(aes(fct_rev(age_group), group_inc), fill = "steelblue", width = .6) +
      coord_flip() +
      labs(title = "COVID-19 incidence by age group",
-          subtitle = paste0("Missoula County, since March 2020. Data incomplete for ", age_na, " cases."),
+          subtitle = paste0("Missoula County, since March 2020. N = ", age_cases, " cases."),
           y = "Incidence per 100,000 Population", x = "Age Group (years)") +
      scale_y_continuous(breaks = c(seq(0, 3000, 100)), labels = c(seq(0, 3000, 100))) +
      theme_minimal() +
@@ -349,8 +346,8 @@ age_incidence_plot_bar
 
 ```{r}
 age_n <- covid_data %>% 
-   filter(is.na(age_group) | is.na(test_date_new))
-age_na <- sum(age_n$case)
+   filter(!is.na(age_group) & !is.na(test_date_new))
+age_cases <- sum(age_n$case)
 
 # Incidence line plot by age and month
 age_incidence_plot_line <- covid_data %>% 
@@ -380,7 +377,7 @@ age_incidence_plot_line <- covid_data %>%
                     color = age_group), size = 1.5) +
       theme_minimal() +
       labs(title = "COVID-19 incidence per week by age group",
-        subtitle = paste0("Missoula County, 2020. Data incomplete for ", age_na, " cases."),
+        subtitle = paste0("Missoula County, 2020. N = ", age_cases, " cases."),
         color = "Age group") +
       ylab("Incidence per 100,000") +
       xlab("") +
@@ -421,8 +418,8 @@ age_incidence_plot_line
 
 ```{r}
 ethnicity_n <- covid_data %>% 
-   filter(is.na(ethnicity))
-ethnicity_na <- sum(ethnicity_n$case)
+   filter(!is.na(ethnicity))
+ethnicity_cases <- sum(ethnicity_n$case)
 
 #Bar plot of ethnicity count data
 ethnicity_plot <- covid_data %>% 
@@ -430,7 +427,7 @@ ethnicity_plot <- covid_data %>%
    ggplot() +   
      geom_bar(aes(x = fct_rev(ethnicity)), fill = "steelblue", width = .6) +   
      labs(title = "COVID-19 cases by self-reported ethnicity",
-          subtitle = paste0("Missoula County. Data incomplete for ", ethnicity_na, " cases."),
+          subtitle = paste0("Missoula County. N = ", ethnicity_cases, " cases."),
           y = "Count", x = "", fill = "") +
      scale_y_continuous(breaks = c(seq(0, 2000, 100)), labels = c(seq(0, 2000, 100))) +
      coord_flip() +
@@ -464,7 +461,7 @@ ethnicity_incidence_plot <- ethnicity_incidence %>%
      geom_col(aes(fct_rev(ethnicity), group_inc), fill = "steelblue", width = .6) +
      coord_flip() +
      labs(title = "COVID-19 incidence by self-reported ethnicity",
-          subtitle = paste0("Missoula County. Data incomplete for ", ethnicity_na, " cases."),
+          subtitle = paste0("Missoula County. N = ", ethnicity_cases, " cases."),
           y = "Incidence per 100,000 Population", x = "") +
      scale_y_continuous(breaks = c(seq(0, 2000, 100)), labels = c(seq(0, 2000, 100))) +
      theme_minimal() +
@@ -540,60 +537,6 @@ symptoms_gender_plot <- covid_data %>%
 symptoms_gender_plot
 
 #ggsave("symptoms_gender_plot.jpg", width = 10, height = 5)
-```
-
-\pagebreak  
-
-```{r}
-#Symptoms and age group bar plot
-symptoms_age_plot <- covid_data %>% 
-   filter(!is.na(age_group)) %>% 
-   pivot_longer(cols = c(symptom_fever_chill:symptom_diarrhea),
-                names_to = "variable", values_to = "values") %>% 
-   group_by(variable, age_group) %>% 
-   mutate(values = as.numeric(values),
-          values = sum(values)) %>% 
-   distinct(variable, .keep_all = TRUE) %>% 
-   ungroup() %>% 
-   arrange(age_group, values) %>% 
-   mutate(variable = factor(variable,
-                            levels = c("symptom_fever_chill", "symptom_cough",
-                                       "symptom_sob", "symptom_fatigue_lethargy",
-                                       "symptom_body_aches", "symptom_headache", 
-                                       "symptom_taste_smell", "symptom_sorethroat",
-                                       "symptom_congestion", "symptom_nv",
-                                       "symptom_diarrhea"),
-                            labels = c("Fever/chills", "Cough",
-                                       "Short of breath", "Fatigue",
-                                       "Muscle/body aches", "Headache", 
-                                       "Taste/Smell Loss", "Sore throat",
-                                       "Congestion", "Nausea/vomiting",
-                                       "Diarrhea"))) %>% 
-   ggplot(aes(x = fct_rev(variable), y = values, fill = age_group)) +   
-     geom_bar(stat = "identity", width = .6) +   
-     labs(title = "Symptoms reported at time of testing", 
-          subtitle = "By age group, Missoula County, 2020",
-          y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 1000, 50)), labels = c(seq(0, 1000, 50))) +
-     coord_flip() +
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 18, colour = "black"),
-           panel.grid = element_blank(),
-           axis.text.x = element_text(size = 14, colour = "black", 
-                                     angle = 45, vjust = 0.75, hjust = 0.9),
-           legend.text = element_text(size = 16, colour = "black"),
-           legend.title = element_text(size = 16, colour = "black"),
-           axis.text.y = element_text(size = 16, colour = "black"),
-           axis.title.y = element_text(size = 16, colour = "white"),
-           axis.title.x = element_blank(),
-           axis.line.x = element_line(colour = "black", size = 1.2), 
-           axis.line.y = element_line(colour = "black", size = 1.2), 
-           axis.ticks = element_line(colour = "black")) + 
-     scale_fill_manual(values = colorblind_palette)
-symptoms_age_plot
-
-#ggsave("symptoms_age_plot.jpg", width = 10, height = 5)
 ```
 
 \pagebreak  
