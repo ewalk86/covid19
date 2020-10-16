@@ -1,7 +1,7 @@
 ---
 title: "University of Montana COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of October 12, 2020"
+date: "Data as of October 15, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -49,7 +49,7 @@ covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>%
    filter(gender != "nb")
 
 um_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
-   filter(um_case == "um") %>% 
+   filter(um_case == "yes") %>% 
    filter(gender != "nb")
 
 ```
@@ -193,7 +193,7 @@ kable(covid_summary, caption = "Missoula County COVID-19 Cases",
 
 \pagebreak  
 
-```{r}
+```{r, include=FALSE, eval=FALSE}
 age_n <- covid_data %>% 
    filter(!is.na(age_group))
 age_cases <- sum(age_n$case)
@@ -232,7 +232,7 @@ age_count_plot
 
 \pagebreak  
 
-```{r}
+```{r, include=FALSE, eval=FALSE}
 age_n <- um_data %>% 
    filter(!is.na(age_group))
 age_cases <- sum(age_n$case)
@@ -294,7 +294,7 @@ age_count_month_plot
 
 \pagebreak  
 
-```{r}
+```{r, include=FALSE, eval=FALSE}
 race_n <- um_data %>% 
    filter(!is.na(race))
 race_cases <- sum(race_n$case)
@@ -331,7 +331,7 @@ race_plot_count
 
 \pagebreak  
 
-```{r}
+```{r, include=FALSE, eval=FALSE}
 ethnicity_n <- um_data %>% 
    filter(!is.na(ethnicity))
 ethnicity_cases <- sum(ethnicity_n$case)
@@ -527,7 +527,7 @@ piechart_function(data = um_data, plot_fill = "number_contacts_categorical",
 
 \pagebreak  
 
-```{r}
+```{r, include=FALSE, eval=FALSE}
 # Table with summary stats on number of contacts per case
 sum_nums <- um_data %>% 
    rename("Age group" = age_group) %>% 
@@ -567,7 +567,7 @@ epi_curve_onset_recent <- plot_data %>%
      geom_col(aes(symptom_onset_date_new, case, fill = symptom_onset_date_indicator)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-08-19")), color = "black", 
               size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-08-19"), label = "Semester start", vjust = -0.5,
+     geom_text(aes(x = as.Date("2020-08-19"), label = "UM semester start", vjust = -0.5,
                  y = 10), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_label(aes(x = Sys.Date()-7, y = 10, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
@@ -628,7 +628,7 @@ epi_curve_onset_recent <- plot_data %>%
      geom_vline(xintercept = as.numeric(as.Date("2020-08-19")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-08-19"), label = "UM semester start", vjust = -0.5,
-                 y = 5), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 10), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_label(aes(x = Sys.Date()-7, y = 10, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +

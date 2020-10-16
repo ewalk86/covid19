@@ -397,7 +397,11 @@ state_test_data_clean <- state_test_data %>%
           dates = as.POSIXct(dates, origin = "1970-01-01")) %>% 
    separate(dates, c("dates", "trash"), sep = " ") %>% 
    mutate(dates = ymd(dates)) %>% 
-   select(dates, total_tests_completed, new_tests_completed) %>% 
+   mutate(total_tests_completed_new = if_else(total_tests_completed < new_tests_completed, new_tests_completed, total_tests_completed),
+          new_tests_completed_new = if_else(new_tests_completed > total_tests_completed, total_tests_completed, new_tests_completed)) %>% 
+   select(dates, total_tests_completed_new, new_tests_completed_new) %>% 
+   rename(total_tests_completed = total_tests_completed_new,
+          new_tests_completed = new_tests_completed_new) %>% 
    arrange(dates, desc(total_tests_completed)) %>% 
    distinct(dates, .keep_all = TRUE)
 

@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Report"
 author: "Ethan Walker, University of Montana"
-date: "Data as of October 12, 2020"
+date: "Data as of October 15, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -845,24 +845,24 @@ epi_curve_onset <- covid_data %>%
      geom_vline(xintercept = as.numeric(as.Date("2020-03-16")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-03-16"), label = "Schools close", vjust = -0.5,
-                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 30), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-03-28")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-03-28"), label = "Shelter in place order", vjust = -0.5,
-                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 30), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-04-26")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-04-26"), label = "Phase 1 start", vjust = -0.5,
-                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 30), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-06-01")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-06-01"), label = "Phase 2 start", vjust = -0.5,
-                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 30), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-07-09")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-07-09"), label = "Mask Mandate", vjust = -0.5,
-                 y = 15), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-10, y = 20, 
+                 y = 30), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-10, y = 30, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",

@@ -61,7 +61,7 @@ counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.07.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.16.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -474,9 +474,12 @@ drive_auth(email = "ethanwalker86@gmail.com")
 gs4_auth(token = drive_token())
 
 
+r_filter_dates <- all_regions_r %>% 
+   filter(dates > Sys.Date() - 60)
+
 
 # Write State/region R data to google
-mt_data <- all_regions_r %>% 
+mt_data <- r_filter_dates %>% 
    filter(region == "state") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -488,7 +491,7 @@ sheet_write(mt_data,
             ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
             sheet = 1)
 
-reg1_data <- all_regions_r %>% 
+reg1_data <- r_filter_dates %>% 
    filter(region == "1") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -500,7 +503,7 @@ sheet_write(reg1_data,
             ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
             sheet = 2)
 
-reg2_data <- all_regions_r %>% 
+reg2_data <- r_filter_dates %>% 
    filter(region == "2") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -512,7 +515,7 @@ sheet_write(reg2_data,
             ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
             sheet = 3)
 
-reg3_data <- all_regions_r %>% 
+reg3_data <- r_filter_dates %>% 
    filter(region == "3") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -524,7 +527,7 @@ sheet_write(reg3_data,
             ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
             sheet = 4)
 
-reg4_data <- all_regions_r %>% 
+reg4_data <- r_filter_dates %>% 
    filter(region == "4") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -536,7 +539,7 @@ sheet_write(reg4_data,
             ss = "https://docs.google.com/spreadsheets/d/1q-QUjewIBdPu_LNR8E53EPQMtw_nEaiOojYkJ3_cSYc/edit#gid=441849247",
             sheet = 5)
 
-reg5_data <- all_regions_r %>% 
+reg5_data <- r_filter_dates %>% 
    filter(region == "5") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -614,7 +617,7 @@ sheet_write(reg5_data,
 
 
 # Write county R data to google
-miss_data <- all_regions_r %>% 
+miss_data <- r_filter_dates %>% 
    filter(region == "Missoula County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -626,7 +629,7 @@ sheet_write(miss_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 1)
 
-gall_data <- all_regions_r %>% 
+gall_data <- r_filter_dates %>% 
    filter(region == "Gallatin County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -638,7 +641,7 @@ sheet_write(gall_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 2)
 
-ystn_data <- all_regions_r %>% 
+ystn_data <- r_filter_dates %>% 
    filter(region == "Yellowstone County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -650,7 +653,7 @@ sheet_write(ystn_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 3)
 
-bh_data <- all_regions_r %>% 
+bh_data <- r_filter_dates %>% 
    filter(region == "Big Horn County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -662,7 +665,7 @@ sheet_write(bh_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 4)
 
-lake_data <- all_regions_r %>% 
+lake_data <- r_filter_dates %>% 
    filter(region == "Lake County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -674,7 +677,7 @@ sheet_write(lake_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 5)
 
-lac_data <- all_regions_r %>% 
+lac_data <- r_filter_dates %>% 
    filter(region == "Lewis and Clark County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -686,7 +689,7 @@ sheet_write(lac_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 6)
 
-flat_data <- all_regions_r %>% 
+flat_data <- r_filter_dates %>% 
    filter(region == "Flathead County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -698,7 +701,7 @@ sheet_write(flat_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 7)
 
-casc_data <- all_regions_r %>% 
+casc_data <- r_filter_dates %>% 
    filter(region == "Cascade County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -710,7 +713,7 @@ sheet_write(casc_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 8)
 
-sb_data <- all_regions_r %>% 
+sb_data <- r_filter_dates %>% 
    filter(region == "Silver Bow County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -722,7 +725,7 @@ sheet_write(sb_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 9)
 
-rosebud_data <- all_regions_r %>% 
+rosebud_data <- r_filter_dates %>% 
    filter(region == "Rosebud County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -734,7 +737,7 @@ sheet_write(rosebud_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 10)
 
-glacier_data <- all_regions_r %>% 
+glacier_data <- r_filter_dates %>% 
    filter(region == "Glacier County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
@@ -746,7 +749,7 @@ sheet_write(glacier_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 11)
 
-roosevelt_data <- all_regions_r %>% 
+roosevelt_data <- r_filter_dates %>% 
    filter(region == "Roosevelt County") %>% 
    select(dates, cl_low, mean_r, cl_high) %>% 
    rename("Dates" = dates,
