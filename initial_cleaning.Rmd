@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 12 Oct 2020"
+date: "Started 2 April 2020, Updated 21 Oct 2020"
 output:
   pdf_document: default
   html_document:
@@ -31,9 +31,9 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 10.15.20.xlsx"), sheet = 1,
-             range = "A2:AB2000", 
-                        col_names = c("case_id", "case_status", "current_hosp", "um_case", "age", "gender", "race", 
+   read_xlsx(paste0(input_path, "COVID data 10.21.20.xlsx"), sheet = 1,
+             range = "A2:AA2000", 
+                        col_names = c("case_id", "case_status", "um_case", "age", "gender", "race", 
                                       "ethnicity", "zipcode", "healthcare_worker",
                                       "symptoms", "symptom_type", "symptom_onset_date",
                                       "test_date", "contact_with_case", "contact_case_number", 
@@ -42,7 +42,7 @@ covid_data_initial <-
                                       "chronic_conditions", "chronic_conditions_type",
                                       "number_contacts", "patient_died", 
                                       "suspected_source", "community_spread"),
-                        col_types = c("text", "text", "text", "text", "text", "text", "text",
+                        col_types = c("text", "text", "text", "text", "text", "text",
                                       "text", "text", "text",
                                       "text", "text", "date",
                                       "date", "text", "text",
@@ -73,7 +73,7 @@ covid_clean <- covid_data_initial %>%
    separate(age_group, c("age_group", "age_group_percent"), sep = ", ") %>% 
    mutate(age_group_percent = as.numeric(age_group_percent),
           county_pop = as.numeric(119000)) %>% 
-   select(case_id, case_status, current_hosp, um_case, age, age_group, age_group_percent, age_group2, age_group3,
+   select(case_id, case_status, um_case, age, age_group, age_group_percent, age_group2, age_group3,
           county_pop, gender:community_spread) %>% 
    mutate_if(is.character, tolower) %>% 
    mutate_if(is.factor, tolower) %>% 
@@ -201,8 +201,7 @@ covid_clean <- covid_data_initial %>%
    mutate(race = as.factor(race),
           ethnicity = as.factor(ethnicity),
           um_case = as.factor(um_case),
-          case_status = as.factor(case_status),
-          current_hosp = as.factor(current_hosp))
+          case_status = as.factor(case_status))
 
 summary(covid_clean)
 ```
