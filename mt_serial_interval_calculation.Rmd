@@ -44,7 +44,7 @@ file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 ```{r}
 # Load serial interval data
 # explanation of data format: https://github.com/jstockwin/EpiEstimApp/wiki/Uploading-your-own-data
-mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
+mt_si_data_early <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
                         col_names = c("pair_no", "cluster", "infector",
                                       "infector_date", "infected", "infected_date",
                                       "EL", "ER", "SL", "SR"),
@@ -52,6 +52,27 @@ mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
                                       "date", "text", "date",
                                       "numeric", "numeric", "numeric", "numeric")) %>% 
    filter(infector_date < "2020-05-01" & infected_date < "2020-05-01") %>% 
+   select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   mutate_all(as.integer)
+
+   mutate(SL2 = if_else(SL<1, SL + (1 - SL), SL),
+          SR2 = if_else(SL<1, SR + (1 - SL), SR),
+          type = 0) %>% 
+   select(EL, ER, SL2, SR2, type) %>% 
+   rename(SL = SL2,
+          SR = SR2) %>% 
+   mutate_all(as.integer)
+
+   
+mt_si_data_late <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
+                        col_names = c("pair_no", "cluster", "infector",
+                                      "infector_date", "infected", "infected_date",
+                                      "EL", "ER", "SL", "SR"),
+                        col_types = c("text", "text", "text",
+                                      "date", "text", "date",
+                                      "numeric", "numeric", "numeric", "numeric")) %>% 
+   filter(infector_date > "2020-05-01" & infected_date > "2020-05-01") %>% 
    select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    mutate_all(as.integer)

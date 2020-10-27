@@ -1,7 +1,7 @@
 ---
 title: "University of Montana COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of October 19, 2020"
+date: "Data as of October 26, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -46,11 +46,11 @@ file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
    mutate(um_case = if_else(is.na(um_case), "Non-UM Case", "UM Case")) %>% 
-   filter(gender != "nb")
+   filter(gender != "nb" | is.na(gender))
 
 um_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
    filter(um_case == "yes") %>% 
-   filter(gender != "nb")
+   filter(gender != "nb" | is.na(gender))
 
 ```
 
