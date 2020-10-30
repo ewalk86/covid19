@@ -61,7 +61,7 @@ counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.21.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.28.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -74,7 +74,7 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.21.
           case = 1) %>% 
    rename(hospitalization = "ever_hospitalized") %>% 
    left_join(counties_regions, by = "county") %>% 
-   mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99",
+   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99" | age_group == "100" | age_group == "100-110",
                                "80+", age_group),
           age_group_new = factor(age_group_new, 
                                  levels = c("0-9", "10-19", "20-29", 
@@ -102,7 +102,7 @@ state_data_wide <- mt_case_data %>%
    mutate(case = 1) %>% 
    pivot_wider(names_from = "age_group_new", values_from = "case") %>% 
    mutate(case = 1) %>% 
-   select(-"NA") %>% 
+   #select(-"NA") %>% 
    pivot_wider(names_from = "sex", values_from = "case") %>% 
    mutate(case = 1) %>% 
    select(-"NA") %>% 
@@ -236,8 +236,8 @@ time_end <- time_start + 13
 
 
 # Serial Interval derived from State of Montana paired case data
-serial_interval_mean <- 6.3
-serial_interval_sd <- 5.4
+serial_interval_mean <- 5.29
+serial_interval_sd <- 4.45
 
 mt_r_results <- estimate_R(mt_li_inc_data, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
@@ -304,8 +304,8 @@ region_analysis_function <- function(filter_var, label_var, data = mt_case_data)
    
    
    # Serial Interval derived from State of Montana case data
-   serial_interval_mean <- 6.3
-   serial_interval_sd <- 5.4
+   serial_interval_mean <- 5.29
+   serial_interval_sd <- 4.45
    
    mt_r_results <- estimate_R(mt_li_inc_data, method="parametric_si", 
                               config = make_config(list(mean_si = serial_interval_mean, 
@@ -380,8 +380,8 @@ county_analysis_function <- function(filter_var, label_var, data = mt_case_data)
    
    
    # Serial Interval derived from State of Montana case data
-   serial_interval_mean <- 6.3
-   serial_interval_sd <- 5.4
+   serial_interval_mean <- 5.29
+   serial_interval_sd <- 4.45
    
    mt_r_results <- estimate_R(mt_li_inc_data, method="parametric_si", 
                               config = make_config(list(mean_si = serial_interval_mean, 

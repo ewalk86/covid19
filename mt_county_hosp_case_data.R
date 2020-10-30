@@ -77,7 +77,7 @@ state_data_clean <- state_data %>%
    select(case_no, dates, county:mt_case) %>% 
    left_join(counties_regions, by = "county") %>% 
    mutate(case = 1) %>% 
-   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99",
+   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99" | age_group == "100" | age_group == "100-110",
                                "80+", age_group),
           age_group_new = factor(age_group2, 
                                  levels = c("0-9", "10-19", "20-29", 
@@ -262,7 +262,7 @@ state_hosp_data <- state_data %>%
    select(case_no, dates, county:mt_case) %>% 
    left_join(counties_regions, by = "county") %>% 
    mutate(case = 1) %>% 
-   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99",
+   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99" | age_group == "100" | age_group == "100-110",
                                "80+", age_group),
           age_group_new = factor(age_group2, 
                                  levels = c("0-9", "10-19", "20-29", 
@@ -279,16 +279,20 @@ state_hosp_data <- state_data %>%
 
 state_hosp <- state_hosp_data %>% 
    filter(mt_case != "X") %>% 
-   filter(!is.na(age_group_new)) %>% 
+   #filter(!is.na(age_group_new)) %>% 
    group_by(age_group_new) %>% 
    mutate(age_group_cases = sum(case)) %>% 
    mutate(hosp = if_else(hospitalization == "Hosp: Yes" | hospitalization == "Hosp: Past", 1, 0),
+          death = if_else(outcome == "Deceased", 1, 0),
           hosp_yes = sum(hosp, na.rm = TRUE),
           hosp_no = age_group_cases - hosp_yes,
-          hosp_percent = round(hosp_yes/age_group_cases*100, digits = 2)) %>% 
+          hosp_percent = round(hosp_yes/age_group_cases*100, digits = 2),
+          deaths = sum(death, na.rm = TRUE),
+          deaths_percent = round(deaths/age_group_cases*100, digits = 2)) %>% 
    ungroup() %>% 
    distinct(age_group_new, .keep_all = TRUE) %>% 
-   select(age_group_new, age_group_cases, hosp_yes, hosp_no, hosp_percent) %>% 
+   select(age_group_new, age_group_cases, hosp_yes, hosp_no, hosp_percent,
+          deaths, deaths_percent) %>% 
    rename(age_group = age_group_new) %>% 
    arrange(age_group)
 

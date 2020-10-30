@@ -44,53 +44,93 @@ file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 ```{r}
 # Load serial interval data
 # explanation of data format: https://github.com/jstockwin/EpiEstimApp/wiki/Uploading-your-own-data
-mt_si_data_early <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
+mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
                         col_names = c("pair_no", "cluster", "infector",
                                       "infector_date", "infected", "infected_date",
                                       "EL", "ER", "SL", "SR"),
                         col_types = c("text", "text", "text",
                                       "date", "text", "date",
-                                      "numeric", "numeric", "numeric", "numeric")) %>% 
-   filter(infector_date < "2020-05-01" & infected_date < "2020-05-01") %>% 
-   select(EL, ER, SL, SR) %>% 
+                                      "numeric", "numeric", "numeric", "numeric"))
+
+mt_si_data_total <- mt_si_data %>% 
+   filter(infected_date < "2020-07-31") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
    mutate_all(as.integer)
 
-   mutate(SL2 = if_else(SL<1, SL + (1 - SL), SL),
-          SR2 = if_else(SL<1, SR + (1 - SL), SR),
-          type = 0) %>% 
-   select(EL, ER, SL2, SR2, type) %>% 
-   rename(SL = SL2,
-          SR = SR2) %>% 
+
+mt_si_data_early <- mt_si_data %>% 
+   filter(infected_date < "2020-05-01") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
    mutate_all(as.integer)
 
    
-mt_si_data_late <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
-                        col_names = c("pair_no", "cluster", "infector",
-                                      "infector_date", "infected", "infected_date",
-                                      "EL", "ER", "SL", "SR"),
-                        col_types = c("text", "text", "text",
-                                      "date", "text", "date",
-                                      "numeric", "numeric", "numeric", "numeric")) %>% 
-   filter(infector_date > "2020-05-01" & infected_date > "2020-05-01") %>% 
-   select(EL, ER, SL, SR) %>% 
+mt_si_data_late <- mt_si_data %>% 
+   filter(infected_date >= "2020-05-01" & infected_date < "2020-07-31") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
    mutate_all(as.integer)
 
-   mutate(SL2 = if_else(SL<1, SL + (1 - SL), SL),
-          SR2 = if_else(SL<1, SR + (1 - SL), SR),
-          type = 0) %>% 
-   select(EL, ER, SL2, SR2, type) %>% 
-   rename(SL = SL2,
-          SR = SR2) %>% 
+
+mt_si_data_pre_sip <- mt_si_data %>% 
+   filter(infected_date < "2020-03-27") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
    mutate_all(as.integer)
+
+
+mt_si_data_sip <- mt_si_data %>% 
+   filter(infected_date > "2020-03-27" & infected_date < "2020-04-24") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
+   mutate_all(as.integer)
+
+
+mt_si_data_phase1 <- mt_si_data %>% 
+   filter(infected_date > "2020-04-25" & infected_date < "2020-05-31") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
+   mutate_all(as.integer)
+
+
+mt_si_data_phase2 <- mt_si_data %>% 
+   filter(infected_date > "2020-05-31" & infected_date < "2020-07-31") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
+   mutate_all(as.integer)
+
+
+mt_si_data_june <- mt_si_data %>% 
+   filter(infected_date > "2020-05-31" & infected_date < "2020-06-30") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
+   mutate_all(as.integer)
+
+
+mt_si_data_july <- mt_si_data %>% 
+   filter(infected_date > "2020-06-30" & infected_date < "2020-07-31") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
+   mutate_all(as.integer)
+   
+   
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.01.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.10.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
-   select(-case_no) %>% 
+   dplyr::select(-case_no) %>% 
    rownames_to_column(var = "case_no") %>% 
    mutate(local = if_else(local_import == 0, 1, 0),
           imported = local_import,
@@ -99,7 +139,7 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.01.
           dates = ymd(dates),
           case = 1) %>% 
    rename(hospitalization = "ever_hospitalized") %>% 
-   mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99",
+   mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99" | age_group == "100" | age_group == "100-110",
                                "80+", age_group),
           age_group_new = factor(age_group_new, 
                                  levels = c("0-9", "10-19", "20-29", 
@@ -112,10 +152,11 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.01.
                                    levels = c("Y", "N", "P", "U"),
                                    labels = c("Hosp: Yes", "Hosp: No", 
                                               "Hosp: Past", "Hosp: Unknown"))) %>% 
-   filter(!is.na(dates)) %>% 
+   #filter(!is.na(dates))
+   filter(dates < "2020-08-01") %>% 
    arrange(dates) %>% 
    ungroup() %>% 
-   select(case_no, mt_case, county:hospitalization, local_import:age_group_new)
+   dplyr::select(case_no, mt_case, county:hospitalization, local_import:age_group_new)
 ```
 
 
@@ -123,27 +164,37 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.01.
 #################### Run analysis and print results
 ## State results
 # Format analysis data
+# CHANGE DATE FILTER BASED ON DESIRED SI TIMEFRAME
 mt_li_analysis_data <- mt_case_data %>% 
-   filter(dates < "2020-05-01") %>% 
+   #filter(dates < "2020-05-01" & dates >= "2020-03-01") %>% # early
+   #filter(dates >= "2020-05-01" & dates < "2020-08-01") %>% # late
+   #filter(dates < "2020-03-28" & dates >= "2020-03-01") %>% # pre sip
+   #filter(dates >= "2020-03-28" & dates < "2020-04-26") %>% # sip
+   #filter(dates < "2020-06-01" & dates >= "2020-04-26") %>% # phase 1
+   #filter(dates >= "2020-06-01" & dates < "2020-08-01") %>% # phase 2
+   #filter(dates < "2020-07-01" & dates >= "2020-06-01") %>% # june
+   #filter(dates >= "2020-07-01" & dates < "2020-08-01") %>% # july
    group_by(dates) %>% 
    mutate(local = sum(local),
           imported = sum(imported)) %>% 
-   select(dates, local, imported) %>% 
+   dplyr::select(dates, local, imported) %>% 
    distinct(dates, .keep_all = TRUE) %>% 
    arrange(dates)
 
 
 mt_data <- mt_li_analysis_data %>% 
    mutate(I = local + imported) %>% 
-   select(dates, I) 
+   dplyr::select(dates, I) 
 
-latest_date <- format(Sys.Date() - 14, "%Y-%m-%d")
-
-mt_incidence_data <- incidence(mt_data$dates, last_date = "2020-04-30")
+# CHANGE LAST DATE BASED ON DESIRED SI TIMEFRAME:
+# Early = 2020-04-30; Late, July, Phase2, and Total = 2020-07-31
+# PreSIP = 2020-03-27; SIP = 2020-04-25
+# Phase1 = 2020-05-31; June = 2020-06-30
+mt_incidence_data <- incidence(mt_data$dates, last_date = "2020-07-31")
 
 mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
    mutate(dates = ymd(mt_incidence_data$dates)) %>% 
-   select(dates) %>% 
+   dplyr::select(dates) %>% 
    left_join(mt_li_analysis_data, by = "dates") %>% 
    mutate(local = if_else(is.na(local), 0, local),
           imported = if_else(is.na(imported), 0, imported))
@@ -160,15 +211,40 @@ time_end <- time_start + 13
 ## This code only needs to be used if we want to update the SI with new paired cases
 MCMC_seed <- 1
 overall_seed <- 2
-mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 10000, thin = 10)
+mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 5000, thin = 10)
 dist <- "G"  # fitting a Gamma distribution for the SI
 si_config <- make_config(list(si_parametric_distr = dist, 
-                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 5000, n2 = 500,
+                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 1000, n2 = 100,
                               t_start = time_start, t_end = time_end))
 
+# CHANGE si_data INPUT DATASET BASED ON DESIRED TIMEFRAME
+# mt_si_data_early, mt_si_data_late, mt_si_data_total
+# mt_si_data_pre_sip, mt_si_data_sip, mt_si_data_phase1
+# mt_si_data_phase2, mt_si_data_june, mt_si_data_july
 mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data, config = si_config)
+                           si_data = mt_si_data_july, config = si_config)
 
+
+
+# calculate mean serial interval using SI data
+mean_si <- mt_r_results$SI.Moments %>% 
+   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
+mean_si
+
+# Total SI convergence successful: Mean SI = 5.52, SD SI = 4.63
+# Early SI convergence successful: Mean SI = 6.27, SD SI = 5.14
+# Late SI convergence successful: Mean SI = 5.29, SD SI = 4.45
+# Pre-SIP SI convergence successful: Mean SI = 4.62, SD SI = 3.67
+# SIP SI convergence successful: Mean SI = 8.52, SD SI = 6.22
+# Phase 1 SI convergence successful: Mean SI = 5.35, SD SI = 4.69
+# Phase 2 SI convergence successful: Mean SI = 5.29, SD SI = 4.45
+# June SI convergence successful: Mean SI = 5.26, SD SI = 4.48
+# July SI convergence successful: Mean SI = 5.31, SD SI = 4.44
+```
+
+
+```{r}
+# Calculate R using known SI
 serial_interval_mean <- 6.53
 serial_interval_sd <- 5.44
 
@@ -179,12 +255,8 @@ mt_r_results <- estimate_R(mt_li_inc_data, method = "parametric_si",
                                                         t_end = 61)))
 
 
-# calculate mean serial interval using SI data
-# Mean SI = 6.3, SD SI = 5.4
-mean_si <- mt_r_results$SI.Moments %>% 
-   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
-mean_si
 
+# Format and plot R and incidence results
 colomns <- c(1:4, 8)
 state_r <- (mt_r_results$R[,colomns]) %>% 
    mutate(region = "state") %>% 
@@ -281,7 +353,7 @@ plot_colors <- c("#332288", "#882255", "#661100", "#6699CC", "#888888")
 
 # Epi curve - test date
 full_data <- mt_case_data %>% 
-   filter(dates < "2020-08-01")
+   filter(dates < "2020-08-01" & dates >= "2020-03-01")
 
 total_cases <- sum(mt_case_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
@@ -298,13 +370,13 @@ epi_curve_full <- full_data %>%
                fill = "gray50", alpha = 0.05) +
      geom_col(aes(dates, case, fill = local_import), width = 1) +
      geom_label(aes(x = as.Date("2020-03-31"), y = 125,
-                    label = "Early cases: \n n = 462 \n Pairs = 116 \n Mean SI = 6.53 \n SD SI = 5.44 \n Mean R = 0.67"),
+                    label = "Early cases: \n n = 461 \n SI Pairs = 115 \n Mean SI = 6.27 \n SD SI = 5.14"),
                 fill = NA, color = "black") +
      geom_label(aes(x = as.Date("2020-06-15"), y = 125, 
-                    label = "Later cases: \n n = xx \n Pairs = xx \n Mean SI = xx \n SD SI = xx \n Mean R = xx"),
+                    label = "Later cases: \n n = 4311 \n SI Pairs = 394 \n Mean SI = 5.29 \n SD SI = 4.45"),
                 fill = NA, color = "black") +
      labs(title = "COVID-19 cases in Montana by date of symptom onset",
-          subtitle = paste0("Total cases: n = xx, Pairs = xx, Mean SI = xx, SD SI = xx, Mean R = xx"),
+          subtitle = paste0("Total cases: n = 4772, SI Pairs = 509, Mean SI = 5.52, SD SI = 4.63"),
           fill = " ") +
      ylab("Number of Cases") +
      xlab("") +
@@ -337,7 +409,92 @@ epi_curve_full <- full_data %>%
 
 epi_curve_full
 
-#ggsave("si_pub_epi_curve.jpg", width = 10, height = 5)
+#ggsave("si_pub_epi_curve.jpg", width = 12, height = 6)
 ```
 
+# Total SI convergence successful: Mean SI = 5.52, SD SI = 4.63
+# Early SI convergence successful: Mean SI = 6.27, SD SI = 5.14
+# Late SI convergence successful: Mean SI = 5.29, SD SI = 4.45
+# Pre-SIP SI convergence successful: Mean SI = 4.62, SD SI = 3.67
+# SIP SI convergence successful: Mean SI = 8.52, SD SI = 6.22
+# Phase 1 SI convergence successful: Mean SI = 5.35, SD SI = 4.69
+# Phase 2 SI convergence successful: Mean SI = 5.29, SD SI = 4.45
+# June SI convergence successful: Mean SI = 5.26, SD SI = 4.48
+# July SI convergence successful: Mean SI = 5.31, SD SI = 4.44
 
+```{r, fig.width = 10, fig.height = 5}
+colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                        "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+plot_colors <- c("#332288", "#882255", "#661100", "#6699CC", "#888888")
+
+# Epi curve - test date
+full_data <- mt_case_data %>% 
+   filter(dates < "2020-08-01" & dates >= "2020-03-01")
+
+total_cases <- sum(mt_case_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
+
+epi_curve_full <- full_data %>% 
+   mutate(local_import = factor(local_import,
+                            levels = c(1, 0),
+                            labels = c("imported case", "local case"))) %>% 
+   ggplot() +
+     geom_rect(aes(xmin = as.Date("2020-02-28"), xmax = as.Date("2020-03-28"), ymin=0, ymax=Inf),
+               fill = "gray70", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-03-28"), xmax = as.Date("2020-04-26"), ymin=0, ymax=Inf),
+               fill = "gray50", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-04-26"), xmax = as.Date("2020-06-01"), ymin=0, ymax=Inf),
+               fill = "gray70", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-06-01"), xmax = as.Date("2020-08-01"), ymin=0, ymax=Inf),
+               fill = "gray50", alpha = 0.05) +
+     geom_col(aes(dates, case, fill = local_import), width = 1) +
+     geom_label(aes(x = as.Date("2020-03-13"), y = 125,
+                    label = "Pre-SIP: \n n = 291 \n SI Pairs = 68 \n Mean SI = 4.62 \n SD SI = 3.67"),
+                fill = NA, color = "black") +
+     geom_label(aes(x = as.Date("2020-04-11"), y = 125, 
+                    label = "SIP: \n n = 168 \n SI Pairs = 47 \n Mean SI = 8.52 \n SD SI = 6.22"),
+                fill = NA, color = "black") +
+     geom_label(aes(x = as.Date("2020-05-14"), y = 125,
+                    label = "Phase 1: \n n = 96 \n SI Pairs = 22 \n Mean SI = 5.35 \n SD SI = 4.69"),
+                fill = NA, color = "black") +
+     geom_label(aes(x = as.Date("2020-06-16"), y = 125, 
+                    label = "Phase 2: \n n = 4217 \n SI Pairs = 372 \n Mean SI = 5.29 \n SD SI = 4.45"),
+                fill = NA, color = "black") +
+     labs(title = "COVID-19 cases in Montana by date of symptom onset",
+          subtitle = paste0("Total cases: n = 4772, SI Pairs = 509, Mean SI = 5.52, SD SI = 4.63"),
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-01"), 
+                                    to = as.Date("2020-08-01"), 
+                                    by = "5 days"),
+                  labels = seq.Date(from = as.Date("2020-03-01"), 
+                                    to = as.Date("2020-08-01"), 
+                                    by = "5 days"),
+                  date_labels = "%d-%b") +
+     scale_y_continuous(breaks = c(seq(0, 300, 25)), labels = c(seq(0, 300, 25))) +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           legend.position = "top",
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) +
+     scale_fill_manual(values = plot_colors)   
+
+epi_curve_full
+
+#ggsave("si_pub_epi_curve2.jpg", width = 12, height = 6)
+```

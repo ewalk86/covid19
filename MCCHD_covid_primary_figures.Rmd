@@ -1035,8 +1035,8 @@ time_end <- time_start + 13
 
 
 # Serial Interval derived from State of Montana paired case data
-serial_interval_mean <- 6.3
-serial_interval_sd <- 5.4
+serial_interval_mean <- 5.29
+serial_interval_sd <- 4.45
 
 r_results <- estimate_R(li_inc_data, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
@@ -1195,8 +1195,7 @@ epi_curve_onset
 ```
 
 
-
-
+          
 
 ```{r, include=FALSE, eval=FALSE}
 ############### Older plots included here for future reference #########################
@@ -1242,6 +1241,69 @@ covid_piechart
 
 #ggsave("piechart_comm_spread.jpg", width = 10, height = 5)
 ```
+
+
+```{r}
+# Line plot of days between symptom onset and test results
+date_n <- covid_data %>% 
+   filter(test_date_new > "2020-08-01") %>% 
+   filter(!is.na(symptom_test_diff) & !is.na(test_date_new))
+date_cases <- sum(date_n$case)
+
+
+symptom_test_date_plot <- covid_data %>% 
+   filter(test_date_new > "2020-08-01") %>% 
+   #mutate(month_of_year = month(test_date_new, label = TRUE)) %>% 
+   mutate(week_of_year = cut.Date(test_date_new, breaks = "1 week", start.on.monday = FALSE),
+          week_of_year = ymd(week_of_year)) %>% 
+   group_by(week_of_year) %>% 
+   mutate(mean_test_diff = mean(symptom_test_diff, na.rm = TRUE)) %>% 
+   filter(!is.na(mean_test_diff)) %>% 
+   filter(!is.na(week_of_year)) %>% 
+   distinct(mean_test_diff, week_of_year) %>% 
+   ggplot() +
+      geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+      geom_label(aes(x = Sys.Date()-8, y = 3, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
+      geom_line(aes(week_of_year, mean_test_diff), size = 1.5) +
+      theme_minimal() +
+      labs(title = "Mean days from symptom onset to test results, by week",
+        subtitle = paste0("Missoula County, 2020. N = ", date_cases, " cases."),
+        color = "Age group") +
+      ylab("Mean # contacts") +
+      xlab("") +
+      scale_x_date(breaks = seq.Date(from = as.Date("2020-08-02"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "7 days"),
+                  labels = seq.Date(from = as.Date("2020-08-02"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "7 days"),
+                  date_labels = "%d-%b") +
+      #scale_y_continuous(breaks = c(seq(0, 25, 5)), labels = c(seq(0, 25, 5))) +
+      theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 18, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 16, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 16, colour = "black"),
+         legend.text = element_text(size = 16, colour = "black"),
+         axis.title.y = element_text(size = 16, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 16, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = colorblind_palette)
+
+symptom_test_date_plot
+
+#ggsave("C:/R/covid19/symptom_test_date_plot.png", width = 12, height = 6)
+```
+
 
 
 ```{r, include=FALSE, eval=FALSE}

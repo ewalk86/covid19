@@ -103,7 +103,7 @@ state_data_clean <- state_data %>%
    select(case_no, dates, county:mt_case) %>% 
    left_join(counties_regions, by = "county") %>% 
    mutate(case = 1) %>% 
-   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99",
+   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99" | age_group == "100" | age_group == "100-110",
                                "80+", age_group),
           age_group_new = factor(age_group2, 
                                  levels = c("0-9", "10-19", "20-29", 
