@@ -1,7 +1,7 @@
 ---
 title: "University of Montana COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of October 26, 2020"
+date: "Data as of November 2, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -45,13 +45,10 @@ input_path <- c("C:/R/covid19/")
 file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
-   mutate(um_case = if_else(is.na(um_case), "Non-UM Case", "UM Case")) %>% 
-   filter(gender != "nb" | is.na(gender))
+   mutate(um_case = if_else(is.na(um_case), "Non-UM Case", "UM Case")) 
 
 um_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
-   filter(um_case == "yes") %>% 
-   filter(gender != "nb" | is.na(gender))
-
+   filter(um_case == "yes") 
 ```
 
 
@@ -716,8 +713,8 @@ time_end <- time_start + 13
 
 
 # Serial Interval derived from State of Montana paired case data
-serial_interval_mean <- 6.3
-serial_interval_sd <- 5.4
+serial_interval_mean <- 5.29
+serial_interval_sd <- 4.45
 
 r_results <- estimate_R(li_inc_data, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 

@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of October 26, 2020"
+date: "Data as of November 5, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -46,9 +46,7 @@ input_path <- c("C:/R/covid19/")
 file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 
-covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
-   filter(gender != "nb" | is.na(gender)) %>% 
-   filter()
+covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) 
 ```
 
 
@@ -269,7 +267,7 @@ age_count_month_plot <- covid_data %>%
                fill = "gray80", alpha = 0.05) +
       geom_line(aes(week_of_year, group_cases, group = age_group, 
                     color = age_group), size = 1.5) +
-      geom_label(aes(x = Sys.Date()-7, y = 75, 
+      geom_label(aes(x = Sys.Date()-9, y = 90, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
       theme_minimal() +
@@ -331,7 +329,7 @@ age_count_month_plot2 <- covid_data %>%
                fill = "gray80", alpha = 0.05) +
       geom_line(aes(week_of_year, group_cases, group = age_group3, 
                     color = age_group3), size = 1.5) +
-      geom_label(aes(x = Sys.Date()-7, y = 75, 
+      geom_label(aes(x = Sys.Date()-9, y = 75, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
       theme_minimal() +
@@ -388,7 +386,7 @@ age_incidence_plot_bar <- age_incidence %>%
      labs(title = "COVID-19 incidence by age group",
           subtitle = paste0("Missoula County, since March 2020. N = ", age_cases, " cases."),
           y = "Incidence per 100,000 Population", x = "Age Group (years)") +
-     scale_y_continuous(breaks = c(seq(0, 3000, 100)), labels = c(seq(0, 3000, 100))) +
+     scale_y_continuous(breaks = c(seq(0, 5000, 100)), labels = c(seq(0, 5000, 100))) +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
            title = element_text(size = 18, colour = "black"),
@@ -449,7 +447,7 @@ age_incidence_plot_line <- covid_data %>%
         color = "Age group") +
       ylab("Incidence per 100,000") +
       xlab("") +
-      geom_label(aes(x = Sys.Date()-7, y = 400, 
+      geom_label(aes(x = Sys.Date()-9, y = 600, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
       scale_x_date(breaks = seq.Date(from = as.Date("2020-08-02"), 
@@ -568,7 +566,7 @@ ethnicity_plot <- covid_data %>%
      labs(title = "COVID-19 cases by self-reported ethnicity",
           subtitle = paste0("Missoula County. N = ", ethnicity_cases, " cases."),
           y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 2000, 100)), labels = c(seq(0, 2000, 100))) +
+     scale_y_continuous(breaks = c(seq(0, 5000, 100)), labels = c(seq(0, 5000, 100))) +
      coord_flip() +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -602,7 +600,7 @@ ethnicity_incidence_plot <- ethnicity_incidence %>%
      labs(title = "COVID-19 incidence by self-reported ethnicity",
           subtitle = paste0("Missoula County. N = ", ethnicity_cases, " cases."),
           y = "Incidence per 100,000 Population", x = "") +
-     scale_y_continuous(breaks = c(seq(0, 2000, 100)), labels = c(seq(0, 2000, 100))) +
+     scale_y_continuous(breaks = c(seq(0, 5000, 100)), labels = c(seq(0, 5000, 100))) +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
            title = element_text(size = 18, colour = "black"),
@@ -884,7 +882,7 @@ epi_curve_onset_recent <- plot_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-08-19"), label = "UM semester start", vjust = -0.5,
                  y = 30), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-7, y = 40, 
+     geom_label(aes(x = Sys.Date()-8, y = 90, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County Since August 1, 2020",
@@ -947,7 +945,7 @@ epi_curve_test_date <- plot_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-08-19"), label = "UM semester start", vjust = -0.5,
                  y = 30), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-7, y = 40, 
+     geom_label(aes(x = Sys.Date()-8, y = 75, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County Since August 1, 2020",
@@ -1155,7 +1153,7 @@ epi_curve_onset <- plot_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-08-19"), label = "UM semester start", vjust = -0.5,
                  y = 30), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-10, y = 30, 
+     geom_label(aes(x = Sys.Date()-12, y = 90, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County by Date, 2020",
@@ -1243,7 +1241,7 @@ covid_piechart
 ```
 
 
-```{r}
+```{r, include=FALSE, eval=FALSE}
 # Line plot of days between symptom onset and test results
 date_n <- covid_data %>% 
    filter(test_date_new > "2020-08-01") %>% 

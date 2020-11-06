@@ -32,6 +32,7 @@ library(jsonlite)
 library(httr)
 library(rlist)
 library(Rsftp)
+library(EnvStats)
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", 
                "#0072B2", "#D55E00", "#CC79A7")
 colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
@@ -168,7 +169,7 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.10.
 mt_li_analysis_data <- mt_case_data %>% 
    #filter(dates < "2020-05-01" & dates >= "2020-03-01") %>% # early
    #filter(dates >= "2020-05-01" & dates < "2020-08-01") %>% # late
-   #filter(dates < "2020-03-28" & dates >= "2020-03-01") %>% # pre sip
+   filter(dates < "2020-03-28" & dates >= "2020-03-01") %>% # pre sip
    #filter(dates >= "2020-03-28" & dates < "2020-04-26") %>% # sip
    #filter(dates < "2020-06-01" & dates >= "2020-04-26") %>% # phase 1
    #filter(dates >= "2020-06-01" & dates < "2020-08-01") %>% # phase 2
@@ -190,7 +191,7 @@ mt_data <- mt_li_analysis_data %>%
 # Early = 2020-04-30; Late, July, Phase2, and Total = 2020-07-31
 # PreSIP = 2020-03-27; SIP = 2020-04-25
 # Phase1 = 2020-05-31; June = 2020-06-30
-mt_incidence_data <- incidence(mt_data$dates, last_date = "2020-07-31")
+mt_incidence_data <- incidence(mt_data$dates, last_date = "2020-03-27")
 
 mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
    mutate(dates = ymd(mt_incidence_data$dates)) %>% 
@@ -222,22 +223,145 @@ si_config <- make_config(list(si_parametric_distr = dist,
 # mt_si_data_pre_sip, mt_si_data_sip, mt_si_data_phase1
 # mt_si_data_phase2, mt_si_data_june, mt_si_data_july
 mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data_july, config = si_config)
+                           si_data = mt_si_data_total, config = si_config)
+```
 
+# Use distributions to calculate mean, sd, 95% ci's
+```{r}
+### Total SI calculation
+# Total SI convergence successful: Mean SI = 5.51 (5.13, 5.90), SD SI = 4.62 (4.21, 5.05)
 
+# Save/load results
+total_results <- mt_r_results
+write_rds(total_results, paste0(file_path, "total_results.rds"))
+total_results <- read_rds(paste0(file_path, "total_results.rds"))
 
-# calculate mean serial interval using SI data
-mean_si <- mt_r_results$SI.Moments %>% 
+# Mean/SD SI from distribution
+mean_si <- total_results$SI.Moments %>% 
    summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
 mean_si
 
-# Total SI convergence successful: Mean SI = 5.52, SD SI = 4.63
+# Shape and scale of distribution of Means
+egamma(total_results$SI.Moments$Mean, ci = TRUE)
+# 95% CI for means
+qgamma(c(0.025, 0.975), shape = 794, scale = 0.00694)
+
+# Shape and scale of distribution of SDs
+egamma(total_results$SI.Moments$Std, ci = TRUE)
+# 95% CI for SDs
+qgamma(c(0.025, 0.975), shape = 463, scale = 0.00998)
+
+
+### Pre-SIP SI calculation
+# Pre-SIP SI convergence successful: Mean SI = 4.62 (3.79, 5.53), SD SI = 3.67 (2.77, 4.73)
+
+# Save/load results
+presip_results <- mt_r_results
+write_rds(presip_results, paste0(file_path, "presip_results.rds"))
+presip_results <- read_rds(paste0(file_path, "presip_results.rds"))
+
+# Mean/SD SI from distribution
+mean_si <- presip_results$SI.Moments %>% 
+   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
+mean_si
+
+# Shape and scale of distribution of Means
+egamma(presip_results$SI.Moments$Mean, ci = TRUE)
+# 95% CI for means
+qgamma(c(0.025, 0.975), shape = 108, scale = 0.0428)
+
+# Shape and scale of distribution of SDs
+egamma(presip_results$SI.Moments$Std, ci = TRUE)
+# 95% CI for SDs
+qgamma(c(0.025, 0.975), shape = 54, scale = 0.0683)
+
+
+### SIP SI calculation
+# SIP SI convergence successful: Mean SI = 8.52 (6.88, 10.37), SD SI = 6.22 (4.61, 8.05)
+
+# Save/load results
+sip_results <- mt_r_results
+write_rds(sip_results, paste0(file_path, "sip_results.rds"))
+sip_results <- read_rds(paste0(file_path, "sip_results.rds"))
+
+# Mean/SD SI from distribution
+mean_si <- sip_results$SI.Moments %>% 
+   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
+mean_si
+
+# Shape and scale of distribution of Means
+egamma(sip_results$SI.Moments$Mean, ci = TRUE)
+# 95% CI for means
+qgamma(c(0.025, 0.975), shape = 92, scale = 0.0928)
+
+# Shape and scale of distribution of SDs
+egamma(sip_results$SI.Moments$Std, ci = TRUE)
+# 95% CI for SDs
+qgamma(c(0.025, 0.975), shape = 50, scale = 0.1242)
+
+
+### Phase 1 SI calculation
+# Phase 1 SI convergence successful: Mean SI = 5.35 (3.51, 7.50), SD SI = 4.69 (2.53, 7.36)
+
+# Save/load results
+phase1_results <- mt_r_results
+write_rds(phase1_results, paste0(file_path, "phase1_results.rds"))
+phase1_results <- read_rds(paste0(file_path, "phase1_results.rds"))
+
+# Mean/SD SI from distribution
+mean_si <- phase1_results$SI.Moments %>% 
+   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
+mean_si
+
+# Shape and scale of distribution of Means
+egamma(phase1_results$SI.Moments$Mean, ci = TRUE)
+# 95% CI for means
+qgamma(c(0.025, 0.975), shape = 27, scale = 0.197)
+
+# Shape and scale of distribution of SDs
+egamma(phase1_results$SI.Moments$Std, ci = TRUE)
+# 95% CI for SDs
+qgamma(c(0.025, 0.975), shape = 14, scale = 0.331)
+
+
+### Phase 2 SI calculation
+# Phase 2 SI convergence successful: Mean SI = 5.29 (4.88, 5.76), SD SI = 4.45 (3.97, 4.93)
+
+# Save/load results
+phase2_results <- mt_r_results
+write_rds(phase2_results, paste0(file_path, "phase2_results.rds"))
+phase2_results <- read_rds(paste0(file_path, "phase2_results.rds"))
+
+# Mean/SD SI from distribution
+mean_si <- phase2_results$SI.Moments %>% 
+   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
+mean_si
+
+# Shape and scale of distribution of Means
+egamma(phase2_results$SI.Moments$Mean, ci = TRUE)
+# 95% CI for means
+qgamma(c(0.025, 0.975), shape = 559, scale = 0.0095)
+
+# Shape and scale of distribution of SDs
+egamma(phase2_results$SI.Moments$Std, ci = TRUE)
+# 95% CI for SDs
+qgamma(c(0.025, 0.975), shape = 324, scale = 0.0137)
+
+
+mean_si_plot <- phase2_results$SI.Moments %>%
+   ggplot() +
+     geom_histogram(aes(Mean))
+mean_si_plot
+
+sd_si_plot <- phase2_results$SI.Moments %>%
+   ggplot() +
+     geom_histogram(aes(Std))
+sd_si_plot
+
+
+
 # Early SI convergence successful: Mean SI = 6.27, SD SI = 5.14
 # Late SI convergence successful: Mean SI = 5.29, SD SI = 4.45
-# Pre-SIP SI convergence successful: Mean SI = 4.62, SD SI = 3.67
-# SIP SI convergence successful: Mean SI = 8.52, SD SI = 6.22
-# Phase 1 SI convergence successful: Mean SI = 5.35, SD SI = 4.69
-# Phase 2 SI convergence successful: Mean SI = 5.29, SD SI = 4.45
 # June SI convergence successful: Mean SI = 5.26, SD SI = 4.48
 # July SI convergence successful: Mean SI = 5.31, SD SI = 4.44
 ```
@@ -376,7 +500,7 @@ epi_curve_full <- full_data %>%
                     label = "Later cases: \n n = 4311 \n SI Pairs = 394 \n Mean SI = 5.29 \n SD SI = 4.45"),
                 fill = NA, color = "black") +
      labs(title = "COVID-19 cases in Montana by date of symptom onset",
-          subtitle = paste0("Total cases: n = 4772, SI Pairs = 509, Mean SI = 5.52, SD SI = 4.63"),
+          subtitle = paste0("Total cases: n = 4772, SI Pairs = 509, Mean SI = 5.51 (95% CI: 5.13, 5.90), SD SI = 4.62 (95% CI: 4.21, 5.05)"),
           fill = " ") +
      ylab("Number of Cases") +
      xlab("") +
@@ -442,30 +566,30 @@ epi_curve_full <- full_data %>%
                             labels = c("imported case", "local case"))) %>% 
    ggplot() +
      geom_rect(aes(xmin = as.Date("2020-02-28"), xmax = as.Date("2020-03-28"), ymin=0, ymax=Inf),
-               fill = "gray70", alpha = 0.05) +
+               fill = "gray90", alpha = 0.05) +
      geom_rect(aes(xmin = as.Date("2020-03-28"), xmax = as.Date("2020-04-26"), ymin=0, ymax=Inf),
-               fill = "gray50", alpha = 0.05) +
-     geom_rect(aes(xmin = as.Date("2020-04-26"), xmax = as.Date("2020-06-01"), ymin=0, ymax=Inf),
                fill = "gray70", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-04-26"), xmax = as.Date("2020-06-01"), ymin=0, ymax=Inf),
+               fill = "gray90", alpha = 0.05) +
      geom_rect(aes(xmin = as.Date("2020-06-01"), xmax = as.Date("2020-08-01"), ymin=0, ymax=Inf),
-               fill = "gray50", alpha = 0.05) +
+               fill = "gray70", alpha = 0.05) +
      geom_col(aes(dates, case, fill = local_import), width = 1) +
-     geom_label(aes(x = as.Date("2020-03-13"), y = 125,
-                    label = "Pre-SIP: \n n = 291 \n SI Pairs = 68 \n Mean SI = 4.62 \n SD SI = 3.67"),
+     geom_label(aes(x = as.Date("2020-03-14"), y = 125,
+                    label = "Pre-SIP: \n\n Cases = 291 \n SI Pairs = 68 \n\n Mean SI = 4.62 \n (95% CI: 3.79, 5.53) \n\n SD SI = 3.67 \n (95% CI: 2.77, 4.73)"),
                 fill = NA, color = "black") +
-     geom_label(aes(x = as.Date("2020-04-11"), y = 125, 
-                    label = "SIP: \n n = 168 \n SI Pairs = 47 \n Mean SI = 8.52 \n SD SI = 6.22"),
+     geom_label(aes(x = as.Date("2020-04-12"), y = 125, 
+                    label = "SIP: \n\n Cases = 168 \n SI Pairs = 47 \n\n Mean SI = 8.52 \n (95% CI: 6.88, 10.37) \n\n SD SI = 6.22 \n (95% CI: 4.61, 8.05)"),
                 fill = NA, color = "black") +
      geom_label(aes(x = as.Date("2020-05-14"), y = 125,
-                    label = "Phase 1: \n n = 96 \n SI Pairs = 22 \n Mean SI = 5.35 \n SD SI = 4.69"),
+                    label = "Phase 1: \n\n Cases = 96 \n SI Pairs = 22 \n\n Mean SI = 5.35 \n (95% CI: 3.51, 7.50) \n\n SD SI = 4.69 \n (95% CI: 2.53, 7.36)"),
                 fill = NA, color = "black") +
      geom_label(aes(x = as.Date("2020-06-16"), y = 125, 
-                    label = "Phase 2: \n n = 4217 \n SI Pairs = 372 \n Mean SI = 5.29 \n SD SI = 4.45"),
+                    label = "Phase 2: \n\n Cases = 4,217 \n SI Pairs = 372 \n\n Mean SI = 5.29 \n (95% CI: 4.88, 5.76) \n\n SD SI = 4.45 \n (95% CI: 3.97, 4.93)"),
                 fill = NA, color = "black") +
-     labs(title = "COVID-19 cases in Montana by date of symptom onset",
-          subtitle = paste0("Total cases: n = 4772, SI Pairs = 509, Mean SI = 5.52, SD SI = 4.63"),
+     labs(title = "Reported COVID-19 cases in Montana by date of symptom onset",
+          subtitle = paste0("Total cases = 4,772; Total SI Pairs = 509; Overall Mean SI = 5.51 (95% CI: 5.13, 5.90); Overall SD SI = 4.62 (95% CI: 4.21, 5.05)"),
           fill = " ") +
-     ylab("Number of Cases") +
+     ylab("Number of reported cases") +
      xlab("") +
      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-01"), 
                                     to = as.Date("2020-08-01"), 
@@ -496,5 +620,5 @@ epi_curve_full <- full_data %>%
 
 epi_curve_full
 
-#ggsave("si_pub_epi_curve2.jpg", width = 12, height = 6)
+#ggsave("si_pub_epi_curve2.jpg", width = 13, height = 7)
 ```

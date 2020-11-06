@@ -61,7 +61,7 @@ counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.28.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_11.05.2020_v2.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -74,7 +74,7 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_10.28.
           case = 1) %>% 
    rename(hospitalization = "ever_hospitalized") %>% 
    left_join(counties_regions, by = "county") %>% 
-   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99" | age_group == "100" | age_group == "100-110",
+   mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99" | age_group == "100" | age_group == "100-110",
                                "80+", age_group),
           age_group_new = factor(age_group_new, 
                                  levels = c("0-9", "10-19", "20-29", 

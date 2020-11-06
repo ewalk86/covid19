@@ -262,24 +262,26 @@ state_hosp_data <- state_data %>%
    select(case_no, dates, county:mt_case) %>% 
    left_join(counties_regions, by = "county") %>% 
    mutate(case = 1) %>% 
-   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99" | age_group == "100" | age_group == "100-110",
+   mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99" | age_group == "100" | age_group == "100-110",
                                "80+", age_group),
-          age_group_new = factor(age_group2, 
+          age_group_new = factor(age_group_new, 
                                  levels = c("0-9", "10-19", "20-29", 
                                             "30-39", "40-49", "50-59", 
                                             "60-69", "70-79", "80+"),
                                  labels = c("0 to 9", "10 to 19", "20 to 29", 
                                             "30 to 39", "40 to 49", "50 to 59", 
                                             "60 to 69", "70 to 79", "80+"))) %>% 
-   select(-age_group2, -age_group) %>% 
+   select(-age_group) %>% 
    mutate(hospitalization = factor(hospitalization,
                                    levels = c("Y", "N", "P", "U"),
                                    labels = c("Hosp: Yes", "Hosp: No", 
                                               "Hosp: Past", "Hosp: Unknown")))
 
-state_hosp <- state_hosp_data %>% 
+
+state_hosp_death <- state_hosp_data %>% 
    filter(mt_case != "X") %>% 
    #filter(!is.na(age_group_new)) %>% 
+   filter(dates < Sys.Date()-30) %>% 
    group_by(age_group_new) %>% 
    mutate(age_group_cases = sum(case)) %>% 
    mutate(hosp = if_else(hospitalization == "Hosp: Yes" | hospitalization == "Hosp: Past", 1, 0),
@@ -296,7 +298,30 @@ state_hosp <- state_hosp_data %>%
    rename(age_group = age_group_new) %>% 
    arrange(age_group)
 
-write_csv(state_hosp, "C:/R/covid19/state_daily_results/state_hosp.csv", na = " ")
+write_csv(state_hosp_death, "C:/R/covid19/state_daily_results/state_hosp_death.csv", na = " ")
+
+
+reg_hosp_death <- state_hosp_data %>% 
+   filter(mt_case != "X") %>% 
+   #filter(!is.na(age_group_new)) %>% 
+   filter(dates < Sys.Date()-30) %>% 
+   group_by(age_group_new, region) %>% 
+   mutate(age_group_cases = sum(case)) %>% 
+   mutate(hosp = if_else(hospitalization == "Hosp: Yes" | hospitalization == "Hosp: Past", 1, 0),
+          death = if_else(outcome == "Deceased", 1, 0),
+          hosp_yes = sum(hosp, na.rm = TRUE),
+          hosp_no = age_group_cases - hosp_yes,
+          hosp_percent = round(hosp_yes/age_group_cases*100, digits = 2),
+          deaths = sum(death, na.rm = TRUE),
+          deaths_percent = round(deaths/age_group_cases*100, digits = 2)) %>% 
+   ungroup() %>% 
+   distinct(age_group_new, region, .keep_all = TRUE) %>% 
+   select(region, age_group_new, age_group_cases, hosp_yes, hosp_no, hosp_percent,
+          deaths, deaths_percent) %>% 
+   rename(age_group = age_group_new) %>% 
+   arrange(region, age_group)
+
+write_csv(reg_hosp_death, "C:/R/covid19/state_daily_results/reg_hosp_death.csv", na = " ")
 
 
 
@@ -309,9 +334,9 @@ hosp_data_initial <- state_data %>%
    select(case_no, dates, county:mt_case) %>% 
    left_join(counties_regions, by = "county") %>% 
    mutate(case = 1) %>% 
-   mutate(age_group2 = if_else(age_group == "80-89" | age_group == "90-99",
+   mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99",
                                "80+", age_group),
-          age_group_new = factor(age_group2, 
+          age_group_new = factor(age_group_new, 
                                  levels = c("0-9", "10-19", "20-29", 
                                             "30-39", "40-49", "50-59", 
                                             "60-69", "70-79", "80+"),
@@ -515,8 +540,12 @@ write_csv(case_hosp_test_outcome, "C:/R/covid19/state_daily_results/mt_case_outc
 # remotepath = '/celFtpFiles/covid19/Rt/incoming/'
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/state_hosp.csv",
-           "C:/R/covid19/state_daily_results/state_hosp.csv")
+           "/celFtpFiles/covid19/Rt/incoming/state_hosp_death.csv",
+           "C:/R/covid19/state_daily_results/state_hosp_death.csv")
+
+sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+           "/celFtpFiles/covid19/Rt/incoming/reg_hosp_death.csv",
+           "C:/R/covid19/state_daily_results/reg_hosp_death.csv")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
            "/celFtpFiles/covid19/Rt/incoming/county_data_combined.csv",

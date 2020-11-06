@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 2 April 2020, Updated 26 Oct 2020"
+date: "Started 2 April 2020, Updated 5 Nov 2020"
 output:
   pdf_document: default
   html_document:
@@ -31,7 +31,7 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID data 10.26.20.xlsx"), sheet = 1,
+   read_xlsx(paste0(input_path, "COVID data 11.5.20.xlsx"), sheet = 1,
              range = "A2:AA5000", 
                         col_names = c("case_id", "case_status", "um_case", "age", "gender", "race", 
                                       "ethnicity", "zipcode", "healthcare_worker",
@@ -60,13 +60,13 @@ covid_data_initial <-
 covid_clean <- covid_data_initial %>% 
    filter(!is.na(case_id)) %>% 
    mutate(age = as.numeric(age),
-          age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 110),
+          age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 130),
                           labels = c("0 to 9, 0.1", "10 to 19, 0.12", "20 to 29, 0.19", 
                                      "30 to 39, 0.14", "40 to 49, 0.12", "50 to 59, 0.11", 
                                      "60 to 69, 0.11", "70 to 79, 0.07", "80+, 0.03"), right = FALSE),
-          age_group2 = cut(age, breaks = c(0, 18, 65, 110),
+          age_group2 = cut(age, breaks = c(0, 18, 65, 130),
                           labels = c("<18", "18 to 64", "65+"), right = FALSE),
-          age_group3 = cut(age, breaks = c(0, 10, 15, 19, 25, 30, 40, 50, 60, 70, 80, 110),
+          age_group3 = cut(age, breaks = c(0, 10, 15, 19, 25, 30, 40, 50, 60, 70, 80, 130),
                           labels = c("0 to 9", "10 to 14", "15 to 18", "19 to 24", "25 to 29", 
                                      "30 to 39", "40 to 49", "50 to 59", 
                                      "60 to 69", "70 to 79", "80+"), right = FALSE)) %>% 
@@ -192,10 +192,12 @@ covid_clean <- covid_data_initial %>%
                                    "asian, 0.016", "native hawaiian/pacific islander, 0.001", "other, 0.038",
                                    "white, 0.917")),
           ethnicity = fct_collapse(ethnicity,
-                                   "hispanic/latino, 0.032" = c("hispanic/latino"),
+                                   "hispanic/latino, 0.032" = c("hispanic/latino", "hispanic/latno"),
                                    "not hispanic or latino, 0.968" = 
-                                    c("not hispanic or latino", "non hispanic",
+                                    c("not hispanic or latino", "non hispanic", "non-hispanic/latino",
                                       "not hispanic/latino", "nonhispanic"))) %>% 
+   replace_with_na(replace = list(ethnicity = "declined")) %>%
+   replace_with_na(replace = list(gender = c("nb", "declined"))) %>%
    separate(race, c("race", "race_percent"), sep = ", ") %>% 
    separate(ethnicity, c("ethnicity", "ethnicity_percent"), sep = ", ") %>% 
    mutate(race = as.factor(race),
