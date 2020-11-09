@@ -1,7 +1,7 @@
 ---
 title: "University of Montana COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of November 2, 2020"
+date: "Data as of November 9, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -566,7 +566,11 @@ epi_curve_onset_recent <- plot_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-08-19"), label = "UM semester start", vjust = -0.5,
                  y = 10), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-7, y = 10, 
+     geom_vline(xintercept = as.numeric(as.Date("2020-09-07")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-09-07"), label = "Labor Day", vjust = -0.5,
+                 y = 10), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-8, y = 15, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "University of Montana COVID-19 Cases Since August 1, 2020",
@@ -626,7 +630,11 @@ epi_curve_onset_recent <- plot_data %>%
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-08-19"), label = "UM semester start", vjust = -0.5,
                  y = 10), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-7, y = 10, 
+     geom_vline(xintercept = as.numeric(as.Date("2020-09-07")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-09-07"), label = "Labor Day", vjust = -0.5,
+                 y = 10), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-8, y = 15, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "University of Montana COVID-19 Cases Since August 1, 2020",
@@ -742,7 +750,8 @@ county_dates_new <- county_dates_new[-(1:14), 1:2]
 county_dates_new <- cbind(county_dates_new, county_cil, county_cih) %>% 
    rename(cl_low = 3,
           cl_high = 4)
-mc_r <- cbind(county_r, county_dates_new)
+mc_r <- cbind(county_r, county_dates_new) %>% 
+   filter(dates > "2020-09-30")
 ```
 
 \pagebreak  
@@ -827,7 +836,7 @@ um_r <- cbind(county_r, county_dates_new)
 
 
 county_r_plot <- um_r %>% 
-   filter(dates > "2020-07-31") %>% 
+   filter(dates > "2020-09-30") %>% 
    ggplot() +
    geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
    geom_line(data = mc_r, aes(dates, mean_r), size = 1.5, color = "blue") +
@@ -840,7 +849,7 @@ county_r_plot <- um_r %>%
    xlab("") +
    geom_hline(yintercept = 1, color = "red", size = 1.2) +
    scale_x_date(date_breaks = "2 days", date_labels = "%d-%b") +
-   scale_y_continuous(breaks = seq(0, 5, 0.25), labels = seq(0, 5, 0.25)) +
+   scale_y_continuous(breaks = seq(0, 2, 0.1), labels = seq(0, 2, 0.1)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
          title = element_text(size = 18, colour = "black"),
