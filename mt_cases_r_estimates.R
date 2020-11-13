@@ -61,7 +61,7 @@ counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_11.05.2020_v2.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_11.12.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    select(-case_no) %>% 
@@ -102,7 +102,7 @@ state_data_wide <- mt_case_data %>%
    mutate(case = 1) %>% 
    pivot_wider(names_from = "age_group_new", values_from = "case") %>% 
    mutate(case = 1) %>% 
-   #select(-"NA") %>% 
+   select(-"NA") %>% 
    pivot_wider(names_from = "sex", values_from = "case") %>% 
    mutate(case = 1) %>% 
    select(-"NA") %>% 

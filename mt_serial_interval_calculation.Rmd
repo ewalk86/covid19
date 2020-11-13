@@ -56,8 +56,8 @@ mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
 mt_si_data_total <- mt_si_data %>% 
    filter(infected_date < "2020-07-31") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
-   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
-   filter(SR < 29) %>% 
+   #mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29 & SR != 0) %>% 
    mutate_all(as.integer)
 
 
@@ -236,8 +236,12 @@ total_results <- mt_r_results
 write_rds(total_results, paste0(file_path, "total_results.rds"))
 total_results <- read_rds(paste0(file_path, "total_results.rds"))
 
+total_results_no_zeros <- mt_r_results
+write_rds(total_results_no_zeros, paste0(file_path, "total_results_no_zeros.rds"))
+total_results_no_zeros <- read_rds(paste0(file_path, "total_results_no_zeros.rds"))
+
 # Mean/SD SI from distribution
-mean_si <- total_results$SI.Moments %>% 
+mean_si <- total_results_no_zeros$SI.Moments %>% 
    summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
 mean_si
 
