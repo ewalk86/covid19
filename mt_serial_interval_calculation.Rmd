@@ -171,7 +171,7 @@ mt_li_analysis_data <- mt_case_data %>%
    #filter(dates >= "2020-05-01" & dates < "2020-08-01") %>% # late
    #filter(dates < "2020-03-28" & dates >= "2020-03-01") %>% # pre sip
    #filter(dates >= "2020-03-28" & dates < "2020-04-26") %>% # sip
-   #filter(dates < "2020-06-01" & dates >= "2020-04-26") %>% # phase 1
+   filter(dates < "2020-06-01" & dates >= "2020-04-26") %>% # phase 1
    #filter(dates >= "2020-06-01" & dates < "2020-08-01") %>% # phase 2
    #filter(dates < "2020-07-01" & dates >= "2020-06-01") %>% # june
    #filter(dates >= "2020-07-01" & dates < "2020-08-01") %>% # july
@@ -191,7 +191,7 @@ mt_data <- mt_li_analysis_data %>%
 # Early = 2020-04-30; Late, July, Phase2, and Total = 2020-07-31
 # PreSIP = 2020-03-27; SIP = 2020-04-25
 # Phase1 = 2020-05-31; June = 2020-06-30
-mt_incidence_data <- incidence(mt_data$dates, last_date = "2020-07-31")
+mt_incidence_data <- incidence(mt_data$dates, last_date = "2020-05-31")
 
 mt_li_inc_data <- as.data.frame(mt_incidence_data$dates) %>% 
    mutate(dates = ymd(mt_incidence_data$dates)) %>% 
@@ -223,7 +223,7 @@ si_config <- make_config(list(si_parametric_distr = dist,
 # mt_si_data_pre_sip, mt_si_data_sip, mt_si_data_phase1
 # mt_si_data_phase2, mt_si_data_june, mt_si_data_july
 mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data_total, config = si_config)
+                           si_data = mt_si_data_phase1, config = si_config)
 ```
 
 # Use distributions to calculate mean, sd, 95% ci's

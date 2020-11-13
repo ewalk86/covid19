@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of November 9, 2020"
+date: "Data as of November 13, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -495,7 +495,7 @@ race_plot_count <- covid_data %>%
      labs(title = "COVID-19 cases by self-reported race",
           subtitle = paste0("Missoula County. N = ", race_cases, " cases."),
           y = "Count", x = "", fill = "") +
-     scale_y_continuous(breaks = c(seq(0, 2000, 100)), labels = c(seq(0, 2000, 100))) +
+     scale_y_continuous(breaks = c(seq(0, 5000, 100)), labels = c(seq(0, 5000, 100))) +
      coord_flip() +
      theme_minimal() +
      theme(strip.text = element_text(size = 16, colour = "black"),
@@ -1192,6 +1192,29 @@ epi_curve_onset
 #ggsave("epi_curve_onset.jpg", width = 12, height = 5.5)
 ```
 
+\pagebreak  
+
+```{r}
+inc_data <- covid_data %>% 
+   rename(dates = symptom_onset_date_new) %>% 
+   filter(!is.na(dates)) %>% 
+   filter(dates > "2020-08-31" & dates < Sys.Date() - 13) %>% 
+   arrange(dates) %>% 
+   select(dates, case) %>% 
+   group_by(dates) %>% 
+   mutate(total_cases = sum(case, na.rm = TRUE)) %>% 
+   arrange(dates) %>% 
+   ungroup()
+
+inc_data2 <- incidence(inc_data$dates)
+
+plot(inc_data2)
+
+inc_fit <- fit(inc_data2)
+inc_fit
+
+plot(inc_fit)
+```
 
           
 
@@ -1527,5 +1550,32 @@ missoula_r_plot <- missoula_r %>%
 missoula_r_plot
 
 #ggsave("C:/R/covid19/missoula_r_plot.png", width = 10, height = 6)
+```
+
+
+```{r, include=FALSE, eval=FALSE}
+# Load sewage testing data and format columns
+
+input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
+
+
+sewage_data <- 
+   read_xlsx(paste0(input_path, "Msla WW COVID graph.xlsx"), sheet = 1,
+             range = "A2:G26", 
+                        col_names = c("date", "n1_gene", "n2_gene", 
+                                      "daily_inc", "new_case_7day_ave", 
+                                      "active_cases", "active_cases_7day_ave"),
+                        col_types = c("date", "numeric", "numeric",
+                                      "numeric", "numeric",
+                                      "numeric", "numeric"))
+
+sewage_model <- lm(new_case_7day_ave ~ n1_gene, data = sewage_data)
+summary(sewage_model)
+
+sewage_plot <- sewage_data %>% 
+   ggplot(aes(new_case_7day_ave, n1_gene)) +
+     geom_col() +
+     geom_smooth(method = "lm")
+sewage_plot 
 ```
 
