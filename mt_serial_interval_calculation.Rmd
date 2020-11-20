@@ -479,6 +479,10 @@ epi_curve_full <- full_data %>%
      geom_rect(aes(xmin = as.Date("2020-06-01"), xmax = as.Date("2020-08-01"), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
      geom_col(aes(dates, case, fill = local_import), width = 1) +
+     geom_text(aes(x = as.Date("2020-03-03"), y = 175, label = "A"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-03-31"), y = 175, label = "B"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-04-30"), y = 175, label = "C"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-06-04"), y = 175, label = "D"), size = 8, color = "black") + 
      geom_label(aes(x = as.Date("2020-03-14"), y = 125,
                     label = "Pre-SIP: \n\n Cases = 291 \n SI Pairs = 68 \n\n Mean SI = 4.62 \n (95% CI: 3.79, 5.53) \n\n SD SI = 3.67 \n (95% CI: 2.77, 4.73)"),
                 fill = NA, color = "black") +
@@ -503,8 +507,7 @@ epi_curve_full <- full_data %>%
                   date_labels = "%d-%B") +
      scale_y_continuous(breaks = c(seq(0, 300, 25)), labels = c(seq(0, 300, 25))) +
      theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 12, colour = "black"),
+     theme(title = element_text(size = 12, colour = "black"),
            panel.grid = element_blank(),
            panel.grid.major.y = element_line(colour = "gray50"),
            axis.text.x = element_text(size = 14, colour = "black", 
@@ -523,7 +526,7 @@ epi_curve_full <- full_data %>%
 
 epi_curve_full
 
-#ggsave("si_pub_epi_curve2.jpg", width = 13, height = 7)
+ggsave("si_pub_epi_curve2.jpg", width = 13, height = 7, dpi = 600)
 ```
 
 
