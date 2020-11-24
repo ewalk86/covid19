@@ -607,7 +607,7 @@ epi_curve_full
 
 ```{r, include=FALSE, eval=FALSE}
 inc_data <- covid_data %>% 
-   rename(dates = symptom_onset_date_new) %>% 
+   rename(dates = test_date) %>% 
    filter(!is.na(dates)) %>% 
    filter(dates > "2020-08-30" & dates < Sys.Date() - 13) %>% 
    arrange(dates) %>% 
