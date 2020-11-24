@@ -1,0 +1,99 @@
+---
+title: "MCCHD Covid-19 initial data cleaning"
+author: "Ethan Walker"
+date: "Started 23 Nov 2020, Updated 23 Nov 2020"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, 
+                      include = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+library(readxl)
+library(naniar)
+library(lubridate)
+library(zoo)
+library(plotly)
+library(knitr)
+```
+
+
+```{r}
+# Load data and format columns
+
+input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
+
+
+covid_data_initial <- 
+   read_xlsx(paste0(input_path, "COVID data 11.23.20.xlsx"), sheet = 1,
+             range = "A2:AA5000", 
+                        col_names = c("case_id", "case_status", "um_case", "age", "gender", "race", 
+                                      "ethnicity", "zipcode", "healthcare_worker",
+                                      "symptoms", "symptom_type", "symptom_onset_date",
+                                      "test_date", "contact_with_case", "contact_case_number", 
+                                      "epi_linked", "epi_linked_number", "travel_hx",
+                                      "hospitalized", "ventilated", "discharge_date",
+                                      "chronic_conditions", "chronic_conditions_type",
+                                      "number_contacts", "patient_died", 
+                                      "suspected_source", "community_spread"),
+                        col_types = c("text", "text", "text", "text", "text", "text",
+                                      "text", "text", "text",
+                                      "text", "text", "date",
+                                      "date", "text", "text",
+                                      "text", "text", "text",
+                                      "text", "text", "date",
+                                      "text", "text", 
+                                      "text", "text",
+                                      "text", "text"))
+```
+
+
+```{r}
+# Clean data
+
+covid_clean <- covid_data_initial %>% 
+   select(case_id, case_status, um_case, age, test_date) %>% 
+   filter(!is.na(case_id)) %>% 
+   mutate(age = as.numeric(age),
+          age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 130),
+                          labels = c("0 to 9, 0.1", "10 to 19, 0.12", "20 to 29, 0.19", 
+                                     "30 to 39, 0.14", "40 to 49, 0.12", "50 to 59, 0.11", 
+                                     "60 to 69, 0.11", "70 to 79, 0.07", "80+, 0.03"), right = FALSE),
+          age_group2 = cut(age, breaks = c(0, 18, 65, 130),
+                          labels = c("<18", "18 to 64", "65+"), right = FALSE),
+          age_group3 = cut(age, breaks = c(0, 10, 15, 19, 25, 30, 40, 50, 60, 70, 80, 130),
+                          labels = c("0 to 9", "10 to 14", "15 to 18", "19 to 24", "25 to 29", 
+                                     "30 to 39", "40 to 49", "50 to 59", 
+                                     "60 to 69", "70 to 79", "80+"), right = FALSE)) %>% 
+   separate(age_group, c("age_group", "age_group_percent"), sep = ", ") %>% 
+   mutate_if(is.character, tolower) %>% 
+   mutate_if(is.factor, tolower) %>% 
+   replace_with_na_all(condition = ~.x %in% c("n/a", "na", "unknown", "unkown")) %>% 
+   mutate(age_group_percent = as.numeric(age_group_percent),
+          county_pop = as.numeric(119000),
+          case = 1,
+          um_case = as.factor(um_case),
+          case_status = as.factor(case_status),
+          age_group = as.factor(age_group),
+          age_group2 = as.factor(age_group2),
+          age_group3 = as.factor(age_group3),
+          test_date = ymd(test_date)) 
+   
+
+summary(covid_clean)
+```
+
+```{r}
+# Save data
+file_path <- c("C:/R/covid19/")
+
+
+write_rds(covid_clean, paste0(file_path, "covid_data_clean.rds"))
+```
+
