@@ -67,21 +67,17 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_11232020_2.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_11302020.xlsx"),
                           sheet = 1, skip = 1,
-                          col_names = c("jurisdiction", "spec_coll_date", "inv_start_date", 
-                                        "diagnosis_date", "county_fips", "state_num", 
-                                        "age", "age_unit", "sex", "hosp_adm_date", 
-                                        "hospitalization", "onset_date"),
-                          col_types = c("text", "date", "date",
-                                        "date", "numeric", "numeric", 
-                                        "numeric", "text", "text", "date", 
-                                        "text", "date")) %>% 
+                          col_names = c("inv_start_date", "state_num", "county_fips", 
+                                        "age", "age_unit", "sex", "hospitalization", "hosp_dur",
+                                        "onset_date", "spec_coll_date", "diagnosis_date"),
+                          col_types = c("date", "numeric", "numeric",
+                                        "numeric", "text", "text", "text", "numeric",
+                                        "date", "date", "date")) %>% 
    rownames_to_column(var = "case_no") %>% 
-   mutate(jurisdiction = str_to_title(jurisdiction),
-          case = 1) %>% 
+   mutate(case = 1) %>% 
    left_join(mt_county_fips, by = "county_fips") %>% 
-   filter(jurisdiction != "Out Of State") %>% 
    filter(!is.na(county)) %>% 
    mutate(age = as.numeric(age),
           age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 130),
@@ -114,13 +110,14 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_11232020_2.xlsx"),
           onset_date_4 = if_else(is.na(onset_date_3) & !is.na(inv_start_date), 
                                  inv_start_date - mean_onset_inv_diff, onset_date_3)) %>% 
    separate(onset_date_4, into = c("dates", "time"), sep = " ") %>% 
-   mutate(dates = ymd(dates)) %>% 
+   mutate(dates = ymd(dates),
+          region = as.factor(region)) %>% 
    select(-time) %>% 
    filter(!is.na(dates)) %>% 
    arrange(dates) %>% 
    ungroup() 
 
-
+# summary(mt_case_data)
 
 #################### Run analysis and print results ########################
 

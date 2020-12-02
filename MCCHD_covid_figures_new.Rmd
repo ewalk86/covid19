@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of November 23, 2020"
+date: "Data as of November 30, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -609,7 +609,7 @@ epi_curve_full
 inc_data <- covid_data %>% 
    rename(dates = test_date) %>% 
    filter(!is.na(dates)) %>% 
-   filter(dates > "2020-08-30" & dates < Sys.Date() - 13) %>% 
+   filter(dates > Sys.Date() - 28 & dates < Sys.Date() - 14) %>% 
    arrange(dates) %>% 
    select(dates, case) %>% 
    group_by(dates) %>% 
@@ -623,8 +623,11 @@ plot(inc_data2)
 
 inc_fit <- fit(inc_data2)
 inc_fit
+inc_fit$info$doubling
 
-plot(inc_fit)
+#plot(inc_fit)
+
+#find_peak(inc_data2)
 ```
 
 
@@ -635,7 +638,7 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 sewage_data <- 
-   read_xlsx(paste0(input_path, "Msla WW COVID graph 2020-11-13.xlsx"), sheet = 1,
+   read_xlsx(paste0(input_path, "Msla WW COVID graph 2020-11-30.xlsx"), sheet = 1,
              range = "A2:I33", 
                         col_names = c("date", "n1_gene", "n2_gene", 
                                       "daily_inc", "new_case_7day_ave", "new_case_7day_ave2",
