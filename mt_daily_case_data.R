@@ -69,7 +69,6 @@ reg5 <- as.data.frame(c("Flathead", "Lake", "Lincoln", "Mineral", "Missoula",
 counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 state_data_clean <- state_data %>% 
-   select(-Hospitalization) %>% 
    rename_all(tolower) %>% 
    mutate(date_reported_to_cdepi = date_reported_to_cdepi/1000,
           dates = as.POSIXct(date_reported_to_cdepi, origin = "1970-01-01")) %>% 
@@ -90,6 +89,10 @@ state_data_clean <- state_data %>%
    separate(age_group_new, c("age_group_new", "age_group_new_percent"), sep = ",") %>% 
    mutate(age_group_new_percent = as.numeric(age_group_new_percent),
           state_pop = as.numeric(1068778)) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Y", "N", "P", "U"),
+                                   labels = c("Hosp: Yes", "Hosp: No", 
+                                              "Hosp: Past", "Hosp: Unknown"))) %>% 
    select(-age_group2, -age_group_new, -age_group_new_percent, -state_pop, -case_no) %>% 
    rownames_to_column(var = "case_no")
 
@@ -128,9 +131,17 @@ county_function <- function(county_name, data = state_data_clean){
       left_join(county_data, by = "dates") %>% 
       mutate(case_new = case) %>% 
       group_by(dates) %>% 
+      mutate(hospitalization = as.character(hospitalization)) %>% 
+      pivot_wider(names_from = "hospitalization", values_from = "case") %>% 
+      select(-"NA") %>% 
+      group_by(dates) %>% 
       pivot_wider(names_from = "outcome", values_from = "case_new") %>% 
       select(-"NA") %>% 
       group_by(dates) %>% 
+      mutate_at(vars(one_of("Hosp: No")), sum, na.rm = TRUE) %>% 
+      mutate_at(vars(one_of("Hosp: Yes")), sum, na.rm = TRUE) %>% 
+      mutate_at(vars(one_of("Hosp: Unkown")), sum, na.rm = TRUE) %>% 
+      mutate_at(vars(one_of("Hosp: Past")), sum, na.rm = TRUE) %>%
       mutate_at(vars(one_of("Active")), sum, na.rm = TRUE) %>% 
       mutate_at(vars(one_of("Deceased")), sum, na.rm = TRUE) %>% 
       mutate_at(vars(one_of("Recovered")), sum, na.rm = TRUE) %>% 
@@ -268,6 +279,34 @@ state_test_data_clean <- state_test_data %>%
    distinct(dates, .keep_all = TRUE)
 
 
+hosp_data_daily <- state_data_clean %>% 
+   filter(mt_case != "X") %>% 
+   select(dates, hospitalization, case) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Hosp: Yes",
+                                              "Hosp: No",
+                                              "Hosp: Past",
+                                              "Hosp: Unknown"),
+                                   labels = c("hosp_active",
+                                              "hosp_no",
+                                              "hosp_past",
+                                              "hosp_unknown"))) %>% 
+   group_by(dates, hospitalization) %>% 
+   mutate(sum_hosp = sum(case)) %>% 
+   group_by(dates) %>% 
+   select(-case) %>% 
+   distinct(dates, hospitalization, .keep_all = TRUE) %>% 
+   pivot_wider(names_from = "hospitalization", values_from = "sum_hosp") %>% 
+   mutate(hosp_active = if_else(is.na(hosp_active), 0, hosp_active),
+          hosp_no = if_else(is.na(hosp_no), 0, hosp_no),
+          hosp_past = if_else(is.na(hosp_past), 0, hosp_past)) %>% 
+   group_by(dates) %>% 
+   mutate(daily_hosp = hosp_active + hosp_past) %>% 
+   ungroup() %>% 
+   mutate(total_hosp = cumsum(daily_hosp)) %>% 
+   select(dates, daily_hosp, total_hosp)
+
+
 outcome_data_daily <- state_data_clean %>% 
    filter(mt_case != "X") %>% 
    select(dates, outcome, case) %>% 
@@ -309,12 +348,14 @@ case_data_daily <- state_data_clean %>%
    select(-case)
 
 
-case_test_outcome <- case_data_daily %>% 
+case_hosp_test_outcome <- case_data_daily %>% 
+   left_join(hosp_data_daily, by = "dates") %>% 
    left_join(outcome_data_daily, by = "dates") %>% 
    full_join(state_test_data_clean, by = "dates") %>% 
    arrange(dates) %>% 
    mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>% 
    mutate(total_cases = cumsum(daily_cases),
+          total_hosp = cumsum(daily_hosp),
           total_deceased = cumsum(daily_deceased),
           total_active = cumsum(daily_active),
           total_recovered = cumsum(daily_recovered),
@@ -332,7 +373,65 @@ case_test_outcome <- case_data_daily %>%
    rename(total_tests = total_tests_completed,
           daily_tests = new_tests_completed) 
 
-write_csv(case_test_outcome, "C:/R/covid19/state_daily_results/mt_case_test_outcome_data.csv", na = " ")
+write_csv(case_hosp_test_outcome, "C:/R/covid19/state_daily_results/mt_case_hosp_test_outcome_data.csv", na = " ")
+
+
+# Clean up and summarize hosp data for dashboard plot
+hosp_data_initial <- state_data %>% 
+   rename_all(tolower) %>% 
+   mutate(date_reported_to_cdepi = date_reported_to_cdepi/1000,
+          dates = as.POSIXct(date_reported_to_cdepi, origin = "1970-01-01")) %>% 
+   separate(dates, c("dates", "trash"), sep = " ") %>% 
+   mutate(dates = ymd(dates)) %>% 
+   select(case_no, dates, county:mt_case) %>% 
+   left_join(counties_regions, by = "county") %>% 
+   mutate(case = 1) %>% 
+   mutate(age_group_new = if_else(age_group == "80-89" | age_group == "90-99",
+                                  "80+", age_group),
+          age_group_new = factor(age_group_new, 
+                                 levels = c("0-9", "10-19", "20-29", 
+                                            "30-39", "40-49", "50-59", 
+                                            "60-69", "70-79", "80+"),
+                                 labels = c("0 to 9, 0.12", "10 to 19, 0.12", "20 to 29, 0.13", 
+                                            "30 to 39, 0.13", "40 to 49, 0.11", "50 to 59, 0.12", 
+                                            "60 to 69, 0.14", "70 to 79, 0.08", "80+, 0.04"))) %>% 
+   separate(age_group_new, c("age_group_new", "age_group_new_percent"), sep = ",") %>% 
+   mutate(age_group_new_percent = as.numeric(age_group_new_percent),
+          state_pop = as.numeric(1068778)) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Y", "N", "P", "U"),
+                                   labels = c("Hosp: Yes", "Hosp: No", 
+                                              "Hosp: Past", "Hosp: Unknown"))) %>% 
+   select(-case_no) %>% 
+   rownames_to_column(var = "case_no")
+
+
+hosp_data_daily <- hosp_data_initial %>% 
+   filter(mt_case != "X") %>% 
+   select(dates, hospitalization, case) %>% 
+   mutate(hospitalization = factor(hospitalization,
+                                   levels = c("Hosp: Yes",
+                                              "Hosp: No",
+                                              "Hosp: Past",
+                                              "Hosp: Unknown"),
+                                   labels = c("hosp_active",
+                                              "hosp_no",
+                                              "hosp_past",
+                                              "hosp_unknown"))) %>% 
+   group_by(dates, hospitalization) %>% 
+   mutate(sum_hosp = sum(case)) %>% 
+   group_by(dates) %>% 
+   select(-case) %>% 
+   distinct(dates, hospitalization, .keep_all = TRUE) %>% 
+   pivot_wider(names_from = "hospitalization", values_from = "sum_hosp") %>% 
+   mutate(hosp_active = if_else(is.na(hosp_active), 0, hosp_active),
+          hosp_no = if_else(is.na(hosp_no), 0, hosp_no),
+          hosp_past = if_else(is.na(hosp_past), 0, hosp_past)) %>% 
+   group_by(dates) %>% 
+   mutate(daily_hosp = hosp_active + hosp_past) %>% 
+   ungroup() %>% 
+   mutate(total_hosp = cumsum(daily_hosp)) %>% 
+   select(dates, daily_hosp, total_hosp)
 
 
 # Send files to the sftp server
@@ -347,8 +446,8 @@ sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
            "C:/R/covid19/state_daily_results/county_data_combined.csv")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/mt_case_test_outcome_data.csv",
-           "C:/R/covid19/state_daily_results/mt_case_test_outcome_data.csv")
+           "/celFtpFiles/covid19/Rt/incoming/mt_case_hosp_test_outcome_data.csv",
+           "C:/R/covid19/state_daily_results/mt_case_hosp_test_outcome_data.csv")
 
 
 ########## Push case and rate data by age group to Google sheets
@@ -371,6 +470,16 @@ mt_data <- case_hosp_test_outcome %>%
 sheet_write(mt_data, 
             ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
             sheet = 1)
+
+mt_data <- case_hosp_test_outcome %>% 
+   select(dates, daily_hosp, total_hosp) %>% 
+   rename("Date" = dates,
+          "Daily_Hospitalizations" = daily_hosp,
+          "Total_Hospitalizations" = total_hosp)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
+            sheet = 2)
 
 mt_data <- case_hosp_test_outcome %>% 
    select(dates, daily_deceased, total_deceased) %>% 
