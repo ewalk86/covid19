@@ -1,6 +1,6 @@
 # Estimate R, save results/plots
 # Ethan Walker
-# 24 Nov 2020
+# 3 Dec 2020
 
 library(tidyverse)
 library(readxl)
@@ -67,13 +67,15 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_11302020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_12032020.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("inv_start_date", "state_num", "county_fips", 
-                                        "age", "age_unit", "sex", "hospitalization", "hosp_dur",
+                                        "age", "age_unit", "sex", "hospitalization", 
+                                        "hosp_dur", "deceased",
                                         "onset_date", "spec_coll_date", "diagnosis_date"),
                           col_types = c("date", "numeric", "numeric",
-                                        "numeric", "text", "text", "text", "numeric",
+                                        "numeric", "text", "text", "text", 
+                                        "numeric", "text",
                                         "date", "date", "date")) %>% 
    rownames_to_column(var = "case_no") %>% 
    mutate(case = 1) %>% 
@@ -84,13 +86,19 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_11302020.xlsx"),
                           labels = c("0 to 9", "10 to 19", "20 to 29", 
                                      "30 to 39", "40 to 49", "50 to 59", 
                                      "60 to 69", "70 to 79", "80+"), right = FALSE)) %>% 
-   mutate(hospitalization = factor(hospitalization,
-                                   levels = c("Y", "N", "UNK"),
-                                   labels = c("Hosp: Yes", "Hosp: No", 
-                                              "Hosp: Unknown")),
-          sex = factor(sex,
+   mutate(sex = factor(sex,
                        levels = c("F", "M", "U"),
-                       labels = c("Female", "Male", "Unknown"))) %>% 
+                       labels = c("Female", "Male", "Unknown")),
+          deceased = if_else(is.na(deceased), "N", deceased),
+          deceased = fct_collapse(deceased,
+                                  "Deceased: Yes" = "Y",
+                                  "Deceased: No" = "N",
+                                  "Deceased: Unknown" = "UNK"),
+          hospitalization = if_else(is.na(hospitalization), "N", hospitalization),
+          hospitalization = fct_collapse(hospitalization,
+                                  "Hosp: Yes" = "Y",
+                                  "Hosp: No" = "N",
+                                  "Hosp: Unknown" = "UNK")) %>% 
    filter(diagnosis_date > "2020-03-10" | is.na(diagnosis_date)) %>% 
    filter(spec_coll_date > "2020-03-10" | is.na(spec_coll_date)) %>% 
    filter(onset_date > "2020-02-13" | is.na(onset_date)) %>% 
@@ -781,4 +789,175 @@ ravalli_data <- all_regions_r %>%
 sheet_write(ravalli_data, 
             ss = "https://docs.google.com/spreadsheets/d/1X0vxDLVxQT_XrPgNMtyRwT1kTVQSN2PzQPYDWi2oxBo/edit#gid=0",
             sheet = 13)
+
+
+
+#################### Run and save state hospitalization data
+
+state_hosp_death <- mt_case_data %>% 
+   filter(!is.na(age_group)) %>% 
+   filter(dates < Sys.Date()-30) %>% 
+   group_by(age_group) %>% 
+   mutate(age_group_cases = sum(case)) %>% 
+   mutate(hosp = if_else(hospitalization == "Hosp: Yes", 1, 0),
+          death = if_else(deceased == "Deceased: Yes", 1, 0),
+          hosp_yes = sum(hosp, na.rm = TRUE),
+          hosp_no = age_group_cases - hosp_yes,
+          hosp_percent = round(hosp_yes/age_group_cases*100, digits = 2),
+          deaths = sum(death, na.rm = TRUE),
+          deaths_percent = round(deaths/age_group_cases*100, digits = 2)) %>% 
+   ungroup() %>% 
+   distinct(age_group, .keep_all = TRUE) %>% 
+   select(age_group, age_group_cases, hosp_yes, hosp_no, hosp_percent,
+          deaths, deaths_percent) %>% 
+   arrange(age_group)
+
+write_csv(state_hosp_death, "C:/R/covid19/state_daily_results/state_hosp_death_new.csv", na = " ")
+
+
+reg_hosp_death <- mt_case_data %>% 
+   filter(!is.na(age_group)) %>% 
+   filter(dates < Sys.Date()-30) %>% 
+   group_by(age_group, region) %>% 
+   mutate(age_group_cases = sum(case)) %>% 
+   mutate(hosp = if_else(hospitalization == "Hosp: Yes", 1, 0),
+          death = if_else(deceased == "Deceased: Yes", 1, 0),
+          hosp_yes = sum(hosp, na.rm = TRUE),
+          hosp_no = age_group_cases - hosp_yes,
+          hosp_percent = round(hosp_yes/age_group_cases*100, digits = 2),
+          deaths = sum(death, na.rm = TRUE),
+          deaths_percent = round(deaths/age_group_cases*100, digits = 2)) %>% 
+   ungroup() %>% 
+   distinct(age_group, region, .keep_all = TRUE) %>% 
+   select(region, age_group, age_group_cases, hosp_yes, hosp_no, hosp_percent,
+          deaths, deaths_percent) %>% 
+   arrange(region, age_group)
+
+write_csv(reg_hosp_death, "C:/R/covid19/state_daily_results/reg_hosp_death_new.csv", na = " ")
+
+
+
+hosp_data_initial <- mt_case_data %>% 
+   mutate(age_group_new = factor(age_group, 
+                                 levels = c("0 to 9", "10 to 19", "20 to 29", 
+                                            "30 to 39", "40 to 49", "50 to 59", 
+                                            "60 to 69", "70 to 79", "80+"),
+                                 labels = c("0 to 9, 0.12", "10 to 19, 0.12", "20 to 29, 0.13", 
+                                            "30 to 39, 0.13", "40 to 49, 0.11", "50 to 59, 0.12", 
+                                            "60 to 69, 0.14", "70 to 79, 0.08", "80+, 0.04"))) %>% 
+   separate(age_group_new, c("age_group_new", "age_group_new_percent"), sep = ",") %>% 
+   mutate(age_group_new_percent = as.numeric(age_group_new_percent),
+          state_pop = as.numeric(1068778)) 
+
+
+age_rates <- hosp_data_initial %>% 
+   select(case, age_group_new, age_group_new_percent, state_pop) %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(age_group_new) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group_new_percent*state_pop,
+          group_rate = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(age_group_new, .keep_all = TRUE) %>% 
+   mutate(region = "Montana") %>% 
+   rename(age_group = age_group_new,
+          age_group_cases = group_cases) %>% 
+   mutate(age_group_rate = round(group_rate, digits = 0)) %>% 
+   select(age_group, age_group_cases, age_group_rate) %>% 
+   filter(!is.na(age_group)) %>% 
+   arrange(age_group)
+
+hosp_data <- hosp_data_initial %>% 
+   select(case, age_group_new, age_group_new_percent, state_pop, hospitalization) %>% 
+   mutate(total_cases = n(),
+          hospitalization_status = if_else(hospitalization == "Hosp: Yes", 
+                                           "Yes", "No")) %>% 
+   group_by(age_group_new, hospitalization_status) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group_new_percent*state_pop,
+          group_rate = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(age_group_new, hospitalization_status, .keep_all = TRUE) 
+
+hosp_cases <- hosp_data %>% 
+   arrange(age_group_new, hospitalization_status) %>% 
+   pivot_wider(names_from = hospitalization_status, values_from = group_cases) %>% 
+   rename(age_group = age_group_new,
+          Hospitalized = Yes,
+          Not_Hospitalized = No) %>% 
+   select(age_group, Hospitalized, Not_Hospitalized) %>% 
+   filter(!is.na(age_group)) 
+
+hosp_rates <- hosp_data %>% 
+   arrange(age_group_new, hospitalization_status) %>% 
+   mutate(age_group_rate = round(group_rate, digits = 0)) %>% 
+   pivot_wider(names_from = hospitalization_status, values_from = age_group_rate) %>% 
+   rename(age_group = age_group_new,
+          Hospitalized = Yes,
+          Not_Hospitalized = No) %>% 
+   select(age_group, Hospitalized, Not_Hospitalized) %>% 
+   filter(!is.na(age_group)) 
+
+
+
+# Send files to the sftp server
+# host = 'elbastion.dbs.umt.edu'
+# port = 22
+# username = 'celftp'
+# password  = 'celftp'
+# remotepath = '/celFtpFiles/covid19/Rt/incoming/'
+
+sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+           "/celFtpFiles/covid19/Rt/incoming/state_hosp_death.csv",
+           "C:/R/covid19/state_daily_results/state_hosp_death.csv")
+
+sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+           "/celFtpFiles/covid19/Rt/incoming/reg_hosp_death.csv",
+           "C:/R/covid19/state_daily_results/reg_hosp_death.csv")
+
+
+
+########## Push hosp data by age group to Google sheets
+
+options(gargle_oauth_email = "ethanwalker86@gmail.com")
+drive_auth(email = "ethanwalker86@gmail.com")
+gs4_auth(token = drive_token())
+
+
+# Write age case/rate data to google
+mt_data <- age_rates %>% 
+   select(age_group, age_group_cases) %>% 
+   rename("Age_Group" = age_group,
+          "Cases" = age_group_cases)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
+            sheet = 1)
+
+mt_data <- age_rates %>% 
+   select(age_group, age_group_rate) %>% 
+   rename("Age_Group" = age_group,
+          "Rate per 100,000 population" = age_group_rate)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
+            sheet = 2)
+
+mt_data <- hosp_cases %>% 
+   select(age_group, Hospitalized, Not_Hospitalized) %>% 
+   rename("Age_Group" = age_group)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
+            sheet = 3)
+
+mt_data <- hosp_rates %>% 
+   select(age_group, Hospitalized, Not_Hospitalized) %>% 
+   rename("Age_Group" = age_group)
+
+sheet_write(mt_data, 
+            ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
+            sheet = 4)
 
