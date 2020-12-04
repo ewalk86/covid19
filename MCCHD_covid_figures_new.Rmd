@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of November 30, 2020"
+date: "Data as of December 3, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -421,13 +421,13 @@ epi_curve_test_date
 case_data <- covid_data %>% 
    rename(dates = test_date) %>% 
    filter(!is.na(dates)) %>% 
-   filter(dates > "2020-06-30" & dates < Sys.Date() - 6) %>% 
+   filter(dates > "2020-06-30" & dates < Sys.Date() - 13) %>% 
    arrange(dates) %>% 
    select(dates, case) %>% 
    arrange(dates) %>% 
    ungroup() 
 
-latest_date <- format(Sys.Date() - 7, "%Y-%m-%d")
+latest_date <- format(Sys.Date() - 14, "%Y-%m-%d")
 
 incidence_data <- incidence(case_data$dates, last_date = latest_date)
 
@@ -609,7 +609,7 @@ epi_curve_full
 inc_data <- covid_data %>% 
    rename(dates = test_date) %>% 
    filter(!is.na(dates)) %>% 
-   filter(dates > Sys.Date() - 28 & dates < Sys.Date() - 14) %>% 
+   filter(dates > Sys.Date() - 42 & dates < Sys.Date() - 14) %>% 
    arrange(dates) %>% 
    select(dates, case) %>% 
    group_by(dates) %>% 

@@ -910,12 +910,12 @@ hosp_rates <- hosp_data %>%
 # remotepath = '/celFtpFiles/covid19/Rt/incoming/'
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/state_hosp_death.csv",
-           "C:/R/covid19/state_daily_results/state_hosp_death.csv")
+           "/celFtpFiles/covid19/Rt/incoming/state_hosp_death_new.csv",
+           "C:/R/covid19/state_daily_results/state_hosp_death_new.csv")
 
 sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg_hosp_death.csv",
-           "C:/R/covid19/state_daily_results/reg_hosp_death.csv")
+           "/celFtpFiles/covid19/Rt/incoming/reg_hosp_death_new.csv",
+           "C:/R/covid19/state_daily_results/reg_hosp_death_new.csv")
 
 
 
