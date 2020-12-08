@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of December 3, 2020"
+date: "Data as of December 7, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -625,7 +625,7 @@ inc_fit <- fit(inc_data2)
 inc_fit
 inc_fit$info$doubling
 
-#plot(inc_fit)
+plot(inc_fit)
 
 #find_peak(inc_data2)
 ```

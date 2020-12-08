@@ -93,7 +93,7 @@ state_data_clean <- state_data %>%
                                    levels = c("Y", "N", "P", "U"),
                                    labels = c("Hosp: Yes", "Hosp: No", 
                                               "Hosp: Past", "Hosp: Unknown"))) %>% 
-   select(-age_group2, -age_group_new, -age_group_new_percent, -state_pop, -case_no) %>% 
+   select(-age_group2, -age_group, -age_group_new_percent, -state_pop, -case_no) %>% 
    rownames_to_column(var = "case_no")
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
@@ -149,7 +149,7 @@ county_function <- function(county_name, data = state_data_clean){
       ungroup() %>% 
       fill(county, .direction = c("downup")) %>% 
       fill(region, .direction = c("downup")) %>% 
-      select(-case_no, -age_group, -sex, -mt_case)
+      select(-case_no, -age_group_new, -sex, -mt_case)
    
    county_data_final <- cbind(county_data_new, county_cases) 
    

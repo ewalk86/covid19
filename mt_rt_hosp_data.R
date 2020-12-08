@@ -1,6 +1,6 @@
 # Estimate R, save results/plots
 # Ethan Walker
-# 3 Dec 2020
+# 7 Dec 2020
 
 library(tidyverse)
 library(readxl)
@@ -67,7 +67,7 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_12032020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_12072020.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("inv_start_date", "state_num", "county_fips", 
                                         "age", "age_unit", "sex", "hospitalization", 
@@ -815,6 +815,28 @@ state_hosp_death <- mt_case_data %>%
 write_csv(state_hosp_death, "C:/R/covid19/state_daily_results/state_hosp_death_new.csv", na = " ")
 
 
+state_hosp_death_month <- mt_case_data %>% 
+   filter(!is.na(age_group)) %>% 
+   filter(dates < Sys.Date()-30) %>% 
+   mutate(onset_month = lubridate::month(dates, label = TRUE)) %>% 
+   group_by(age_group, onset_month) %>% 
+   mutate(age_group_cases = sum(case)) %>% 
+   mutate(hosp = if_else(hospitalization == "Hosp: Yes", 1, 0),
+          death = if_else(deceased == "Deceased: Yes", 1, 0),
+          hosp_yes = sum(hosp, na.rm = TRUE),
+          hosp_no = age_group_cases - hosp_yes,
+          hosp_percent = round(hosp_yes/age_group_cases*100, digits = 2),
+          deaths = sum(death, na.rm = TRUE),
+          deaths_percent = round(deaths/age_group_cases*100, digits = 2)) %>% 
+   ungroup() %>% 
+   distinct(onset_month, age_group, .keep_all = TRUE) %>% 
+   select(onset_month, age_group, age_group_cases, hosp_yes, hosp_no, hosp_percent,
+          deaths, deaths_percent) %>% 
+   arrange(onset_month, age_group)
+
+write_csv(state_hosp_death_month, "C:/R/covid19/state_daily_results/state_hosp_death_month.csv", na = " ")
+
+
 reg_hosp_death <- mt_case_data %>% 
    filter(!is.na(age_group)) %>% 
    filter(dates < Sys.Date()-30) %>% 
@@ -917,6 +939,9 @@ sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
            "/celFtpFiles/covid19/Rt/incoming/reg_hosp_death_new.csv",
            "C:/R/covid19/state_daily_results/reg_hosp_death_new.csv")
 
+sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+           "/celFtpFiles/covid19/Rt/incoming/state_hosp_death_month.csv",
+           "C:/R/covid19/state_daily_results/state_hosp_death_month.csv")
 
 
 ########## Push hosp data by age group to Google sheets
