@@ -67,7 +67,7 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_12072020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_12102020.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("inv_start_date", "state_num", "county_fips", 
                                         "age", "age_unit", "sex", "hospitalization", 
