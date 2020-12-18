@@ -67,25 +67,30 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_12152020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_12172020.xlsx"),
                           sheet = 1, skip = 1,
-                          col_names = c("inv_start_date", "state_num", "county_fips", 
-                                        "age", "age_unit", "sex", "hospitalization", 
-                                        "hosp_dur", "deceased",
+                          col_names = c("midis_add_datetime", "inv_start_date", "state_num", "county_fips", 
+                                        "sex", "age", "age_unit", "hospitalization", 
+                                        "hosp_dur", "hosp_dur_unit", "deceased",
                                         "onset_date", "spec_coll_date", "diagnosis_date"),
-                          col_types = c("date", "numeric", "numeric",
-                                        "numeric", "text", "text", "text", 
-                                        "numeric", "text",
+                          col_types = c("date", "date", "numeric", "numeric",
+                                        "text", "text", "text", "text",  
+                                        "numeric", "text", "text", 
                                         "date", "date", "date")) %>% 
    rownames_to_column(var = "case_no") %>% 
    mutate(case = 1) %>% 
    left_join(mt_county_fips, by = "county_fips") %>% 
    filter(!is.na(county)) %>% 
-   mutate(age = as.numeric(age),
-          age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 130),
-                          labels = c("0 to 9", "10 to 19", "20 to 29", 
-                                     "30 to 39", "40 to 49", "50 to 59", 
-                                     "60 to 69", "70 to 79", "80+"), right = FALSE)) %>% 
+   mutate(age_group = fct_collapse(age,
+                                   "0 to 9" = "0-9",
+                                   "10 to 19" = "10-19", 
+                                   "20 to 29" = "20-29", 
+                                   "30 to 39" = "30-39", 
+                                   "40 to 49" = "40-49", 
+                                   "50 to 59" = "50-59", 
+                                   "60 to 69" = "60-69", 
+                                   "70 to 79" = "70-79", 
+                                   "80+" = c("80-89", "90-99", "100-109"))) %>% 
    mutate(sex = factor(sex,
                        levels = c("F", "M", "U"),
                        labels = c("Female", "Male", "Unknown")),
@@ -816,7 +821,7 @@ write_csv(state_hosp, "C:/R/covid19/state_daily_results/state_hosp.csv", na = " 
 
 state_deaths <- mt_case_data %>% 
    filter(!is.na(age_group)) %>% 
-   #filter(dates < Sys.Date()-30) %>% 
+   filter(dates < Sys.Date()-14) %>% 
    group_by(age_group) %>% 
    mutate(age_group_cases = sum(case)) %>% 
    mutate(hosp = if_else(hospitalization == "Hosp: Yes", 1, 0),
@@ -857,7 +862,7 @@ write_csv(state_hosp_month, "C:/R/covid19/state_daily_results/state_hosp_month.c
 
 state_deaths_month <- mt_case_data %>% 
    filter(!is.na(age_group)) %>% 
-   #filter(dates < Sys.Date()-30) %>% 
+   filter(dates < Sys.Date()-14) %>% 
    mutate(onset_month = lubridate::month(dates, label = TRUE)) %>% 
    group_by(age_group, onset_month) %>% 
    mutate(age_group_cases = sum(case)) %>% 
@@ -898,7 +903,7 @@ write_csv(reg_hosp, "C:/R/covid19/state_daily_results/reg_hosp.csv", na = " ")
 
 reg_deaths <- mt_case_data %>% 
    filter(!is.na(age_group)) %>% 
-   #filter(dates < Sys.Date()-30) %>% 
+   filter(dates < Sys.Date()-14) %>% 
    group_by(age_group, region) %>% 
    mutate(age_group_cases = sum(case)) %>% 
    mutate(hosp = if_else(hospitalization == "Hosp: Yes", 1, 0),
