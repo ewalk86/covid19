@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of December 17, 2020"
+date: "Data as of December 21, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -36,7 +36,7 @@ jv_palette <- c("#330099","#CC0066","#FF6633",
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#CC6633",
                "#0072B2", "#D55E00", "#CC79A7", "#999999")
 colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
-                        "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+                        "#44AA99", "Black", "#999933", "#882255", "#661100", "#6699CC", "#888888")
 ```
 
 
@@ -67,6 +67,22 @@ age_incidence <- covid_data %>%
           county_pop, age_group_percent) %>% 
    filter(!is.na(age_group)) %>% 
    arrange(age_group)
+
+age_incidence2 <- covid_data %>% 
+   select(case, age_group3, age_group3_percent, county_pop) %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(age_group3) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group3_percent*county_pop,
+          group_inc = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(age_group3, .keep_all = TRUE) %>% 
+   mutate(region = "Missoula County") %>% 
+   select(region, age_group3, group_cases, group_pop, group_inc, 
+          county_pop, age_group3_percent) %>% 
+   filter(!is.na(age_group3)) %>% 
+   arrange(age_group3)
 ```
 
 \pagebreak  
@@ -177,12 +193,14 @@ age_count_month_plot
 ```{r}
 age_n <- covid_data %>% 
    filter(!is.na(age_group3) & !is.na(test_date)) %>% 
-   filter(test_date > "2020-09-01")
+   filter(test_date > "2020-09-01") %>% 
+   filter(age < 30)
 age_cases <- sum(age_n$case)
 
 # Age group line plot - counts by month
 age_count_month_plot2 <- covid_data %>% 
    filter(test_date > "2020-09-01") %>% 
+   filter(age < 30) %>% 
    mutate(week_of_year = cut.Date(test_date, breaks = "1 week", start.on.monday = FALSE),
           week_of_year = ymd(week_of_year)) %>% 
    group_by(age_group3, week_of_year) %>% 
@@ -348,6 +366,80 @@ age_incidence_plot_line
 
 \pagebreak  
 
+```{r}
+age_n <- covid_data %>% 
+   filter(!is.na(age_group) & !is.na(test_date)) %>% 
+   filter(test_date > "2020-09-01") %>% 
+   filter(age < 30)
+age_cases <- sum(age_n$case)
+
+# Incidence line plot by age and month
+age_incidence_plot_line <- covid_data %>% 
+   filter(test_date > "2020-09-01") %>% 
+   filter(age < 30) %>% 
+   mutate(week_of_year = cut.Date(test_date, breaks = "1 week", start.on.monday = FALSE),
+          week_of_year = ymd(week_of_year)) %>% 
+   select(case, age_group3, age_group3_percent, county_pop, week_of_year) %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(age_group3, week_of_year) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group3_percent*county_pop,
+          group_inc = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(age_group3, week_of_year, .keep_all = TRUE) %>% 
+   mutate(region = "Missoula County") %>% 
+   select(region, age_group3, week_of_year, group_cases, group_prop, group_inc, 
+          county_pop, age_group3_percent) %>% 
+   filter(!is.na(age_group3)) %>% 
+   arrange(age_group3, week_of_year) %>% 
+   filter(!is.na(week_of_year)) %>% 
+   ggplot() +
+      geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+      geom_line(aes(week_of_year, group_inc, group = age_group3, 
+                    color = age_group3), size = 1.5) +
+      theme_minimal() +
+      labs(title = "COVID-19 incidence per week by age group",
+        subtitle = paste0("Missoula County, 2020. N = ", age_cases, " cases."),
+        color = "Age group") +
+      ylab("Incidence per 100,000") +
+      xlab("") +
+      geom_label(aes(x = Sys.Date()-10, y = 650, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
+      scale_x_date(breaks = seq.Date(from = as.Date("2020-09-02"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "7 days"),
+                  labels = seq.Date(from = as.Date("2020-09-02"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "7 days"),
+                  date_labels = "%d-%b") +
+      scale_y_continuous(breaks = c(seq(0, 1000, 50)), labels = c(seq(0, 1000, 50))) +
+      theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 18, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 16, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 16, colour = "black"),
+         legend.text = element_text(size = 16, colour = "black"),
+         axis.title.y = element_text(size = 16, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 16, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = colorblind_palette)
+
+age_incidence_plot_line
+
+#ggsave("C:/R/covid19/age_incidence_plot_line.png", width = 12, height = 6)
+```
+
+\pagebreak  
+
 ```{r, fig.width = 10, fig.height = 5}
 # Epi curve - test date
 
@@ -374,7 +466,7 @@ epi_curve_test_date <- plot_data %>%
      geom_vline(xintercept = as.numeric(as.Date("2020-11-26")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-11-26"), label = "Thanksgiving", vjust = -0.5,
-                 y = 70), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 100), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_label(aes(x = Sys.Date()-10, y = 125, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
@@ -565,7 +657,7 @@ epi_curve_full <- plot_data %>%
      geom_vline(xintercept = as.numeric(as.Date("2020-10-31")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-10-31"), label = "Halloween", vjust = -0.5,
-                 y = 70), colour = "black", angle = 90, text = element_text(size=14)) +
+                 y = 100), colour = "black", angle = 90, text = element_text(size=14)) +
      geom_vline(xintercept = as.numeric(as.Date("2020-11-26")), color = "black", 
               size = 1, linetype = "dashed") +
      geom_text(aes(x = as.Date("2020-11-26"), label = "Thanksgiving", vjust = -0.5,

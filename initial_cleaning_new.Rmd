@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 23 Nov 2020, Updated 17 Dec 2020"
+date: "Started 23 Nov 2020, Updated 21 Dec 2020"
 output:
   pdf_document: default
   html_document:
@@ -31,7 +31,7 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID Data 12.17.20.xlsx"), sheet = 1,
+   read_xlsx(paste0(input_path, "COVID Data 12.21.20.xlsx"), sheet = 1,
              range = "A2:AA10000", 
                         col_names = c("case_id", "case_status", "um_case", "age", "gender", "race", 
                                       "ethnicity", "zipcode", "healthcare_worker",
@@ -62,28 +62,39 @@ covid_clean <- covid_data_initial %>%
    filter(!is.na(case_id)) %>% 
    mutate(age = as.numeric(age),
           age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 130),
-                          labels = c("0 to 9, 0.1", "10 to 19, 0.12", "20 to 29, 0.19", 
-                                     "30 to 39, 0.14", "40 to 49, 0.12", "50 to 59, 0.11", 
-                                     "60 to 69, 0.11", "70 to 79, 0.07", "80+, 0.03"), right = FALSE),
+                          labels = c("0 to 9, 0.101", "10 to 19, 0.117", "20 to 29, 0.191", 
+                                     "30 to 39, 0.143", "40 to 49, 0.115", "50 to 59, 0.112", 
+                                     "60 to 69, 0.118", "70 to 79, 0.072", "80+, 0.032"), right = FALSE),
           age_group2 = cut(age, breaks = c(0, 18, 65, 130),
                           labels = c("<18", "18 to 64", "65+"), right = FALSE),
-          age_group3 = cut(age, breaks = c(0, 10, 15, 19, 25, 30, 40, 50, 60, 70, 80, 130),
-                          labels = c("0 to 9", "10 to 14", "15 to 18", "19 to 24", "25 to 29", 
-                                     "30 to 39", "40 to 49", "50 to 59", 
-                                     "60 to 69", "70 to 79", "80+"), right = FALSE)) %>% 
+          age_group3 = cut(age, breaks = c(0, 5, 14, 18, 25, 30, 40, 50, 60, 70, 80, 130),
+                          labels = c("0 to 4, 0.0503", "5 to 13, 0.095", "14 to 17, 0.0405", 
+                                     "18 to 24, 0.137", "25 to 29, 0.086", 
+                                     "30 to 39, 0.143", "40 to 49, 0.115", "50 to 59, 0.112", 
+                                     "60 to 69, 0.118", "70 to 79, 0.072", "80+, 0.032"), right = FALSE)) %>% 
    separate(age_group, c("age_group", "age_group_percent"), sep = ", ") %>% 
+   separate(age_group3, c("age_group3", "age_group3_percent"), sep = ", ") %>% 
    mutate_if(is.character, tolower) %>% 
    mutate_if(is.factor, tolower) %>% 
    replace_with_na_all(condition = ~.x %in% c("n/a", "na", "unknown", "unkown")) %>% 
    mutate(age_group_percent = as.numeric(age_group_percent),
-          county_pop = as.numeric(119000),
+          age_group3_percent = as.numeric(age_group3_percent),
+          county_pop = as.numeric(119600),
           case = 1,
           um_case = as.factor(um_case),
           case_status = as.factor(case_status),
           age_group = as.factor(age_group),
           age_group2 = as.factor(age_group2),
-          age_group3 = as.factor(age_group3),
-          test_date = ymd(test_date)) 
+          test_date = ymd(test_date),
+          age_group3 = factor(age_group3,
+                              levels = c("0 to 4", "5 to 13", "14 to 17", 
+                                     "18 to 24", "25 to 29", 
+                                     "30 to 39", "40 to 49", "50 to 59", 
+                                     "60 to 69", "70 to 79", "80+"),
+                              labels = c("0 to 4", "5 to 13", "14 to 17", 
+                                     "18 to 24", "25 to 29", 
+                                     "30 to 39", "40 to 49", "50 to 59", 
+                                     "60 to 69", "70 to 79", "80+"))) 
    
 
 summary(covid_clean)
