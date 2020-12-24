@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of December 21, 2020"
+date: "Data as of December 23, 2020"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -35,8 +35,9 @@ jv_palette <- c("#330099","#CC0066","#FF6633",
                   "#FF3366", "#33CC99", "#33999")
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#CC6633",
                "#0072B2", "#D55E00", "#CC79A7", "#999999")
-colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
-                        "#44AA99", "Black", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", 
+                        "#44AA99", "#999933", "#882255", "Black", "#661100", 
+                        "#6699CC", "#AA4499", "#888888")
 ```
 
 
@@ -503,7 +504,7 @@ epi_curve_test_date <- plot_data %>%
 
 epi_curve_test_date
 
-#ggsave("epi_curve_test_date.jpg", width = 12, height = 5.5)
+#ggsave("mc_epi_curve_test_date.jpg", width = 12, height = 5.5)
 ```
 
 \pagebreak  
@@ -757,5 +758,74 @@ sewage_plot <- sewage_data %>%
      geom_col() +
      geom_smooth(method = "lm")
 sewage_plot 
+```
+
+\pagebreak  
+
+```{r, include=FALSE, eval=FALSE}
+# Epi curve - test date
+
+plot_data <- covid_data %>% 
+   filter(um_case == "yes") %>% 
+   filter(test_date > "2020-08-31") 
+
+total_cases <- sum(plot_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
+
+epi_curve_test_date <- plot_data %>% 
+   ggplot() +
+     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_col(aes(test_date, case), color = "steelblue") +
+     geom_vline(xintercept = as.numeric(as.Date("2020-09-07")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-09-07"), label = "Labor Day", vjust = -0.5,
+                 y = 12), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-10-31")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-10-31"), label = "Halloween", vjust = -0.5,
+                 y = 12), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_vline(xintercept = as.numeric(as.Date("2020-11-26")), color = "black", 
+              size = 1, linetype = "dashed") +
+     geom_text(aes(x = as.Date("2020-11-26"), label = "Thanksgiving", vjust = -0.5,
+                 y = 12), colour = "black", angle = 90, text = element_text(size=14)) +
+     geom_label(aes(x = Sys.Date()-10, y = 15, 
+                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
+                fill = NA) +
+     labs(title = "UM COVID-19 Cases Since September 1, 2020",
+          subtitle = paste0("Cases in plot = ", total_cases),
+          fill = " ") +
+     ylab("Number of Cases") +
+     xlab("Test Date") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-09-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "3 days"),
+                  labels = seq.Date(from = as.Date("2020-09-01"), 
+                                    to = as.Date(Sys.Date()), 
+                                    by = "3 days"),
+                  date_labels = "%d-%b") + 
+     scale_y_continuous(breaks = seq(0, 50, 5), labels = seq(0, 50, 5)) + 
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray75"),
+           axis.text.x = element_text(size = 12, colour = "black", 
+                                     angle = 90, vjust = 0.4),
+           axis.text.y = element_text(size = 12, colour = "black"),
+           axis.title.y = element_text(size = 12, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 12, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 12, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(), 
+           axis.ticks = element_blank()) +
+     scale_fill_manual(values = cbPalette)   
+
+epi_curve_test_date
+
+#ggsave("um_epi_curve_test_date.jpg", width = 12, height = 5.5)
 ```
 
