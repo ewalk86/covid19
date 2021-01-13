@@ -56,8 +56,13 @@ mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
 mt_si_data_total <- mt_si_data %>% 
    filter(infected_date < "2020-07-31") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
-   #mutate(SR = if_else(SR == 0, 1, SR)) %>% 
-   filter(SR < 29 & SR != 0) %>% 
+   #mutate(filter_var = if_else(SR != SL, 1, 0)) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   #filter(filter_var == 0) %>% 
+   #mutate(SR = if_else(SR == 2, 3, SR)) %>%
+   #mutate(SL = SL + 1,
+   #       SR = SR + 1) %>% 
+   filter(SR < 29) %>% 
    mutate_all(as.integer)
 
 
@@ -78,7 +83,8 @@ mt_si_data_late <- mt_si_data %>%
 
 
 mt_si_data_pre_sip <- mt_si_data %>% 
-   filter(infected_date < "2020-03-27") %>% 
+   #filter(infected_date < "2020-03-27") %>% 
+   filter(infected_date < "2020-04-10") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -86,7 +92,8 @@ mt_si_data_pre_sip <- mt_si_data %>%
 
 
 mt_si_data_sip <- mt_si_data %>% 
-   filter(infected_date > "2020-03-27" & infected_date < "2020-04-24") %>% 
+   #filter(infected_date > "2020-03-27" & infected_date < "2020-04-24") %>% 
+   filter(infected_date > "2020-04-10" & infected_date < "2020-05-08") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -94,15 +101,18 @@ mt_si_data_sip <- mt_si_data %>%
 
 
 mt_si_data_phase1 <- mt_si_data %>% 
-   filter(infected_date > "2020-04-25" & infected_date < "2020-05-31") %>% 
+   #filter(infected_date > "2020-04-25" & infected_date < "2020-05-31") %>% 
+   filter(infected_date > "2020-05-08" & infected_date < "2020-06-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   #mutate(SR = if_else(SR == 3, 4, SR)) %>%
    filter(SR < 29) %>% 
    mutate_all(as.integer)
 
 
 mt_si_data_phase2 <- mt_si_data %>% 
-   filter(infected_date > "2020-05-31" & infected_date < "2020-07-31") %>% 
+   #filter(infected_date > "2020-05-31" & infected_date < "2020-07-31") %>% 
+   filter(infected_date > "2020-06-14" & infected_date < "2020-07-31") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -212,10 +222,13 @@ time_end <- time_start + 13
 ## This code only needs to be used if we want to update the SI with new paired cases
 MCMC_seed <- 1
 overall_seed <- 2
-mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 5000, thin = 10)
-dist <- "G"  # fitting a Gamma distribution for the SI
-si_config <- make_config(list(si_parametric_distr = dist, 
-                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 1000, n2 = 100,
+mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 500, thin = 10)
+dist_g <- "G"  # fitting a Gamma distribution for the SI
+dist_g1 <- "off1G"  # fitting a Gamma distribution for the SI
+dist_w <- "W"  # fitting a Weibull distribution for the SI
+dist_l <- "L"  # fitting a Lognormal distribution for the SI
+si_config <- make_config(list(si_parametric_distr = dist_g, 
+                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 100, n2 = 10,
                               t_start = time_start, t_end = time_end))
 
 # CHANGE si_data INPUT DATASET BASED ON DESIRED TIMEFRAME
@@ -223,7 +236,7 @@ si_config <- make_config(list(si_parametric_distr = dist,
 # mt_si_data_pre_sip, mt_si_data_sip, mt_si_data_phase1
 # mt_si_data_phase2, mt_si_data_june, mt_si_data_july
 mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data_phase1, config = si_config)
+                           si_data = mt_si_data_pre_sip, config = si_config)
 ```
 
 # Use distributions to calculate mean, sd, 95% ci's
@@ -241,19 +254,19 @@ write_rds(total_results_no_zeros, paste0(file_path, "total_results_no_zeros.rds"
 total_results_no_zeros <- read_rds(paste0(file_path, "total_results_no_zeros.rds"))
 
 # Mean/SD SI from distribution
-mean_si <- total_results_no_zeros$SI.Moments %>% 
+mean_si <- total_results$SI.Moments %>% 
    summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
 mean_si
 
 # Shape and scale of distribution of Means
 egamma(total_results$SI.Moments$Mean, ci = TRUE)
 # 95% CI for means
-qgamma(c(0.025, 0.975), shape = 794, scale = 0.00694)
+qgamma(c(0.025, 0.975), shape = 172.8, scale = 0.0344)
 
 # Shape and scale of distribution of SDs
 egamma(total_results$SI.Moments$Std, ci = TRUE)
 # 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 463, scale = 0.00998)
+qgamma(c(0.025, 0.975), shape = 90.24, scale = 0.0542)
 
 
 ### Pre-SIP SI calculation
@@ -272,12 +285,12 @@ mean_si
 # Shape and scale of distribution of Means
 egamma(presip_results$SI.Moments$Mean, ci = TRUE)
 # 95% CI for means
-qgamma(c(0.025, 0.975), shape = 108, scale = 0.0428)
+qgamma(c(0.025, 0.975), shape = 114, scale = 0.0461)
 
 # Shape and scale of distribution of SDs
 egamma(presip_results$SI.Moments$Std, ci = TRUE)
 # 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 54, scale = 0.0683)
+qgamma(c(0.025, 0.975), shape = 64, scale = 0.0666)
 
 
 ### SIP SI calculation
@@ -317,10 +330,23 @@ mean_si <- phase1_results$SI.Moments %>%
    summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
 mean_si
 
+library(goft)
+library(R0)
+
+si_data_dist <- as.numeric(mt_si_data_total$SR)
+
+est.GT(serial.interval = si_data_dist)
+
+si_dist <- as.data.frame(phase1_results[["si_distr"]]) %>% 
+   pivot_longer(1:166, names_to = "name", values_to = "value") %>% 
+   filter(value > 0)
+plot(si_dist$value)
+gamma_test(si_dist$value)
+
 # Shape and scale of distribution of Means
 egamma(phase1_results$SI.Moments$Mean, ci = TRUE)
 # 95% CI for means
-qgamma(c(0.025, 0.975), shape = 27, scale = 0.197)
+qgamma(c(0.025, 0.975), shape = 29, scale = 0.195)
 
 # Shape and scale of distribution of SDs
 egamma(phase1_results$SI.Moments$Std, ci = TRUE)
