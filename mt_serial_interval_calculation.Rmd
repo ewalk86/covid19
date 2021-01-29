@@ -83,26 +83,54 @@ mt_si_data_late <- mt_si_data %>%
 
 
 mt_si_data_pre_sip <- mt_si_data %>% 
-   #filter(infected_date < "2020-03-27") %>% 
-   filter(infected_date < "2020-04-10") %>% 
+   filter(infector_date < "2020-03-27") %>% 
+   #filter(infected_date < "2020-04-10") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
-   mutate_all(as.integer)
+   #mutate(type = if_else(SL == SR, 2, 1)) %>% 
+   mutate_all(as.integer) 
+
+run_data <- data.frame(mt_si_data_pre_sip)
+
+library(coarseDataTools)
+
+si_results <- dic.fit.mcmc(dat = run_data, dist = "G", optim(par = c(1, 1), method = "BFGS"))
+si_results2 <- unclass(si_results)
+mean_si <- attr(si_results2, "samples")$var1
+mean(mean_si)
+sd_si <- attr(si_results2, "samples")$var2
+
+mean_si <- si_results2$samples %>% 
+   summarize(mean_si = mean(var1), sd_si = mean(var2)) 
+mean_si
+
+cd.fit.mcmc(si_results)
+
+# Shape and scale of distribution of Means
+egamma(si_results$SI.Moments$Mean, ci = TRUE)
+# 95% CI for means
+qgamma(c(0.025, 0.975), shape = 172.8, scale = 0.0344)
+
+# Shape and scale of distribution of SDs
+egamma(si_results$SI.Moments$Std, ci = TRUE)
+# 95% CI for SDs
+qgamma(c(0.025, 0.975), shape = 90.24, scale = 0.0542)
+
 
 
 mt_si_data_sip <- mt_si_data %>% 
-   #filter(infected_date > "2020-03-27" & infected_date < "2020-04-24") %>% 
-   filter(infected_date > "2020-04-10" & infected_date < "2020-05-08") %>% 
+   filter(infector_date > "2020-03-27" & infector_date < "2020-04-24") %>% 
+   #filter(infected_date > "2020-04-10" & infected_date < "2020-05-08") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
-   mutate_all(as.integer)
+   mutate_all(as.integer) 
 
 
 mt_si_data_phase1 <- mt_si_data %>% 
-   #filter(infected_date > "2020-04-25" & infected_date < "2020-05-31") %>% 
-   filter(infected_date > "2020-05-08" & infected_date < "2020-06-14") %>% 
+   filter(infector_date > "2020-04-25" & infector_date < "2020-05-31") %>% 
+   #filter(infected_date > "2020-05-08" & infected_date < "2020-06-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    #mutate(SR = if_else(SR == 3, 4, SR)) %>%
@@ -111,8 +139,8 @@ mt_si_data_phase1 <- mt_si_data %>%
 
 
 mt_si_data_phase2 <- mt_si_data %>% 
-   #filter(infected_date > "2020-05-31" & infected_date < "2020-07-31") %>% 
-   filter(infected_date > "2020-06-14" & infected_date < "2020-07-31") %>% 
+   filter(infector_date > "2020-05-31" & infector_date < "2020-07-31") %>% 
+   #filter(infected_date > "2020-06-14" & infected_date < "2020-07-31") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -226,7 +254,9 @@ mcmc_control <- make_mcmc_control(seed = MCMC_seed, burnin = 500, thin = 10)
 dist_g <- "G"  # fitting a Gamma distribution for the SI
 dist_g1 <- "off1G"  # fitting a Gamma distribution for the SI
 dist_w <- "W"  # fitting a Weibull distribution for the SI
+dist_w1 <- "off1W"  # fitting a Weibull distribution for the SI
 dist_l <- "L"  # fitting a Lognormal distribution for the SI
+dist_l1 <- "off1L"  # fitting a Lognormal distribution for the SI
 si_config <- make_config(list(si_parametric_distr = dist_g, 
                               mcmc_control = mcmc_control, seed = overall_seed, n1 = 100, n2 = 10,
                               t_start = time_start, t_end = time_end))
@@ -236,7 +266,7 @@ si_config <- make_config(list(si_parametric_distr = dist_g,
 # mt_si_data_pre_sip, mt_si_data_sip, mt_si_data_phase1
 # mt_si_data_phase2, mt_si_data_june, mt_si_data_july
 mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data_pre_sip, config = si_config)
+                           si_data = mt_si_data_phase2, config = si_config)
 ```
 
 # Use distributions to calculate mean, sd, 95% ci's
@@ -261,12 +291,12 @@ mean_si
 # Shape and scale of distribution of Means
 egamma(total_results$SI.Moments$Mean, ci = TRUE)
 # 95% CI for means
-qgamma(c(0.025, 0.975), shape = 172.8, scale = 0.0344)
+qgamma(c(0.025, 0.975), shape = 405.7, scale = 0.0132)
 
 # Shape and scale of distribution of SDs
 egamma(total_results$SI.Moments$Std, ci = TRUE)
 # 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 90.24, scale = 0.0542)
+qgamma(c(0.025, 0.975), shape = 260.7, scale = 0.0175)
 
 
 ### Pre-SIP SI calculation

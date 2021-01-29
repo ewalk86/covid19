@@ -67,7 +67,7 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_01112021.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_01282021.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("midis_add_datetime", "inv_start_date", "state_num", "county_fips", 
                                         "sex", "age", "age_unit", "hospitalization", 
@@ -504,6 +504,10 @@ sheet_write(reg5_data,
             sheet = 6)
 
 
+options(gargle_oauth_email = "ethanwalker86@gmail.com")
+drive_auth(email = "ethanwalker86@gmail.com")
+gs4_auth(token = drive_token())
+
 
 # Write county R data to google
 miss_data <- r_filter_dates %>% 
@@ -662,6 +666,10 @@ sheet_write(ravalli_data,
             ss = "https://docs.google.com/spreadsheets/d/1L1pBAp0e5RvU7x4IfnfyeJ5uaQs0OTuYXYmgJB0r_oE/edit#gid=0",
             sheet = 13)
 
+
+options(gargle_oauth_email = "ethanwalker86@gmail.com")
+drive_auth(email = "ethanwalker86@gmail.com")
+gs4_auth(token = drive_token())
 
 
 # Write county case data to google
