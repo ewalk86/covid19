@@ -45,37 +45,30 @@ file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 ```{r}
 # Load serial interval data
 # explanation of data format: https://github.com/jstockwin/EpiEstimApp/wiki/Uploading-your-own-data
-mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
+mt_si_data1 <- read_xlsx(paste0(file_path, "Input/SI_pair_data.xlsx"), skip = 1,
                         col_names = c("pair_no", "cluster", "infector",
-                                      "infector_date", "infected", "infected_date",
-                                      "EL", "ER", "SL", "SR"),
+                                      "infector_date", "infector_date2", "infected", 
+                                      "infected_date", "EL", "ER", "SL", "SR"),
                         col_types = c("text", "text", "text",
-                                      "date", "text", "date",
-                                      "numeric", "numeric", "numeric", "numeric"))
+                                      "date", "date", "text", "date",
+                                      "numeric", "numeric", "numeric", "numeric")) 
+
+mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_pair_data_v2.xlsx"), skip = 1,
+                        col_names = c("pair_no", "cluster", "infector",
+                                      "infector_date", "infector_date2", "infector_date3", "infected", 
+                                      "infected_date", "EL", "ER", "SL", "SR"),
+                        col_types = c("text", "text", "text",
+                                      "date", "date", "date", "text", "date",
+                                      "numeric", "numeric", "numeric", "numeric")) 
+
 
 mt_si_data_total <- mt_si_data %>% 
-   filter(infected_date < "2020-07-31") %>% 
-   dplyr::select(EL, ER, SL, SR) %>% 
-   #mutate(filter_var = if_else(SR != SL, 1, 0)) %>% 
-   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
-   #filter(filter_var == 0) %>% 
-   #mutate(SR = if_else(SR == 2, 3, SR)) %>%
-   #mutate(SL = SL + 1,
-   #       SR = SR + 1) %>% 
-   filter(SR < 29) %>% 
-   mutate_all(as.integer)
-
-
-mt_si_data_early <- mt_si_data %>% 
-   filter(infected_date < "2020-05-01") %>% 
-   dplyr::select(EL, ER, SL, SR) %>% 
-   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
-   filter(SR < 29) %>% 
-   mutate_all(as.integer)
-
-   
-mt_si_data_late <- mt_si_data %>% 
-   filter(infected_date >= "2020-05-01" & infected_date < "2020-07-31") %>% 
+   #filter(infector_date2 < "2020-07-31") %>% 
+   #filter(infected_date < "2020-07-31") %>% 
+   #filter(infector_date2 < "2020-08-07") %>% 
+   #filter(infected_date < "2020-08-07") %>% 
+   #filter(infector_date2 < "2020-08-14") %>% 
+   filter(infected_date < "2020-08-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -83,45 +76,25 @@ mt_si_data_late <- mt_si_data %>%
 
 
 mt_si_data_pre_sip <- mt_si_data %>% 
-   filter(infector_date < "2020-03-27") %>% 
-   #filter(infected_date < "2020-04-10") %>% 
+   #filter(infector_date2 < "2020-03-27") %>% 
+   #filter(infected_date < "2020-03-27") %>% 
+   #filter(infector_date2 < "2020-04-03") %>% 
+   #filter(infected_date < "2020-04-03") %>% 
+   #filter(infector_date2 < "2020-04-10") %>% 
+   filter(infected_date < "2020-04-10") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
-   #mutate(type = if_else(SL == SR, 2, 1)) %>% 
    mutate_all(as.integer) 
-
-run_data <- data.frame(mt_si_data_pre_sip)
-
-library(coarseDataTools)
-
-si_results <- dic.fit.mcmc(dat = run_data, dist = "G", optim(par = c(1, 1), method = "BFGS"))
-si_results2 <- unclass(si_results)
-mean_si <- attr(si_results2, "samples")$var1
-mean(mean_si)
-sd_si <- attr(si_results2, "samples")$var2
-
-mean_si <- si_results2$samples %>% 
-   summarize(mean_si = mean(var1), sd_si = mean(var2)) 
-mean_si
-
-cd.fit.mcmc(si_results)
-
-# Shape and scale of distribution of Means
-egamma(si_results$SI.Moments$Mean, ci = TRUE)
-# 95% CI for means
-qgamma(c(0.025, 0.975), shape = 172.8, scale = 0.0344)
-
-# Shape and scale of distribution of SDs
-egamma(si_results$SI.Moments$Std, ci = TRUE)
-# 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 90.24, scale = 0.0542)
-
 
 
 mt_si_data_sip <- mt_si_data %>% 
-   filter(infector_date > "2020-03-27" & infector_date < "2020-04-24") %>% 
-   #filter(infected_date > "2020-04-10" & infected_date < "2020-05-08") %>% 
+   #filter(infector_date2 > "2020-03-27" & infector_date2 < "2020-04-24") %>% 
+   #filter(infected_date > "2020-03-27" & infected_date < "2020-04-24") %>% 
+   #filter(infector_date2 > "2020-04-03" & infector_date2 < "2020-05-01") %>% 
+   #filter(infected_date > "2020-04-03" & infected_date < "2020-05-01") %>% 
+   #filter(infector_date2 > "2020-04-10" & infector_date2 < "2020-05-08") %>% 
+   filter(infected_date > "2020-04-10" & infected_date < "2020-05-08") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -129,18 +102,25 @@ mt_si_data_sip <- mt_si_data %>%
 
 
 mt_si_data_phase1 <- mt_si_data %>% 
-   filter(infector_date > "2020-04-25" & infector_date < "2020-05-31") %>% 
-   #filter(infected_date > "2020-05-08" & infected_date < "2020-06-14") %>% 
+   #filter(infector_date2 > "2020-04-25" & infector_date2 < "2020-05-31") %>% 
+   #filter(infected_date > "2020-04-25" & infected_date < "2020-05-31") %>% 
+   #filter(infector_date2 > "2020-05-02" & infector_date2 < "2020-06-07") %>% 
+   #filter(infected_date > "2020-05-02" & infected_date < "2020-06-07") %>% 
+   #filter(infector_date2 > "2020-05-09" & infector_date2 < "2020-06-14") %>% 
+   filter(infected_date > "2020-05-09" & infected_date < "2020-06-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
-   #mutate(SR = if_else(SR == 3, 4, SR)) %>%
    filter(SR < 29) %>% 
    mutate_all(as.integer)
 
 
 mt_si_data_phase2 <- mt_si_data %>% 
-   filter(infector_date > "2020-05-31" & infector_date < "2020-07-31") %>% 
-   #filter(infected_date > "2020-06-14" & infected_date < "2020-07-31") %>% 
+   #filter(infector_date2 > "2020-05-31" & infector_date2 < "2020-07-31") %>% 
+   #filter(infected_date > "2020-05-31" & infected_date < "2020-07-31") %>% 
+   #filter(infector_date2 > "2020-06-07" & infector_date2 < "2020-08-07") %>% 
+   #filter(infected_date > "2020-06-07" & infected_date < "2020-08-07") %>% 
+   #filter(infector_date2 > "2020-06-14" & infector_date2 < "2020-08-14") %>% 
+   filter(infected_date > "2020-06-14" & infected_date < "2020-08-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -148,7 +128,12 @@ mt_si_data_phase2 <- mt_si_data %>%
 
 
 mt_si_data_june <- mt_si_data %>% 
+   #filter(infector_date2 > "2020-05-31" & infector_date2 < "2020-06-30") %>% 
    filter(infected_date > "2020-05-31" & infected_date < "2020-06-30") %>% 
+   #filter(infector_date2 > "2020-06-07" & infector_date2 < "2020-07-07") %>% 
+   #filter(infected_date > "2020-06-07" & infected_date < "2020-07-07") %>% 
+   #filter(infector_date2 > "2020-06-14" & infector_date2 < "2020-07-14") %>% 
+   #filter(infected_date > "2020-06-14" & infected_date < "2020-07-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -156,7 +141,12 @@ mt_si_data_june <- mt_si_data %>%
 
 
 mt_si_data_july <- mt_si_data %>% 
+   #filter(infector_date2 > "2020-06-30" & infector_date2 < "2020-07-31") %>% 
    filter(infected_date > "2020-06-30" & infected_date < "2020-07-31") %>% 
+   #filter(infector_date2 > "2020-07-07" & infector_date2 < "2020-08-07") %>% 
+   #filter(infected_date > "2020-07-07" & infected_date < "2020-08-07") %>% 
+   #filter(infector_date2 > "2020-07-14" & infector_date2 < "2020-08-14") %>% 
+   #filter(infected_date > "2020-07-14" & infected_date < "2020-08-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -271,160 +261,45 @@ mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data",
 
 # Use distributions to calculate mean, sd, 95% ci's
 ```{r}
-### Total SI calculation
-# Total SI convergence successful: Mean SI = 5.51 (5.13, 5.90), SD SI = 4.62 (4.21, 5.05)
-
-# Save/load results
-total_results <- mt_r_results
-write_rds(total_results, paste0(file_path, "total_results.rds"))
-total_results <- read_rds(paste0(file_path, "total_results.rds"))
-
-total_results_no_zeros <- mt_r_results
-write_rds(total_results_no_zeros, paste0(file_path, "total_results_no_zeros.rds"))
-total_results_no_zeros <- read_rds(paste0(file_path, "total_results_no_zeros.rds"))
+### SI calculation
 
 # Mean/SD SI from distribution
-mean_si <- total_results$SI.Moments %>% 
+mean_si <- mt_r_results$SI.Moments %>% 
    summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
 mean_si
 
 # Shape and scale of distribution of Means
-egamma(total_results$SI.Moments$Mean, ci = TRUE)
+egamma(mt_r_results$SI.Moments$Mean, ci = TRUE)
 # 95% CI for means
-qgamma(c(0.025, 0.975), shape = 405.7, scale = 0.0132)
+qgamma(c(0.025, 0.975), shape = 589, scale = 0.0094)
 
 # Shape and scale of distribution of SDs
-egamma(total_results$SI.Moments$Std, ci = TRUE)
+egamma(mt_r_results$SI.Moments$Std, ci = TRUE)
 # 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 260.7, scale = 0.0175)
+qgamma(c(0.025, 0.975), shape = 360, scale = 0.0129)
 
 
-### Pre-SIP SI calculation
-# Pre-SIP SI convergence successful: Mean SI = 4.62 (3.79, 5.53), SD SI = 3.67 (2.77, 4.73)
-
-# Save/load results
-presip_results <- mt_r_results
-write_rds(presip_results, paste0(file_path, "presip_results.rds"))
-presip_results <- read_rds(paste0(file_path, "presip_results.rds"))
-
-# Mean/SD SI from distribution
-mean_si <- presip_results$SI.Moments %>% 
-   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
-mean_si
-
-# Shape and scale of distribution of Means
-egamma(presip_results$SI.Moments$Mean, ci = TRUE)
-# 95% CI for means
-qgamma(c(0.025, 0.975), shape = 114, scale = 0.0461)
-
-# Shape and scale of distribution of SDs
-egamma(presip_results$SI.Moments$Std, ci = TRUE)
-# 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 64, scale = 0.0666)
-
-
-### SIP SI calculation
-# SIP SI convergence successful: Mean SI = 8.52 (6.88, 10.37), SD SI = 6.22 (4.61, 8.05)
-
-# Save/load results
-sip_results <- mt_r_results
-write_rds(sip_results, paste0(file_path, "sip_results.rds"))
-sip_results <- read_rds(paste0(file_path, "sip_results.rds"))
-
-# Mean/SD SI from distribution
-mean_si <- sip_results$SI.Moments %>% 
-   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
-mean_si
-
-# Shape and scale of distribution of Means
-egamma(sip_results$SI.Moments$Mean, ci = TRUE)
-# 95% CI for means
-qgamma(c(0.025, 0.975), shape = 92, scale = 0.0928)
-
-# Shape and scale of distribution of SDs
-egamma(sip_results$SI.Moments$Std, ci = TRUE)
-# 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 50, scale = 0.1242)
-
-
-### Phase 1 SI calculation
-# Phase 1 SI convergence successful: Mean SI = 5.35 (3.51, 7.50), SD SI = 4.69 (2.53, 7.36)
-
-# Save/load results
-phase1_results <- mt_r_results
-write_rds(phase1_results, paste0(file_path, "phase1_results.rds"))
-phase1_results <- read_rds(paste0(file_path, "phase1_results.rds"))
-
-# Mean/SD SI from distribution
-mean_si <- phase1_results$SI.Moments %>% 
-   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
-mean_si
-
-library(goft)
-library(R0)
-
-si_data_dist <- as.numeric(mt_si_data_total$SR)
-
-est.GT(serial.interval = si_data_dist)
-
-si_dist <- as.data.frame(phase1_results[["si_distr"]]) %>% 
-   pivot_longer(1:166, names_to = "name", values_to = "value") %>% 
-   filter(value > 0)
-plot(si_dist$value)
-gamma_test(si_dist$value)
-
-# Shape and scale of distribution of Means
-egamma(phase1_results$SI.Moments$Mean, ci = TRUE)
-# 95% CI for means
-qgamma(c(0.025, 0.975), shape = 29, scale = 0.195)
-
-# Shape and scale of distribution of SDs
-egamma(phase1_results$SI.Moments$Std, ci = TRUE)
-# 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 14, scale = 0.331)
-
-
-### Phase 2 SI calculation
-# Phase 2 SI convergence successful: Mean SI = 5.29 (4.88, 5.76), SD SI = 4.45 (3.97, 4.93)
-
-# Save/load results
-phase2_results <- mt_r_results
-write_rds(phase2_results, paste0(file_path, "phase2_results.rds"))
-phase2_results <- read_rds(paste0(file_path, "phase2_results.rds"))
-
-# Mean/SD SI from distribution
-mean_si <- phase2_results$SI.Moments %>% 
-   summarize(mean_si = mean(Mean), sd_si = mean(Std)) 
-mean_si
-
-# Shape and scale of distribution of Means
-egamma(phase2_results$SI.Moments$Mean, ci = TRUE)
-# 95% CI for means
-qgamma(c(0.025, 0.975), shape = 559, scale = 0.0095)
-
-# Shape and scale of distribution of SDs
-egamma(phase2_results$SI.Moments$Std, ci = TRUE)
-# 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 324, scale = 0.0137)
-
-
-mean_si_plot <- phase2_results$SI.Moments %>%
+mean_si_plot <- mt_r_results$SI.Moments %>%
    ggplot() +
      geom_histogram(aes(Mean))
 mean_si_plot
 
-sd_si_plot <- phase2_results$SI.Moments %>%
+sd_si_plot <- mt_r_results$SI.Moments %>%
    ggplot() +
      geom_histogram(aes(Std))
 sd_si_plot
+```
 
-
-
+# Total SI convergence successful: Mean SI = 5.52, SD SI = 4.63
 # Early SI convergence successful: Mean SI = 6.27, SD SI = 5.14
 # Late SI convergence successful: Mean SI = 5.29, SD SI = 4.45
+# Pre-SIP SI convergence successful: Mean SI = 4.62, SD SI = 3.67
+# SIP SI convergence successful: Mean SI = 8.52, SD SI = 6.22
+# Phase 1 SI convergence successful: Mean SI = 5.35, SD SI = 4.69
+# Phase 2 SI convergence successful: Mean SI = 5.29, SD SI = 4.45
 # June SI convergence successful: Mean SI = 5.26, SD SI = 4.48
 # July SI convergence successful: Mean SI = 5.31, SD SI = 4.44
-```
+
 
 
 ```{r}
@@ -503,6 +378,7 @@ state_r
 #Phase 1: Mean R = 1.21, SD = 0.13, Q0.025 = 0.96, Median = 1.21, Q0.975 = 1.49
 #Phase 2: Mean R = 1.10, SD = 0.02, Q0.025 = 1.06, Median = 1.10, Q0.975 = 1.13
 ```
+
 
 
 # SI Publication Plots
@@ -653,12 +529,53 @@ epi_curve_full
 #ggsave("si_pub_epi_curve.jpg", width = 12, height = 6)
 ```
 
-# Total SI convergence successful: Mean SI = 5.52, SD SI = 4.63
-# Early SI convergence successful: Mean SI = 6.27, SD SI = 5.14
-# Late SI convergence successful: Mean SI = 5.29, SD SI = 4.45
-# Pre-SIP SI convergence successful: Mean SI = 4.62, SD SI = 3.67
-# SIP SI convergence successful: Mean SI = 8.52, SD SI = 6.22
-# Phase 1 SI convergence successful: Mean SI = 5.35, SD SI = 4.69
-# Phase 2 SI convergence successful: Mean SI = 5.29, SD SI = 4.45
-# June SI convergence successful: Mean SI = 5.26, SD SI = 4.48
-# July SI convergence successful: Mean SI = 5.31, SD SI = 4.44
+
+```{r}
+# Other analysis 
+
+# Find best distribution
+
+library(goft)
+library(R0)
+
+si_data_dist <- as.numeric(mt_si_data_total$SR)
+
+est.GT(serial.interval = si_data_dist)
+
+si_dist <- as.data.frame(phase1_results[["si_distr"]]) %>% 
+   pivot_longer(1:166, names_to = "name", values_to = "value") %>% 
+   filter(value > 0)
+plot(si_dist$value)
+gamma_test(si_dist$value)
+
+
+ 
+run_data <- data.frame(mt_si_data_pre_sip)
+
+library(coarseDataTools)
+
+si_results <- dic.fit.mcmc(dat = run_data, dist = "G", optim(par = c(1, 1), method = "BFGS"))
+si_results2 <- unclass(si_results)
+mean_si <- attr(si_results2, "samples")$var1
+mean(mean_si)
+sd_si <- attr(si_results2, "samples")$var2
+
+mean_si <- si_results2$samples %>% 
+   summarize(mean_si = mean(var1), sd_si = mean(var2)) 
+mean_si
+
+cd.fit.mcmc(si_results)
+
+# Shape and scale of distribution of Means
+egamma(si_results$SI.Moments$Mean, ci = TRUE)
+# 95% CI for means
+qgamma(c(0.025, 0.975), shape = 172.8, scale = 0.0344)
+
+# Shape and scale of distribution of SDs
+egamma(si_results$SI.Moments$Std, ci = TRUE)
+# 95% CI for SDs
+qgamma(c(0.025, 0.975), shape = 90.24, scale = 0.0542)
+
+
+```
+
