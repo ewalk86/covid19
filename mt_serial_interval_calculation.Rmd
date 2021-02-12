@@ -63,12 +63,12 @@ mt_si_data <- read_xlsx(paste0(file_path, "Input/SI_pair_data_v2.xlsx"), skip = 
 
 
 mt_si_data_total <- mt_si_data %>% 
-   #filter(infector_date2 < "2020-07-31") %>% 
+   filter(infector_date2 < "2020-07-31") %>% 
    #filter(infected_date < "2020-07-31") %>% 
    #filter(infector_date2 < "2020-08-07") %>% 
    #filter(infected_date < "2020-08-07") %>% 
    #filter(infector_date2 < "2020-08-14") %>% 
-   filter(infected_date < "2020-08-14") %>% 
+   #filter(infected_date < "2020-08-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -76,12 +76,12 @@ mt_si_data_total <- mt_si_data %>%
 
 
 mt_si_data_pre_sip <- mt_si_data %>% 
-   #filter(infector_date2 < "2020-03-27") %>% 
+   filter(infector_date2 < "2020-03-27") %>% 
    #filter(infected_date < "2020-03-27") %>% 
    #filter(infector_date2 < "2020-04-03") %>% 
    #filter(infected_date < "2020-04-03") %>% 
    #filter(infector_date2 < "2020-04-10") %>% 
-   filter(infected_date < "2020-04-10") %>% 
+   #filter(infected_date < "2020-04-10") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -89,12 +89,12 @@ mt_si_data_pre_sip <- mt_si_data %>%
 
 
 mt_si_data_sip <- mt_si_data %>% 
-   #filter(infector_date2 > "2020-03-27" & infector_date2 < "2020-04-24") %>% 
+   filter(infector_date2 > "2020-03-27" & infector_date2 < "2020-04-24") %>% 
    #filter(infected_date > "2020-03-27" & infected_date < "2020-04-24") %>% 
    #filter(infector_date2 > "2020-04-03" & infector_date2 < "2020-05-01") %>% 
    #filter(infected_date > "2020-04-03" & infected_date < "2020-05-01") %>% 
    #filter(infector_date2 > "2020-04-10" & infector_date2 < "2020-05-08") %>% 
-   filter(infected_date > "2020-04-10" & infected_date < "2020-05-08") %>% 
+   #filter(infected_date > "2020-04-10" & infected_date < "2020-05-08") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -102,12 +102,12 @@ mt_si_data_sip <- mt_si_data %>%
 
 
 mt_si_data_phase1 <- mt_si_data %>% 
-   #filter(infector_date2 > "2020-04-25" & infector_date2 < "2020-05-31") %>% 
+   filter(infector_date2 > "2020-04-25" & infector_date2 < "2020-05-31") %>% 
    #filter(infected_date > "2020-04-25" & infected_date < "2020-05-31") %>% 
    #filter(infector_date2 > "2020-05-02" & infector_date2 < "2020-06-07") %>% 
    #filter(infected_date > "2020-05-02" & infected_date < "2020-06-07") %>% 
    #filter(infector_date2 > "2020-05-09" & infector_date2 < "2020-06-14") %>% 
-   filter(infected_date > "2020-05-09" & infected_date < "2020-06-14") %>% 
+   #filter(infected_date > "2020-05-09" & infected_date < "2020-06-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -115,12 +115,12 @@ mt_si_data_phase1 <- mt_si_data %>%
 
 
 mt_si_data_phase2 <- mt_si_data %>% 
-   #filter(infector_date2 > "2020-05-31" & infector_date2 < "2020-07-31") %>% 
+   filter(infector_date2 > "2020-05-31" & infector_date2 < "2020-07-31") %>% 
    #filter(infected_date > "2020-05-31" & infected_date < "2020-07-31") %>% 
    #filter(infector_date2 > "2020-06-07" & infector_date2 < "2020-08-07") %>% 
    #filter(infected_date > "2020-06-07" & infected_date < "2020-08-07") %>% 
    #filter(infector_date2 > "2020-06-14" & infector_date2 < "2020-08-14") %>% 
-   filter(infected_date > "2020-06-14" & infected_date < "2020-08-14") %>% 
+   #filter(infected_date > "2020-06-14" & infected_date < "2020-08-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -128,8 +128,8 @@ mt_si_data_phase2 <- mt_si_data %>%
 
 
 mt_si_data_june <- mt_si_data %>% 
-   #filter(infector_date2 > "2020-05-31" & infector_date2 < "2020-06-30") %>% 
-   filter(infected_date > "2020-05-31" & infected_date < "2020-06-30") %>% 
+   filter(infector_date2 > "2020-05-31" & infector_date2 < "2020-06-30") %>% 
+   #filter(infected_date > "2020-05-31" & infected_date < "2020-06-30") %>% 
    #filter(infector_date2 > "2020-06-07" & infector_date2 < "2020-07-07") %>% 
    #filter(infected_date > "2020-06-07" & infected_date < "2020-07-07") %>% 
    #filter(infector_date2 > "2020-06-14" & infector_date2 < "2020-07-14") %>% 
@@ -141,12 +141,51 @@ mt_si_data_june <- mt_si_data %>%
 
 
 mt_si_data_july <- mt_si_data %>% 
-   #filter(infector_date2 > "2020-06-30" & infector_date2 < "2020-07-31") %>% 
-   filter(infected_date > "2020-06-30" & infected_date < "2020-07-31") %>% 
+   filter(infector_date2 > "2020-06-30" & infector_date2 < "2020-07-31") %>% 
+   #filter(infected_date > "2020-06-30" & infected_date < "2020-07-31") %>% 
    #filter(infector_date2 > "2020-07-07" & infector_date2 < "2020-08-07") %>% 
    #filter(infected_date > "2020-07-07" & infected_date < "2020-08-07") %>% 
    #filter(infector_date2 > "2020-07-14" & infector_date2 < "2020-08-14") %>% 
    #filter(infected_date > "2020-07-14" & infected_date < "2020-08-14") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
+   mutate_all(as.integer)
+
+
+mt_si_data_june_early_july <- mt_si_data %>% 
+   #filter(infector_date2 > "2020-05-31" & infector_date2 < "2020-07-06") %>% 
+   filter(infected_date > "2020-05-31" & infected_date < "2020-07-06") %>% 
+   #filter(infector_date2 > "2020-06-07" & infector_date2 < "2020-07-13") %>% 
+   #filter(infected_date > "2020-06-07" & infected_date < "2020-07-13") %>% 
+   #filter(infector_date2 > "2020-06-14" & infector_date2 < "2020-07-20") %>% 
+   #filter(infected_date > "2020-06-14" & infected_date < "2020-07-20") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
+   mutate_all(as.integer)
+
+
+mt_si_data_early_july <- mt_si_data %>% 
+   #filter(infector_date2 > "2020-06-30" & infector_date2 < "2020-07-06") %>% 
+   filter(infected_date > "2020-06-30" & infected_date < "2020-07-06") %>% 
+   #filter(infector_date2 > "2020-07-07" & infector_date2 < "2020-07-13") %>% 
+   #filter(infected_date > "2020-07-07" & infected_date < "2020-07-13") %>% 
+   #filter(infector_date2 > "2020-07-14" & infector_date2 < "2020-07-20") %>% 
+   #filter(infected_date > "2020-07-14" & infected_date < "2020-07-20") %>% 
+   dplyr::select(EL, ER, SL, SR) %>% 
+   mutate(SR = if_else(SR == 0, 1, SR)) %>% 
+   filter(SR < 29) %>% 
+   mutate_all(as.integer)
+
+
+mt_si_data_late_july <- mt_si_data %>% 
+   filter(infector_date2 > "2020-07-06" & infector_date2 < "2020-07-31") %>% 
+   #filter(infected_date > "2020-07-06" & infected_date < "2020-07-31") %>% 
+   #filter(infector_date2 > "2020-07-13" & infector_date2 < "2020-08-07") %>% 
+   #filter(infected_date > "2020-07-13" & infected_date < "2020-08-07") %>% 
+   #filter(infector_date2 > "2020-07-20" & infector_date2 < "2020-08-14") %>% 
+   #filter(infected_date > "2020-07-20" & infected_date < "2020-08-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -156,7 +195,7 @@ mt_si_data_july <- mt_si_data %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.10.2020.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import_Data_02.11.2020.xlsx"),
                                  sheet = 2) %>% 
    rename_all(tolower) %>% 
    dplyr::select(-case_no) %>% 
@@ -182,10 +221,14 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/SI_Local_v_Import Data_09.10.
                                    labels = c("Hosp: Yes", "Hosp: No", 
                                               "Hosp: Past", "Hosp: Unknown"))) %>% 
    #filter(!is.na(dates))
-   filter(dates < "2020-08-01") %>% 
+   filter(dates < "2020-09-01") %>% 
    arrange(dates) %>% 
    ungroup() %>% 
    dplyr::select(case_no, mt_case, county:hospitalization, local_import:age_group_new)
+
+case_incidence <- incidence(mt_case_data$dates)
+plot(case_incidence)
+case_incidence_save <- as.data.frame(case_incidence)
 ```
 
 
@@ -256,7 +299,7 @@ si_config <- make_config(list(si_parametric_distr = dist_g,
 # mt_si_data_pre_sip, mt_si_data_sip, mt_si_data_phase1
 # mt_si_data_phase2, mt_si_data_june, mt_si_data_july
 mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data_phase2, config = si_config)
+                           si_data = mt_si_data_late_july, config = si_config)
 ```
 
 # Use distributions to calculate mean, sd, 95% ci's
@@ -271,12 +314,12 @@ mean_si
 # Shape and scale of distribution of Means
 egamma(mt_r_results$SI.Moments$Mean, ci = TRUE)
 # 95% CI for means
-qgamma(c(0.025, 0.975), shape = 589, scale = 0.0094)
+qgamma(c(0.025, 0.975), shape = 211, scale = 0.0208)
 
 # Shape and scale of distribution of SDs
 egamma(mt_r_results$SI.Moments$Std, ci = TRUE)
 # 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 360, scale = 0.0129)
+qgamma(c(0.025, 0.975), shape = 100, scale = 0.0347)
 
 
 mean_si_plot <- mt_r_results$SI.Moments %>%
