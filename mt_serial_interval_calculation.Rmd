@@ -128,12 +128,12 @@ mt_si_data_phase2 <- mt_si_data %>%
 
 
 mt_si_data_june <- mt_si_data %>% 
-   filter(infector_date2 > "2020-05-31" & infector_date2 < "2020-06-30") %>% 
+   #filter(infector_date2 > "2020-05-31" & infector_date2 < "2020-06-30") %>% 
    #filter(infected_date > "2020-05-31" & infected_date < "2020-06-30") %>% 
    #filter(infector_date2 > "2020-06-07" & infector_date2 < "2020-07-07") %>% 
    #filter(infected_date > "2020-06-07" & infected_date < "2020-07-07") %>% 
    #filter(infector_date2 > "2020-06-14" & infector_date2 < "2020-07-14") %>% 
-   #filter(infected_date > "2020-06-14" & infected_date < "2020-07-14") %>% 
+   filter(infected_date > "2020-06-14" & infected_date < "2020-07-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -141,12 +141,12 @@ mt_si_data_june <- mt_si_data %>%
 
 
 mt_si_data_july <- mt_si_data %>% 
-   filter(infector_date2 > "2020-06-30" & infector_date2 < "2020-07-31") %>% 
+   #filter(infector_date2 > "2020-06-30" & infector_date2 < "2020-07-31") %>% 
    #filter(infected_date > "2020-06-30" & infected_date < "2020-07-31") %>% 
    #filter(infector_date2 > "2020-07-07" & infector_date2 < "2020-08-07") %>% 
    #filter(infected_date > "2020-07-07" & infected_date < "2020-08-07") %>% 
    #filter(infector_date2 > "2020-07-14" & infector_date2 < "2020-08-14") %>% 
-   #filter(infected_date > "2020-07-14" & infected_date < "2020-08-14") %>% 
+   filter(infected_date > "2020-07-14" & infected_date < "2020-08-14") %>% 
    dplyr::select(EL, ER, SL, SR) %>% 
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
@@ -190,7 +190,6 @@ mt_si_data_late_july <- mt_si_data %>%
    mutate(SR = if_else(SR == 0, 1, SR)) %>% 
    filter(SR < 29) %>% 
    mutate_all(as.integer)
-   
    
 
 
@@ -299,7 +298,7 @@ si_config <- make_config(list(si_parametric_distr = dist_g,
 # mt_si_data_pre_sip, mt_si_data_sip, mt_si_data_phase1
 # mt_si_data_phase2, mt_si_data_june, mt_si_data_july
 mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data_late_july, config = si_config)
+                           si_data = mt_si_data_july, config = si_config)
 ```
 
 # Use distributions to calculate mean, sd, 95% ci's
@@ -314,12 +313,12 @@ mean_si
 # Shape and scale of distribution of Means
 egamma(mt_r_results$SI.Moments$Mean, ci = TRUE)
 # 95% CI for means
-qgamma(c(0.025, 0.975), shape = 211, scale = 0.0208)
+qgamma(c(0.025, 0.975), shape = 130, scale = 0.0494)
 
 # Shape and scale of distribution of SDs
 egamma(mt_r_results$SI.Moments$Std, ci = TRUE)
 # 95% CI for SDs
-qgamma(c(0.025, 0.975), shape = 100, scale = 0.0347)
+qgamma(c(0.025, 0.975), shape = 86, scale = 0.0632)
 
 
 mean_si_plot <- mt_r_results$SI.Moments %>%
@@ -357,7 +356,7 @@ mt_li_analysis_data <- mt_case_data %>%
    #filter(dates < "2020-06-01" & dates >= "2020-04-26") %>% # phase 1
    #filter(dates >= "2020-06-01" & dates < "2020-08-01") %>% # phase 2
    #filter(dates < "2020-07-01" & dates >= "2020-06-01") %>% # june
-   #filter(dates >= "2020-07-01" & dates < "2020-08-01") %>% # july
+   filter(dates >= "2020-07-01" & dates < "2020-08-01") %>% # july
    group_by(dates) %>% 
    mutate(local = sum(local),
           imported = sum(imported)) %>% 
@@ -426,7 +425,7 @@ state_r
 
 # SI Publication Plots
 
-```{r, fig.width = 10, fig.height = 5}
+```{r, fig.width = 13, fig.height = 7}
 colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
                         "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
 
@@ -451,24 +450,30 @@ epi_curve_full <- full_data %>%
                fill = "gray80", alpha = 0.05) +
      geom_rect(aes(xmin = as.Date("2020-04-26"), xmax = as.Date("2020-06-01"), ymin=0, ymax=Inf),
                fill = "gray90", alpha = 0.05) +
-     geom_rect(aes(xmin = as.Date("2020-06-01"), xmax = as.Date("2020-08-01"), ymin=0, ymax=Inf),
+     geom_rect(aes(xmin = as.Date("2020-06-01"), xmax = as.Date("2020-07-01"), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-07-01"), xmax = as.Date("2020-08-01"), ymin=0, ymax=Inf),
+               fill = "gray90", alpha = 0.05) +
      geom_col(aes(dates, case, fill = local_import), width = 1) +
-     geom_text(aes(x = as.Date("2020-03-03"), y = 175, label = "A"), size = 8, color = "black") + 
-     geom_text(aes(x = as.Date("2020-03-31"), y = 175, label = "B"), size = 8, color = "black") + 
-     geom_text(aes(x = as.Date("2020-04-30"), y = 175, label = "C"), size = 8, color = "black") + 
-     geom_text(aes(x = as.Date("2020-06-04"), y = 175, label = "D"), size = 8, color = "black") + 
-     geom_label(aes(x = as.Date("2020-03-14"), y = 125,
-                    label = "Pre-SIP: \n\n Cases = 291 \n SI Pairs = 68 \n\n Mean SI = 4.62 \n (95% CI: 3.79, 5.53) \n\n SD SI = 3.67 \n (95% CI: 2.77, 4.73)"),
+     geom_text(aes(x = as.Date("2020-03-03"), y = 230, label = "A"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-03-31"), y = 230, label = "B"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-04-30"), y = 230, label = "C"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-06-04"), y = 230, label = "D"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-07-04"), y = 230, label = "E"), size = 8, color = "black") + 
+     geom_label(aes(x = as.Date("2020-03-16"), y = 190,
+                    label = "Pre-SIP: \n\n Cases = 285 \n SI Pairs = 95 \n Mean SI = 6.84 \n (95% CI: 5.84, 7.87) \n SD SI = 5.56 \n (95% CI: 4.45, 6.80)"),
                 fill = NA, color = "black") +
-     geom_label(aes(x = as.Date("2020-04-12"), y = 125, 
-                    label = "SIP: \n\n Cases = 168 \n SI Pairs = 47 \n\n Mean SI = 8.52 \n (95% CI: 6.88, 10.37) \n\n SD SI = 6.22 \n (95% CI: 4.61, 8.05)"),
+     geom_label(aes(x = as.Date("2020-04-13"), y = 190, 
+                    label = "SIP: \n\n Cases = 168 \n SI Pairs = 20 \n Mean SI = 5.54 \n (95% CI: 3.34, 8.26) \n SD SI = 5.30 \n (95% CI: 2.69, 8.76)"),
                 fill = NA, color = "black") +
-     geom_label(aes(x = as.Date("2020-05-14"), y = 125,
-                    label = "Phase 1: \n\n Cases = 96 \n SI Pairs = 22 \n\n Mean SI = 5.35 \n (95% CI: 3.51, 7.50) \n\n SD SI = 4.69 \n (95% CI: 2.53, 7.36)"),
+     geom_label(aes(x = as.Date("2020-05-14"), y = 190,
+                    label = "Phase 1: \n\n Cases = 99 \n SI Pairs = 25 \n Mean SI = 5.26 \n (95% CI: 3.64, 7.21) \n SD SI = 4.74 \n (95% CI: 2.86, 7.09)"),
                 fill = NA, color = "black") +
-     geom_label(aes(x = as.Date("2020-06-16"), y = 125, 
-                    label = "Phase 2: \n\n Cases = 4,217 \n SI Pairs = 372 \n\n Mean SI = 5.29 \n (95% CI: 4.88, 5.76) \n\n SD SI = 4.45 \n (95% CI: 3.97, 4.93)"),
+     geom_label(aes(x = as.Date("2020-06-17"), y = 190, 
+                    label = "Phase 2 (June): \n\n Cases = 824 \n SI Pairs = 248 \n Mean SI = 6.23 \n (95% CI: 5.59, 6.85) \n SD SI = 5.32 \n (95% CI: 4.61, 6.05)"),
+                fill = NA, color = "black") +
+     geom_label(aes(x = as.Date("2020-07-18"), y = 190, 
+                    label = "Phase 2 (July): \n\n Cases = 3,417 \n SI Pairs = 195 \n Mean SI = 4.42 \n (95% CI: 3.92, 4.93) \n SD SI = 3.51 \n (95% CI: 2.97, 4.06)"),
                 fill = NA, color = "black") +
      labs(fill = "") +
      ylab("Number of reported cases") +
@@ -494,6 +499,7 @@ epi_curve_full <- full_data %>%
            axis.title.x = element_text(size = 14, colour = "black",
                                        margin = unit(c(5, 0, 0, 0), "mm")),
            legend.text = element_text(size = 14, colour = "black"),
+           
            axis.line.x = element_blank(), 
            axis.line.y = element_blank(), 
            axis.ticks = element_blank()) +
@@ -501,7 +507,7 @@ epi_curve_full <- full_data %>%
 
 epi_curve_full
 
-ggsave("si_pub_epi_curve2.jpg", width = 13, height = 7, dpi = 600)
+ggsave("si_pub_epi_curve3.jpg", width = 13, height = 7, dpi = 600)
 ```
 
 
