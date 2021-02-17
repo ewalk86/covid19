@@ -290,7 +290,7 @@ dist_w1 <- "off1W"  # fitting a Weibull distribution for the SI
 dist_l <- "L"  # fitting a Lognormal distribution for the SI
 dist_l1 <- "off1L"  # fitting a Lognormal distribution for the SI
 si_config <- make_config(list(si_parametric_distr = dist_g, 
-                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 100, n2 = 10,
+                              mcmc_control = mcmc_control, seed = overall_seed, n1 = 1000, n2 = 100,
                               t_start = time_start, t_end = time_end))
 
 # CHANGE si_data INPUT DATASET BASED ON DESIRED TIMEFRAME
@@ -298,7 +298,7 @@ si_config <- make_config(list(si_parametric_distr = dist_g,
 # mt_si_data_pre_sip, mt_si_data_sip, mt_si_data_phase1
 # mt_si_data_phase2, mt_si_data_june, mt_si_data_july
 mt_r_results <- estimate_R(mt_li_inc_data, method = "si_from_data", 
-                           si_data = mt_si_data_july, config = si_config)
+                           si_data = mt_si_data_total, config = si_config)
 ```
 
 # Use distributions to calculate mean, sd, 95% ci's
@@ -435,11 +435,23 @@ plot_colors <- c("#332288", "#882255", "#661100", "#6699CC", "#888888")
 full_data <- mt_case_data %>% 
    filter(dates < "2020-08-01" & dates >= "2020-03-01")
 
+trend_data <- full_data %>% 
+   group_by(dates) %>% 
+   mutate(date_cases = sum(case)) %>% 
+   ungroup() %>% 
+   distinct(dates, .keep_all = TRUE) %>% 
+   arrange(dates) %>% 
+   mutate(trend_cases = zoo::rollmean(date_cases, 7, fill = NA, align = "right")) %>% 
+   dplyr::select(dates, trend_cases)
+
+plot_data <- full_data %>% 
+   left_join(trend_data, by = "dates")
+   
 total_cases <- sum(mt_case_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
 date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
-epi_curve_full <- full_data %>% 
+epi_curve_full <- plot_data %>% 
    mutate(local_import = factor(local_import,
                             levels = c(1, 0),
                             labels = c("imported case", "local case"))) %>% 
@@ -454,26 +466,27 @@ epi_curve_full <- full_data %>%
                fill = "gray80", alpha = 0.05) +
      geom_rect(aes(xmin = as.Date("2020-07-01"), xmax = as.Date("2020-08-01"), ymin=0, ymax=Inf),
                fill = "gray90", alpha = 0.05) +
-     geom_col(aes(dates, case, fill = local_import), width = 1) +
-     geom_text(aes(x = as.Date("2020-03-03"), y = 230, label = "A"), size = 8, color = "black") + 
-     geom_text(aes(x = as.Date("2020-03-31"), y = 230, label = "B"), size = 8, color = "black") + 
-     geom_text(aes(x = as.Date("2020-04-30"), y = 230, label = "C"), size = 8, color = "black") + 
-     geom_text(aes(x = as.Date("2020-06-04"), y = 230, label = "D"), size = 8, color = "black") + 
-     geom_text(aes(x = as.Date("2020-07-04"), y = 230, label = "E"), size = 8, color = "black") + 
-     geom_label(aes(x = as.Date("2020-03-16"), y = 190,
-                    label = "Pre-SIP: \n\n Cases = 285 \n SI Pairs = 95 \n Mean SI = 6.84 \n (95% CI: 5.84, 7.87) \n SD SI = 5.56 \n (95% CI: 4.45, 6.80)"),
+     geom_col(aes(dates, case, fill = local_import), width = 1) + 
+     geom_line(aes(dates, trend_cases), color = "black", size = 1) + 
+     geom_text(aes(x = as.Date("2020-03-03"), y = 229, label = "A"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-03-31"), y = 229, label = "B"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-04-30"), y = 229, label = "C"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-06-04"), y = 229, label = "D"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-07-04"), y = 229, label = "E"), size = 8, color = "black") + 
+     geom_label(aes(x = as.Date("2020-03-16"), y = 195,
+                    label = "Pre-SIP: \n\n Cases = 285 \n Pairs = 95 \n Mean SI = 6.84 \n (95% CI: 5.84, 7.87) \n SD = 5.56 \n (95% CI: 4.45, 6.80)"),
                 fill = NA, color = "black") +
-     geom_label(aes(x = as.Date("2020-04-13"), y = 190, 
-                    label = "SIP: \n\n Cases = 168 \n SI Pairs = 20 \n Mean SI = 5.54 \n (95% CI: 3.34, 8.26) \n SD SI = 5.30 \n (95% CI: 2.69, 8.76)"),
+     geom_label(aes(x = as.Date("2020-04-13"), y = 195, 
+                    label = "SIP: \n\n Cases = 168 \n Pairs = 20 \n Mean SI = 5.54 \n (95% CI: 3.34, 8.26) \n SD = 5.30 \n (95% CI: 2.69, 8.76)"),
                 fill = NA, color = "black") +
-     geom_label(aes(x = as.Date("2020-05-14"), y = 190,
-                    label = "Phase 1: \n\n Cases = 99 \n SI Pairs = 25 \n Mean SI = 5.26 \n (95% CI: 3.64, 7.21) \n SD SI = 4.74 \n (95% CI: 2.86, 7.09)"),
+     geom_label(aes(x = as.Date("2020-05-14"), y = 195,
+                    label = "Phase 1: \n\n Cases = 99 \n Pairs = 25 \n Mean SI = 5.26 \n (95% CI: 3.64, 7.21) \n SD = 4.74 \n (95% CI: 2.86, 7.09)"),
                 fill = NA, color = "black") +
-     geom_label(aes(x = as.Date("2020-06-17"), y = 190, 
-                    label = "Phase 2 (June): \n\n Cases = 824 \n SI Pairs = 248 \n Mean SI = 6.23 \n (95% CI: 5.59, 6.85) \n SD SI = 5.32 \n (95% CI: 4.61, 6.05)"),
+     geom_label(aes(x = as.Date("2020-06-17"), y = 195, 
+                    label = "Phase 2 (June): \n\n Cases = 824 \n Pairs = 248 \n Mean SI = 6.23 \n (95% CI: 5.59, 6.85) \n SD = 5.32 \n (95% CI: 4.61, 6.05)"),
                 fill = NA, color = "black") +
-     geom_label(aes(x = as.Date("2020-07-18"), y = 190, 
-                    label = "Phase 2 (July): \n\n Cases = 3,417 \n SI Pairs = 195 \n Mean SI = 4.42 \n (95% CI: 3.92, 4.93) \n SD SI = 3.51 \n (95% CI: 2.97, 4.06)"),
+     geom_label(aes(x = as.Date("2020-07-18"), y = 195, 
+                    label = "Phase 2 (July): \n\n Cases = 3,417 \n Pairs = 195 \n Mean SI = 4.42 \n (95% CI: 3.92, 4.93) \n SD = 3.51 \n (95% CI: 2.97, 4.06)"),
                 fill = NA, color = "black") +
      labs(fill = "") +
      ylab("Number of reported cases") +
@@ -484,30 +497,41 @@ epi_curve_full <- full_data %>%
                   labels = seq.Date(from = as.Date("2020-03-01"), 
                                     to = as.Date("2020-08-01"), 
                                     by = "5 days"),
-                  date_labels = "%d-%B") +
-     scale_y_continuous(breaks = c(seq(0, 300, 25)), labels = c(seq(0, 300, 25))) +
+                  date_labels = "%d-%B",
+                  expand = expansion(mult = 0.015)) +
+     scale_y_continuous(breaks = c(seq(0, 300, 10)), labels = c(seq(0, 300, 10)),
+                        expand = expansion(mult = c(0.02, 0.04))) +
      theme_minimal() +
      theme(title = element_text(size = 12, colour = "black"),
            panel.grid = element_blank(),
            panel.grid.major.y = element_line(colour = "gray50"),
            axis.text.x = element_text(size = 14, colour = "black", 
-                                     angle = 90, vjust = 0.4),
+                                      angle = 90, vjust = 0.5, hjust = 1,
+                                      margin = unit(c(1, 0, 0, 0), "mm")),
            axis.text.y = element_text(size = 14, colour = "black"),
            legend.position = c(0.5, 0.35),
-           axis.title.y = element_text(size = 14, colour = "black",
+           axis.title.y = element_text(size = 14, colour = "black", face = "bold",
                                        margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 14, colour = "black",
+           axis.title.x = element_text(size = 14, colour = "black", face = "bold",
                                        margin = unit(c(5, 0, 0, 0), "mm")),
            legend.text = element_text(size = 14, colour = "black"),
-           
            axis.line.x = element_blank(), 
-           axis.line.y = element_blank(), 
-           axis.ticks = element_blank()) +
+           axis.line.y = element_blank(),
+           axis.ticks.x = element_line(color = "black", size = 1.5, linetype = "longdash")) +
      scale_fill_manual(values = plot_colors)   
 
 epi_curve_full
 
 ggsave("si_pub_epi_curve3.jpg", width = 13, height = 7, dpi = 600)
+
+
+# SI probability distribution
+plot(mt_r_results, what = "SI",
+     options_SI = list(prob_min = 0.001, col = "black", transp = 0.25, 
+                       xlim = NULL, ylim =NULL, 
+                       xlab = "Length of serial interval (days)", ylab = "Probability"))
+
+ggsave("si_distribution.jpg", width = 13, height = 7, dpi = 200)
 ```
 
 
