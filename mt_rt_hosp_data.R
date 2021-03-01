@@ -67,7 +67,7 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_02162021.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_03012021.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("midis_add_datetime", "inv_start_date", "state_num", "county_fips", 
                                         "sex", "age", "age_unit", "hospitalization", 
@@ -156,8 +156,8 @@ time_end <- time_start + 13
 
 
 # Serial Interval derived from State of Montana paired case data
-serial_interval_mean <- 5.29
-serial_interval_sd <- 4.45
+serial_interval_mean <- 4.42
+serial_interval_sd <- 3.51
 
 mt_r_results <- estimate_R(mt_incidence_data, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 
@@ -209,8 +209,8 @@ region_analysis_function <- function(filter_var, label_var, data = mt_case_data)
    
    
    # Serial Interval derived from State of Montana case data
-   serial_interval_mean <- 5.29
-   serial_interval_sd <- 4.45
+   serial_interval_mean <- 4.42
+   serial_interval_sd <- 3.51
    
    mt_r_results <- estimate_R(mt_incidence_data, method="parametric_si", 
                               config = make_config(list(mean_si = serial_interval_mean, 
@@ -270,8 +270,8 @@ county_analysis_function <- function(filter_var, label_var, data = mt_case_data)
    
    
    # Serial Interval derived from State of Montana case data
-   serial_interval_mean <- 5.29
-   serial_interval_sd <- 4.45
+   serial_interval_mean <- 4.42
+   serial_interval_sd <- 3.51
    
    mt_r_results <- estimate_R(mt_incidence_data, method="parametric_si", 
                               config = make_config(list(mean_si = serial_interval_mean, 

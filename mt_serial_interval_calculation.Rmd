@@ -445,7 +445,8 @@ trend_data <- full_data %>%
    dplyr::select(dates, trend_cases)
 
 plot_data <- full_data %>% 
-   left_join(trend_data, by = "dates")
+   left_join(trend_data, by = "dates") %>% 
+   mutate(trend_line = if_else(!is.na(trend_cases), "7-day average cases", "NA"))
    
 total_cases <- sum(mt_case_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
@@ -467,7 +468,8 @@ epi_curve_full <- plot_data %>%
      geom_rect(aes(xmin = as.Date("2020-07-01"), xmax = as.Date("2020-08-01"), ymin=0, ymax=Inf),
                fill = "gray90", alpha = 0.05) +
      geom_col(aes(dates, case, fill = local_import), width = 1) + 
-     geom_line(aes(dates, trend_cases), color = "black", size = 1) + 
+     geom_line(aes(dates, trend_cases, color = "7-day average"), size = 1) + 
+     scale_color_manual(values = "black") +
      geom_text(aes(x = as.Date("2020-03-03"), y = 229, label = "A"), size = 8, color = "black") + 
      geom_text(aes(x = as.Date("2020-03-31"), y = 229, label = "B"), size = 8, color = "black") + 
      geom_text(aes(x = as.Date("2020-04-30"), y = 229, label = "C"), size = 8, color = "black") + 
@@ -480,17 +482,17 @@ epi_curve_full <- plot_data %>%
                     label = "SIP: \n\n Cases = 168 \n Pairs = 20 \n Mean SI = 5.54 \n (95% CI: 3.34, 8.26) \n SD = 5.30 \n (95% CI: 2.69, 8.76)"),
                 fill = NA, color = "black") +
      geom_label(aes(x = as.Date("2020-05-14"), y = 195,
-                    label = "Phase 1: \n\n Cases = 99 \n Pairs = 25 \n Mean SI = 5.26 \n (95% CI: 3.64, 7.21) \n SD = 4.74 \n (95% CI: 2.86, 7.09)"),
+                    label = "Phase1: \n\n Cases = 99 \n Pairs = 25 \n Mean SI = 5.26 \n (95% CI: 3.64, 7.21) \n SD = 4.74 \n (95% CI: 2.86, 7.09)"),
                 fill = NA, color = "black") +
      geom_label(aes(x = as.Date("2020-06-17"), y = 195, 
-                    label = "Phase 2 (June): \n\n Cases = 824 \n Pairs = 248 \n Mean SI = 6.23 \n (95% CI: 5.59, 6.85) \n SD = 5.32 \n (95% CI: 4.61, 6.05)"),
+                    label = "Phase2 (June): \n\n Cases = 824 \n Pairs = 248 \n Mean SI = 6.23 \n (95% CI: 5.59, 6.85) \n SD = 5.32 \n (95% CI: 4.61, 6.05)"),
                 fill = NA, color = "black") +
      geom_label(aes(x = as.Date("2020-07-18"), y = 195, 
-                    label = "Phase 2 (July): \n\n Cases = 3,417 \n Pairs = 195 \n Mean SI = 4.42 \n (95% CI: 3.92, 4.93) \n SD = 3.51 \n (95% CI: 2.97, 4.06)"),
+                    label = "Phase2 (July): \n\n Cases = 3,417 \n Pairs = 195 \n Mean SI = 4.42 \n (95% CI: 3.92, 4.93) \n SD = 3.51 \n (95% CI: 2.97, 4.06)"),
                 fill = NA, color = "black") +
-     labs(fill = "") +
-     ylab("Number of reported cases") +
-     xlab("Date of symptom onset") +
+     labs(fill = "", color = "") +
+     ylab("Number of Reported Cases") +
+     xlab("Date of Symptom Onset") +
      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-01"), 
                                     to = as.Date("2020-08-01"), 
                                     by = "5 days"),
@@ -499,14 +501,16 @@ epi_curve_full <- plot_data %>%
                                     by = "5 days"),
                   date_labels = "%d-%B",
                   expand = expansion(mult = 0.015)) +
-     scale_y_continuous(breaks = c(seq(0, 300, 10)), labels = c(seq(0, 300, 10)),
-                        expand = expansion(mult = c(0.02, 0.04))) +
+     scale_y_continuous(breaks = c(seq(0, 300, 20)), labels = c(seq(0, 300, 20)),
+                        minor_breaks = c(seq(0, 300, 10)),
+                        expand = expansion(mult = c(0.0, 0.04))) +
      theme_minimal() +
      theme(title = element_text(size = 12, colour = "black"),
            panel.grid = element_blank(),
            panel.grid.major.y = element_line(colour = "gray50"),
+           panel.grid.minor.y = element_line(colour = "gray50"),
            axis.text.x = element_text(size = 14, colour = "black", 
-                                      angle = 90, vjust = 0.5, hjust = 1,
+                                      angle = 90, vjust = 0.3, hjust = 1,
                                       margin = unit(c(1, 0, 0, 0), "mm")),
            axis.text.y = element_text(size = 14, colour = "black"),
            legend.position = c(0.5, 0.35),
@@ -517,12 +521,13 @@ epi_curve_full <- plot_data %>%
            legend.text = element_text(size = 14, colour = "black"),
            axis.line.x = element_blank(), 
            axis.line.y = element_blank(),
-           axis.ticks.x = element_line(color = "black", size = 1.5, linetype = "longdash")) +
+           axis.ticks.x = element_line(color = "black"),
+           axis.ticks.length.x = unit(2.5, "mm")) +
      scale_fill_manual(values = plot_colors)   
 
 epi_curve_full
 
-ggsave("si_pub_epi_curve3.jpg", width = 13, height = 7, dpi = 600)
+ggsave("si_pub_epi_curve.jpg", width = 13, height = 7, dpi = 600)
 
 
 # SI probability distribution
