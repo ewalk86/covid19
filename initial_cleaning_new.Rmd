@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 23 Nov 2020, Updated 1 March 2021"
+date: "Started 23 Nov 2020, Updated 8 April 2021"
 output:
   pdf_document: default
   html_document:
@@ -31,16 +31,18 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVIDData_03.01.2021.xlsx"), sheet = 1,
-             range = "A2:N20000", 
+   read_xlsx(paste0(input_path, "COVID Data_4.8.2021.xlsx"), sheet = 1,
+             range = "A2:N20000", na = c(" ", ""),
                         col_names = c("case_id", "case_status", "health_worker", 
                                       "cong_living", "cong_living_where", "age", 
                                       "sex", "zipcode", "test_date", "um_student", "race", 
-                                      "ethnicity", "ever_hosp", "epi_linked"),
+                                      "ethnicity", "ever_hosp", 
+                                      "epi_linked"),
                         col_types = c("text", "text", "text", 
                                       "text", "text", "text",
-                                      "text", "text", "date", "text", 
-                                      "text", "text", "text", "text"))
+                                      "text", "text", "date", "text", "text",
+                                      "text", "text", 
+                                      "text"))
 ```
 
 
@@ -77,7 +79,13 @@ covid_clean <- covid_data_initial %>%
           cong_living = as.factor(cong_living),
           race = as.factor(race),
           ethnicity = as.factor(ethnicity),
+          ever_hosp = sub("\\s", "", ever_hosp),
+          ever_hosp = if_else(ever_hosp != "y" & ever_hosp != "yes", "no", ever_hosp),
+          ever_hosp = if_else(is.na(ever_hosp), "no", ever_hosp),
           ever_hosp = as.factor(ever_hosp),
+          hospitalizations = fct_collapse(ever_hosp,
+                                          "no" = c("n", NA),
+                                          "yes" = c("y", "yes")),
           epi_linked = as.factor(epi_linked),
           age_group = as.factor(age_group),
           age_group2 = as.factor(age_group2),

@@ -539,6 +539,106 @@ plot(mt_r_results, what = "SI",
 ggsave("si_distribution.jpg", width = 13, height = 7, dpi = 200)
 ```
 
+# Plot with no labels
+```{r, fig.width = 13, fig.height = 7}
+colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                        "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+plot_colors <- c("#332288", "#882255", "#661100", "#6699CC", "#888888")
+
+# Epi curve - test date
+full_data <- mt_case_data %>% 
+   filter(dates < "2020-08-01" & dates >= "2020-03-01")
+
+trend_data <- full_data %>% 
+   group_by(dates) %>% 
+   mutate(date_cases = sum(case)) %>% 
+   ungroup() %>% 
+   distinct(dates, .keep_all = TRUE) %>% 
+   arrange(dates) %>% 
+   mutate(trend_cases = zoo::rollmean(date_cases, 7, fill = NA, align = "right")) %>% 
+   dplyr::select(dates, trend_cases)
+
+plot_data <- full_data %>% 
+   left_join(trend_data, by = "dates") %>% 
+   mutate(trend_line = if_else(!is.na(trend_cases), "7-day average cases", "NA"))
+   
+total_cases <- sum(mt_case_data$case)
+date_today <- format(Sys.Date(), "%d %b %Y")
+date_14 <- format(Sys.Date() - 14, "%d %b %Y")
+
+epi_curve_full <- plot_data %>% 
+   mutate(local_import = factor(local_import,
+                            levels = c(1, 0),
+                            labels = c("imported case", "local case"))) %>% 
+   ggplot() +
+     geom_rect(aes(xmin = as.Date("2020-02-28"), xmax = as.Date("2020-03-28"), ymin=0, ymax=Inf),
+               fill = "gray90", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-03-28"), xmax = as.Date("2020-04-26"), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-04-26"), xmax = as.Date("2020-06-01"), ymin=0, ymax=Inf),
+               fill = "gray90", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-06-01"), xmax = as.Date("2020-07-01"), ymin=0, ymax=Inf),
+               fill = "gray80", alpha = 0.05) +
+     geom_rect(aes(xmin = as.Date("2020-07-01"), xmax = as.Date("2020-08-01"), ymin=0, ymax=Inf),
+               fill = "gray90", alpha = 0.05) +
+     geom_col(aes(dates, case, fill = local_import), width = 1) + 
+     geom_line(aes(dates, trend_cases, color = "7-day average"), size = 1) + 
+     scale_color_manual(values = "black") +
+     geom_text(aes(x = as.Date("2020-03-03"), y = 195, label = "A"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-03-31"), y = 195, label = "B"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-04-30"), y = 195, label = "C"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-06-04"), y = 195, label = "D"), size = 8, color = "black") + 
+     geom_text(aes(x = as.Date("2020-07-04"), y = 195, label = "E"), size = 8, color = "black") + 
+     labs(fill = "", color = "") +
+     ylab("Number of Reported Cases") +
+     xlab("Date of Symptom Onset") +
+     scale_x_date(breaks = seq.Date(from = as.Date("2020-03-01"), 
+                                    to = as.Date("2020-08-01"), 
+                                    by = "5 days"),
+                  labels = seq.Date(from = as.Date("2020-03-01"), 
+                                    to = as.Date("2020-08-01"), 
+                                    by = "5 days"),
+                  date_labels = "%d-%B",
+                  expand = expansion(mult = 0.015)) +
+     scale_y_continuous(breaks = c(seq(0, 200, 20)), labels = c(seq(0, 200, 20)),
+                        minor_breaks = c(seq(0, 200, 10)),
+                        expand = expansion(mult = c(0.0, 0.04))) +
+     theme_minimal() +
+     theme(title = element_text(size = 12, colour = "black"),
+           panel.grid = element_blank(),
+           panel.grid.major.y = element_line(colour = "gray50"),
+           panel.grid.minor.y = element_line(colour = "gray50"),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                      angle = 90, vjust = 0.3, hjust = 1,
+                                      margin = unit(c(1, 0, 0, 0), "mm")),
+           axis.text.y = element_text(size = 14, colour = "black"),
+           legend.position = c(0.5, 0.35),
+           axis.title.y = element_text(size = 14, colour = "black", face = "bold",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 14, colour = "black", face = "bold",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           legend.text = element_text(size = 14, colour = "black"),
+           axis.line.x = element_blank(), 
+           axis.line.y = element_blank(),
+           axis.ticks.x = element_line(color = "black"),
+           axis.ticks.length.x = unit(2.5, "mm")) +
+     scale_fill_manual(values = plot_colors)   
+
+epi_curve_full
+
+ggsave("si_pub_epi_curve_no_labels.jpg", width = 13, height = 7, dpi = 600)
+
+
+# SI probability distribution
+plot(mt_r_results, what = "SI",
+     options_SI = list(prob_min = 0.001, col = "black", transp = 0.25, 
+                       xlim = NULL, ylim =NULL, 
+                       xlab = "Length of serial interval (days)", ylab = "Probability"))
+
+ggsave("si_distribution.jpg", width = 13, height = 7, dpi = 200)
+```
+
 
 ```{r, fig.width = 10, fig.height = 5}
 colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
