@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 23 Nov 2020, Updated 8 April 2021"
+date: "Started 23 Nov 2020, Updated 19 April 2021"
 output:
   pdf_document: default
   html_document:
@@ -31,7 +31,7 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID Data_4.8.2021.xlsx"), sheet = 1,
+   read_xlsx(paste0(input_path, "COVID Data_4.19.2021.xlsx"), sheet = 1,
              range = "A2:N20000", na = c(" ", ""),
                         col_names = c("case_id", "case_status", "health_worker", 
                                       "cong_living", "cong_living_where", "age", 
@@ -69,6 +69,7 @@ covid_clean <- covid_data_initial %>%
    mutate_if(is.character, tolower) %>% 
    mutate_if(is.factor, tolower) %>% 
    replace_with_na_all(condition = ~.x %in% c("n/a", "na", "unknown", "unkown")) %>% 
+   separate(test_date, into = c("test_date", "time"), sep = " ") %>% 
    mutate(age_group_percent = as.numeric(age_group_percent),
           age_group3_percent = as.numeric(age_group3_percent),
           county_pop = as.numeric(119600),

@@ -23,6 +23,7 @@ library(Rsftp)
 library(googledrive)
 library(googlesheets4)
 library(data.table)
+library(taskscheduleR)
 #library(sftp)
 
 
@@ -441,12 +442,20 @@ hosp_data_daily <- hosp_data_initial %>%
 # password  = 'celftp'
 # remotepath = '/celFtpFiles/covid19/Rt/incoming/'
 
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/county_data_combined.csv",
+#sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+#           "/celFtpFiles/covid19/Rt/incoming/county_data_combined.csv",
+#           "C:/R/covid19/state_daily_results/county_data_combined.csv")
+
+sftpUpload("celftp.nephelai.net", "celftp", "celftp@umt",
+           "/home/celftp/data/county_data_combined.csv",
            "C:/R/covid19/state_daily_results/county_data_combined.csv")
 
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/mt_case_hosp_test_outcome_data.csv",
+#sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+#           "/celFtpFiles/covid19/Rt/incoming/mt_case_hosp_test_outcome_data.csv",
+#           "C:/R/covid19/state_daily_results/mt_case_hosp_test_outcome_data.csv")
+
+sftpUpload("celftp.nephelai.net", "celftp", "celftp@umt",
+           "/home/celftp/data/mt_case_hosp_test_outcome_data.csv",
            "C:/R/covid19/state_daily_results/mt_case_hosp_test_outcome_data.csv")
 
 

@@ -67,10 +67,9 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_04082021.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_04222021.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("midis_add_datetime", 
-                                        "inv_rpt_dt", 
                                         "inv_start_date", 
                                         "state_num", "county_fips", 
                                         "sex", "age", "age_unit", "hospitalization", 
@@ -78,7 +77,7 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_04082021.xlsx"),
                                         "onset_date", "spec_coll_date", "diagnosis_date",
                                         "reinfection"),
                           col_types = c("date", 
-                                        "date", 
+                                        
                                         "date", "numeric", "numeric",
                                         "text", "text", "text", "text",  
                                         "numeric", "text", "text", 
@@ -349,8 +348,12 @@ write_csv(all_regions_r, "C:/R/covid19/state_daily_results/all_regions_r_new.csv
 # password  = 'celftp'
 # remotepath = '/celFtpFiles/covid19/Rt/incoming/'
 
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/all_regions_r_new.csv",
+#sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+#           "/celFtpFiles/covid19/Rt/incoming/all_regions_r_new.csv",
+#           "C:/R/covid19/state_daily_results/all_regions_r_new.csv")
+
+sftpUpload("celftp.nephelai.net", "celftp", "celftp@umt",
+           "/home/celftp/data/all_regions_r_new.csv",
            "C:/R/covid19/state_daily_results/all_regions_r_new.csv")
 
 
@@ -1009,28 +1012,52 @@ hosp_rates <- hosp_data %>%
 # password  = 'celftp'
 # remotepath = '/celFtpFiles/covid19/Rt/incoming/'
 
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/state_hosp.csv",
+#sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+#           "/celFtpFiles/covid19/Rt/incoming/state_hosp.csv",
+#           "C:/R/covid19/state_daily_results/state_hosp.csv")
+
+sftpUpload("celftp.nephelai.net", "celftp", "celftp@umt",
+           "/home/celftp/data/state_hosp.csv",
            "C:/R/covid19/state_daily_results/state_hosp.csv")
 
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/state_deaths.csv",
+#sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+#           "/celFtpFiles/covid19/Rt/incoming/state_deaths.csv",
+#           "C:/R/covid19/state_daily_results/state_deaths.csv")
+
+sftpUpload("celftp.nephelai.net", "celftp", "celftp@umt",
+           "/home/celftp/data/state_deaths.csv",
            "C:/R/covid19/state_daily_results/state_deaths.csv")
 
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg_hosp.csv",
+#sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+#           "/celFtpFiles/covid19/Rt/incoming/reg_hosp.csv",
+#           "C:/R/covid19/state_daily_results/reg_hosp.csv")
+
+sftpUpload("celftp.nephelai.net", "celftp", "celftp@umt",
+           "/home/celftp/data/reg_hosp.csv",
            "C:/R/covid19/state_daily_results/reg_hosp.csv")
 
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/reg_death.csv",
+#sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+#           "/celFtpFiles/covid19/Rt/incoming/reg_death.csv",
+#           "C:/R/covid19/state_daily_results/reg_death.csv")
+
+sftpUpload("celftp.nephelai.net", "celftp", "celftp@umt",
+           "/home/celftp/data/reg_death.csv",
            "C:/R/covid19/state_daily_results/reg_death.csv")
 
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/state_hosp_month.csv",
+#sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+#           "/celFtpFiles/covid19/Rt/incoming/state_hosp_month.csv",
+#           "C:/R/covid19/state_daily_results/state_hosp_month.csv")
+
+sftpUpload("celftp.nephelai.net", "celftp", "celftp@umt",
+           "/home/celftp/data/state_hosp_month.csv",
            "C:/R/covid19/state_daily_results/state_hosp_month.csv")
 
-sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
-           "/celFtpFiles/covid19/Rt/incoming/state_deaths_month.csv",
+#sftpUpload("elbastion.dbs.umt.edu", "celftp", "celftp",
+#           "/celFtpFiles/covid19/Rt/incoming/state_deaths_month.csv",
+#           "C:/R/covid19/state_daily_results/state_deaths_month.csv")
+
+sftpUpload("celftp.nephelai.net", "celftp", "celftp@umt",
+           "/home/celftp/data/state_deaths_month.csv",
            "C:/R/covid19/state_daily_results/state_deaths_month.csv")
 
 
