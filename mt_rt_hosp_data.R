@@ -67,7 +67,7 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_04222021.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_05202021.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("midis_add_datetime", 
                                         "inv_start_date", 
@@ -75,14 +75,17 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_04222021.xlsx"),
                                         "sex", "age", "age_unit", "hospitalization", 
                                         "hosp_dur", "hosp_dur_unit", "deceased",
                                         "onset_date", "spec_coll_date", "diagnosis_date",
-                                        "reinfection"),
+                                        "reinfection",
+                                        "breakthrough", "variant_class",
+                                        "variant_type", "inv_rpt_date"),
                           col_types = c("date", 
-                                        
                                         "date", "numeric", "numeric",
                                         "text", "text", "text", "text",  
                                         "numeric", "text", "text", 
                                         "date", "date", "date",
-                                        "numeric")) %>% 
+                                        "numeric",
+                                        "text", "text",
+                                        "text", "date")) %>% 
    rownames_to_column(var = "case_no") %>% 
    mutate(case = 1) %>% 
    left_join(mt_county_fips, by = "county_fips") %>% 
