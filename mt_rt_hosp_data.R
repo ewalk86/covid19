@@ -67,12 +67,12 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_05202021.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_06032021.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("midis_add_datetime", 
                                         "inv_start_date", 
                                         "state_num", "county_fips", 
-                                        "sex", "age", "age_unit", "hospitalization", 
+                                        "sex", "spatial_age", "age", "age_unit", "hospitalization", 
                                         "hosp_dur", "hosp_dur_unit", "deceased",
                                         "onset_date", "spec_coll_date", "diagnosis_date",
                                         "reinfection",
@@ -80,7 +80,7 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_05202021.xlsx"),
                                         "variant_type", "inv_rpt_date"),
                           col_types = c("date", 
                                         "date", "numeric", "numeric",
-                                        "text", "text", "text", "text",  
+                                        "text", "text", "text", "text", "text",  
                                         "numeric", "text", "text", 
                                         "date", "date", "date",
                                         "numeric",
@@ -1105,4 +1105,32 @@ mt_data <- hosp_rates %>%
 sheet_write(mt_data, 
             ss = "https://docs.google.com/spreadsheets/d/1H5e3OPlxzlCacDAD_foj72EqZEzyPZ66FUyh-fxokag/edit#gid=0",
             sheet = 4)
+
+
+# County level data for spatial analysis
+spatial_data <- mt_case_data %>% 
+   select(dates, county, spatial_age, sex, hospitalization, deceased, case) %>% 
+   mutate(spatial_age = factor(spatial_age,
+                               levels = c("0-4", "5-24", "25-64", "65+"),
+                               labels = c("0 to 4", "5 to 24", "25 to 64", "65+")),
+          hospitalization_status = if_else(hospitalization == "Hosp: Yes", 
+                                           1, 0),
+          deceased_status = if_else(deceased == "Deceased: Yes", 
+                                    1, 0)) %>% 
+   group_by(county, spatial_age) %>% 
+   mutate(latest_date = max(dates)) %>% 
+   summarize(county_age_case = sum(case),
+             county_age_hosp = sum(hospitalization_status),
+             county_age_deaths = sum(deceased_status),
+             latest_onset_date = latest_date) %>% 
+   distinct(county, spatial_age, .keep_all = T) %>% 
+   ungroup() %>% 
+   arrange(county, spatial_age) 
+
+write_csv(spatial_data, "C:/R/covid19/state_daily_results/spatial_data.csv", na = " ")
+
+
+sftpUpload("celftp.nephelai.net", "celftp", "celftp@umt",
+           "/home/celftp/data/spatial_data.csv",
+           "C:/R/covid19/state_daily_results/spatial_data.csv")
 
