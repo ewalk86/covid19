@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 23 Nov 2020, Updated 10 June 2021"
+date: "Started 23 Nov 2020, Updated 5 August 2021"
 output:
   pdf_document: default
   html_document:
@@ -31,11 +31,11 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID Data 6.10.2021.xlsx"), sheet = 1,
+   read_xlsx(paste0(input_path, "COVID Data 8.5.2021.xlsx"), sheet = 1,
              range = "A2:N20000", na = c(" ", ""),
                         col_names = c("case_id", "case_status", "health_worker", 
                                       "cong_living", "cong_living_where", "age", 
-                                      "sex", "zipcode", "test_date", "um_student", "race", 
+                                      "sex", "zip", "test_date", "um_student", "race", 
                                       "ethnicity", "ever_hosp", 
                                       "epi_linked"),
                         col_types = c("text", "text", "text", 
@@ -111,5 +111,45 @@ file_path <- c("C:/R/covid19/")
 
 
 write_rds(covid_clean, paste0(file_path, "covid_data_clean.rds"))
+```
+
+# clean up variant/breakthrough/reinfection report data
+```{r}
+input_path <- c("C:/R/covid19/")
+covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) 
+
+input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
+
+variant_data_initial <- 
+   read_xlsx(paste0(input_path, "Weekly Tuesday Report 7.27.2021.xlsx"), sheet = 3, 
+             na = c(" ", "", "n/a"))
+
+variant_data_clean <- variant_data_initial %>% 
+   separate(`MCCHD CASE #(s)`, into = c("episode_1", "episode_2"), sep = "/", remove = F) %>% 
+   pivot_longer(cols = c("episode_1", "episode_2"), names_to = "case_episode", 
+                values_to = "case_id") %>% 
+   filter(!is.na(case_id)) %>% 
+   mutate(reinfect_breakthrough_status = factor(`COVID Reinfection/Breakthrough Status`,
+                                                labels = c("Breakthrough",
+                                                           "Reinfection & Breakthrough",
+                                                           "Reinfection",
+                                                           "Pending breakthrough",
+                                                           "Pending reinfection")),
+          vaccine_status = factor(`COVID Vaccine Status`,
+                                  labels = c("Not vaccinated",
+                                             "Vax unknown",
+                                             "Vaccinated")),
+          variant = as.factor(`COVID Variant`),
+          variant_classification = factor(`Covid Variant Classification`,
+                                          labels = c("Variant of Concern",
+                                                     "Variant of Interest"))) %>% 
+   select(case_episode:variant_classification) %>% 
+   left_join(covid_data, by = "case_id")
+
+summary(variant_data_clean)
+
+
+file_path <- c("C:/R/covid19/")
+write_rds(variant_data_clean, paste0(file_path, "variant_data_clean.rds"))
 ```
 

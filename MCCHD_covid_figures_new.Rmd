@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of June 10, 2021"
+date: "Data as of August 5, 2021"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -150,7 +150,7 @@ age_count_month_plot <- covid_data %>%
                fill = "gray80", alpha = 0.05) +
       geom_line(aes(week_of_year, group_cases, group = age_group, 
                     color = age_group), size = 1.5) +
-      geom_label(aes(x = Sys.Date()-14, y = 80, 
+      geom_label(aes(x = Sys.Date()-21, y = 80, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
       theme_minimal() +
@@ -214,7 +214,7 @@ age_count_month_plot2 <- covid_data %>%
                fill = "gray80", alpha = 0.05) +
       geom_line(aes(week_of_year, group_cases, group = age_group3, 
                     color = age_group3), size = 1.5) +
-      geom_label(aes(x = Sys.Date()-14, y = 50, 
+      geom_label(aes(x = Sys.Date()-21, y = 50, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
       theme_minimal() +
@@ -332,7 +332,7 @@ age_incidence_plot_line <- covid_data %>%
         color = "Age group") +
       ylab("Incidence per 100,000") +
       xlab("") +
-      geom_label(aes(x = Sys.Date()-14, y = 400, 
+      geom_label(aes(x = Sys.Date()-21, y = 400, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
       scale_x_date(breaks = seq.Date(from = as.Date("2021-01-01"), 
@@ -406,7 +406,7 @@ age_incidence_plot_line <- covid_data %>%
         color = "Age group") +
       ylab("Incidence per 100,000") +
       xlab("") +
-      geom_label(aes(x = Sys.Date()-14, y = 350, 
+      geom_label(aes(x = Sys.Date()-21, y = 350, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
       scale_x_date(breaks = seq.Date(from = as.Date("2021-01-01"), 
@@ -456,7 +456,7 @@ epi_curve_test_date <- plot_data %>%
      geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
                fill = "gray80", alpha = 0.05) +
      geom_col(aes(test_date, case), color = "steelblue") +
-     geom_label(aes(x = Sys.Date()-10, y = 70, 
+     geom_label(aes(x = Sys.Date()-18, y = 70, 
                     label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
                 fill = NA) +
      labs(title = "COVID-19 Cases in Missoula County Since January 1, 2021",
@@ -466,10 +466,10 @@ epi_curve_test_date <- plot_data %>%
      xlab("Test Date") +
      scale_x_date(breaks = seq.Date(from = as.Date("2021-01-01"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "3 days"),
+                                    by = "5 days"),
                   labels = seq.Date(from = as.Date("2021-01-01"), 
                                     to = as.Date(Sys.Date()), 
-                                    by = "3 days"),
+                                    by = "5 days"),
                   date_labels = "%d-%b") + 
      scale_y_continuous(breaks = seq(0, 300, 10), labels = seq(0, 300, 10)) + 
      theme_minimal() +
@@ -566,7 +566,7 @@ county_r_plot <- county_r %>%
    ylab("R-number") +
    xlab("") +
    geom_hline(yintercept = 1, color = "red", size = 1.2) +
-   scale_x_date(date_breaks = "3 days", date_labels = "%d-%b") +
+   scale_x_date(date_breaks = "5 days", date_labels = "%d-%b") +
    scale_y_continuous(breaks = seq(0, 5, 0.1), labels = seq(0, 5, 0.1)) +
    theme_minimal() +
    theme(strip.text = element_text(size = 16, colour = "black"),
