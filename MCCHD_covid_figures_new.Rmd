@@ -552,8 +552,8 @@ time_end <- time_start + 13
 
 
 # Serial Interval derived from State of Montana paired case data
-serial_interval_mean <- 5.29
-serial_interval_sd <- 4.45
+serial_interval_mean <- 4.42
+serial_interval_sd <- 3.51
 
 r_results <- estimate_R(incidence_data, method="parametric_si", 
                            config = make_config(list(mean_si = serial_interval_mean, 

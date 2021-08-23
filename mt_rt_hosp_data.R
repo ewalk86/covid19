@@ -66,7 +66,7 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
    full_join(counties_regions, by = "county")
 
 
-# Load/format case data
+# Load/format case data -- change file name in next line
 mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_08162021.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("midis_add_datetime", 
