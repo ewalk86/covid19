@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of August 16, 2021"
+date: "Data as of August 23, 2021"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -30,6 +30,18 @@ library(EpiEstim)
 library(viridis)
 library(ggthemes)
 library(epitools)
+```
+
+
+```{r}
+# Load data
+input_path <- c("C:/R/covid19/")
+
+file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+
+
+covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) 
+
 jv_palette <- c("#330099","#CC0066","#FF6633", 
                  "#0099CC", "#FF9900","#CC6633",
                   "#FF3366", "#33CC99", "#33999")
@@ -40,14 +52,31 @@ colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288",
                         "#6699CC", "#AA4499", "#888888")
 ```
 
+```{r, include=FALSE, eval=FALSE}
+# Check doubling time
 
-```{r}
-# Load data
-input_path <- c("C:/R/covid19/")
-file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
+inc_data <- covid_data %>% 
+   rename(dates = test_date) %>% 
+   filter(!is.na(dates)) %>% 
+   filter(dates > Sys.Date() - 42 & dates < Sys.Date() - 14) %>% 
+   arrange(dates) %>% 
+   select(dates, case) %>% 
+   group_by(dates) %>% 
+   mutate(total_cases = sum(case, na.rm = TRUE)) %>% 
+   arrange(dates) %>% 
+   ungroup()
 
+inc_data2 <- incidence(inc_data$dates)
 
-covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) 
+plot(inc_data2)
+
+inc_fit <- fit(inc_data2)
+inc_fit
+inc_fit$info$doubling # doubling time to report to D'Shane
+
+#plot(inc_fit)
+
+#find_peak(inc_data2)
 ```
 
 
@@ -685,63 +714,6 @@ epi_curve_full <- plot_data %>%
 epi_curve_full
 
 #ggsave("epi_curve_full.jpg", width = 12, height = 5.5)
-```
-
-\pagebreak  
-
-```{r, include=FALSE, eval=FALSE}
-inc_data <- covid_data %>% 
-   rename(dates = test_date) %>% 
-   filter(!is.na(dates)) %>% 
-   filter(dates > Sys.Date() - 42 & dates < Sys.Date() - 14) %>% 
-   arrange(dates) %>% 
-   select(dates, case) %>% 
-   group_by(dates) %>% 
-   mutate(total_cases = sum(case, na.rm = TRUE)) %>% 
-   arrange(dates) %>% 
-   ungroup()
-
-inc_data2 <- incidence(inc_data$dates)
-
-plot(inc_data2)
-
-inc_fit <- fit(inc_data2)
-inc_fit
-inc_fit$info$doubling
-
-plot(inc_fit)
-
-#find_peak(inc_data2)
-```
-
-
-```{r, include=FALSE, eval=FALSE}
-# Load sewage testing data and format columns
-
-input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
-
-
-sewage_data <- 
-   read_xlsx(paste0(input_path, "Msla WW COVID graph 2020-11-30.xlsx"), sheet = 1,
-             range = "A2:I33", 
-                        col_names = c("date", "n1_gene", "n2_gene", 
-                                      "daily_inc", "new_case_7day_ave", "new_case_7day_ave2",
-                                      "active_cases", "active_cases_7day_ave",
-                                      "daily_cases"),
-                        col_types = c("date", "numeric", "numeric",
-                                      "numeric", "numeric", "numeric",
-                                      "numeric", "numeric",
-                                      "numeric"))
-
-sewage_model <- lm(active_cases ~ n1_gene, data = sewage_data)
-cor.test(sewage_data$active_cases, sewage_data$n1_gene)
-summary(sewage_model)
-
-sewage_plot <- sewage_data %>% 
-   ggplot(aes(new_case_7day_ave, n1_gene)) +
-     geom_col() +
-     geom_smooth(method = "lm")
-sewage_plot 
 ```
 
 \pagebreak  

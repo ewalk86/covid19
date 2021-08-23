@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Breakthrough, Reinfection, and Variant Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of Aug 12, 2021"
+date: "Data as of Aug 19, 2021"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
@@ -30,14 +30,6 @@ library(EpiEstim)
 library(viridis)
 library(ggthemes)
 library(epitools)
-jv_palette <- c("#330099","#CC0066","#FF6633", 
-                 "#0099CC", "#FF9900","#CC6633",
-                  "#FF3366", "#33CC99", "#33999")
-cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#CC6633",
-               "#0072B2", "#D55E00", "#CC79A7", "#999999")
-colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", 
-                        "#44AA99", "#999933", "#882255", "Black", "#661100", 
-                        "#6699CC", "#AA4499", "#888888")
 ```
 
 
@@ -49,8 +41,13 @@ file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
 
 variant_data_clean <- read_rds(paste0(input_path, "variant_data_clean.rds")) 
 
+jv_palette <- c("#330099","#CC0066","#FF6633", 
+                 "#0099CC", "#FF9900","#CC6633",
+                  "#FF3366", "#33CC99", "#33999")
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#CC6633",
+               "#0072B2", "#D55E00", "#CC79A7", "#999999")
 colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", 
-                        "#44AA99", "#999933", "#882255", "Black", "#661100", 
+                        "#44AA99", "Black", "#999933", "#882255", "#661100", 
                         "#6699CC", "#AA4499", "#888888")
 ```
 
@@ -58,20 +55,20 @@ colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288",
 ```{r}
 age_n <- variant_data_clean %>% 
    filter(!is.na(age_group)) %>% 
-   filter(case_episode == "Reinfection Original Case #:") 
+   filter(case_episode == "Reinfect Original Case #") 
 age_cases <- sum(age_n$case)
 
 # Age group bar plot - counts
 age_count_reinfect <- variant_data_clean %>% 
    filter(!is.na(age_group)) %>% 
-   filter(case_episode == "Reinfection Original Case #:") %>% 
+   filter(case_episode == "Reinfect Original Case #") %>% 
    mutate(age_group = as.character(age_group),
           age_group = if_else(is.na(age_group), "Unknown", age_group),
           age_group = as.factor(age_group)) %>% 
    ggplot() +   
      geom_bar(aes(fct_rev(age_group)), fill = "steelblue", width = .6) +   
      labs(title = "COVID-19 reinfection cases by age group",
-          subtitle = paste0("Missoula County, since March 2020. N = ", age_cases, " cases."), 
+          subtitle = paste0("Missoula County, N = ", age_cases, " cases."), 
           y = "Number of cases", x = "Age Group (years)",
           fill = "") +
      scale_y_continuous(breaks = c(seq(0, 200, 2)), labels = c(seq(0, 200, 2))) +
@@ -101,6 +98,25 @@ age_count_reinfect
 \pagebreak  
 
 ```{r}
+age_incidence <- variant_data_clean %>% 
+   filter(!is.na(age_group)) %>% 
+   filter(breakthrough == "yes") %>% 
+   distinct(row_id, .keep_all = T) %>% 
+   select(case, age_group, age_group_percent, county_pop) %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(age_group) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group_percent*county_pop,
+          group_inc = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(age_group, .keep_all = TRUE) %>% 
+   mutate(region = "Missoula County") %>% 
+   select(region, age_group, group_cases, group_pop, group_inc, 
+          county_pop, age_group_percent) %>% 
+   filter(!is.na(age_group)) %>% 
+   arrange(age_group)
+
 age_n <- variant_data_clean %>% 
    filter(!is.na(age_group)) %>% 
    filter(breakthrough == "yes") %>% 
@@ -118,7 +134,7 @@ age_count_breakthrough <- variant_data_clean %>%
    ggplot() +   
      geom_bar(aes(fct_rev(age_group), fill = reinfect_breakthrough), width = .6) +   
      labs(title = "COVID-19 breakthrough cases by age group",
-          subtitle = paste0("Missoula County, since March 2020. N = ", age_cases, " cases."), 
+          subtitle = paste0("Missoula County, N = ", age_cases, " cases."), 
           y = "Number of cases", x = "Age Group (years)",
           fill = "Reinfection:") +
      scale_y_continuous(breaks = c(seq(0, 200, 2)), labels = c(seq(0, 200, 2))) +
@@ -148,17 +164,66 @@ age_count_breakthrough
 
 \pagebreak  
 
+```{r}
+age_incidence <- variant_data_clean %>% 
+   filter(!is.na(age_group)) %>% 
+   filter(breakthrough == "yes") %>% 
+   distinct(row_id, .keep_all = T) %>% 
+   select(case, age_group, age_group_percent, county_pop) %>% 
+   mutate(total_cases = n()) %>% 
+   group_by(age_group) %>% 
+   mutate(group_cases = n(),
+          group_prop = group_cases/total_cases*100,
+          group_pop = age_group_percent*county_pop,
+          group_inc = group_cases/group_pop*100000) %>% 
+   ungroup() %>% 
+   distinct(age_group, .keep_all = TRUE) %>% 
+   mutate(region = "Missoula County") %>% 
+   select(region, age_group, group_cases, group_pop, group_inc, 
+          county_pop, age_group_percent) %>% 
+   filter(!is.na(age_group)) %>% 
+   arrange(age_group)
+
+age_inc_breakthrough <- age_incidence %>% 
+   ggplot() +   
+     geom_col(aes(fct_rev(age_group), group_inc), fill = "steelblue", width = .6) +   
+     labs(title = "COVID-19 breakthrough incidence by age group",
+          subtitle = paste0("Missoula County"), 
+          y = "Incidence per 100,000 Population", x = "Age Group (years)") +
+     scale_y_continuous(breaks = c(seq(0, 1500, 50)), labels = c(seq(0, 1500, 50))) +
+     coord_flip() +
+     theme_minimal() +
+     theme(strip.text = element_text(size = 16, colour = "black"),
+           title = element_text(size = 18, colour = "black"),
+           panel.grid = element_blank(),
+           axis.text.x = element_text(size = 14, colour = "black", 
+                                     angle = 45, vjust = 0.75, hjust = 0.9),
+           legend.position = "top",
+           legend.text = element_text(size = 16, colour = "black"),
+           legend.title = element_text(size = 16, colour = "black"),
+           axis.text.y = element_text(size = 16, colour = "black"),
+           axis.title.y = element_text(size = 14, colour = "black",
+                                       margin = unit(c(0, 5, 0, 0), "mm")),
+           axis.title.x = element_text(size = 14, colour = "black",
+                                       margin = unit(c(5, 0, 0, 0), "mm")),
+           axis.line.x = element_line(colour = "black", size = 1.2), 
+           axis.line.y = element_line(colour = "black", size = 1.2), 
+           axis.ticks = element_line(colour = "black")) +
+     scale_fill_manual(values = colorblind_palette)
+age_inc_breakthrough
+
+#ggsave("age_count_plot.jpg", width = 12, height = 6)
+```
+
+\pagebreak  
+
 ```{r, fig.width = 10, fig.height = 5}
 # Epi curve - test date
 
 plot_data <- variant_data_clean %>% 
    group_by(row_id) %>% 
    mutate(num_cases = n()) %>% 
-   filter(num_cases == 2) %>% 
-   mutate(case = 1,
-          case_episode2 = factor(case_episode,
-                                levels = c("Case #:", "Reinfection Original Case #:"),
-                                labels = c("Episode 2", "Episode 1")))
+   filter(num_cases == 2) 
 
 total_cases <- sum(plot_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
@@ -166,7 +231,7 @@ date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
 epi_curve_reinfect <- plot_data %>% 
    ggplot() +
-     geom_col(aes(test_date, case, fill = case_episode2), width = 2) +
+     geom_col(aes(test_date, case, fill = case_episode2), width = 1.5) +
      labs(title = "COVID-19 Reinfection Cases in Missoula County",
           subtitle = paste0("Cases in plot = ", total_cases),
           fill = " ") +
@@ -196,7 +261,7 @@ epi_curve_reinfect <- plot_data %>%
            axis.line.x = element_blank(), 
            axis.line.y = element_blank(), 
            axis.ticks = element_blank())  +
-     scale_fill_manual(values = colorblind_palette) 
+     scale_fill_manual(values = jv_palette) 
 
 epi_curve_reinfect
 
@@ -210,11 +275,7 @@ epi_curve_reinfect
 
 plot_data <- variant_data_clean %>% 
    filter(breakthrough == "yes") %>% 
-   distinct(row_id, .keep_all = T) %>% 
-   mutate(case = 1,
-          variant = as.character(variant),
-          variant = if_else(is.na(variant), "None listed", variant),
-          variant = as.factor(variant))
+   distinct(row_id, .keep_all = T) 
 
 total_cases <- sum(plot_data$case)
 date_today <- format(Sys.Date(), "%d %b %Y")
@@ -222,7 +283,7 @@ date_14 <- format(Sys.Date() - 14, "%d %b %Y")
 
 epi_curve_breakthrough <- plot_data %>% 
    ggplot() +
-     geom_col(aes(test_date, case, fill = variant), width = 2) +
+     geom_col(aes(test_date, case, fill = variant)) +
      labs(title = "COVID-19 Breakthrough Cases in Missoula County",
           subtitle = paste0("Cases in plot = ", total_cases),
           fill = "Variant:") +

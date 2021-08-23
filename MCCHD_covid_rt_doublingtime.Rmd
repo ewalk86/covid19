@@ -1,7 +1,7 @@
 ---
-title: "MCCHD Covid-19 initial data cleaning"
+title: "MCCHD Covid-19 data cleaning, Rt, Doubling Time"
 author: "Ethan Walker"
-date: "Started 23 Nov 2020, Updated 23 August 2021"
+date: "23 August 2021"
 output:
   pdf_document: default
   html_document:
@@ -18,15 +18,15 @@ library(tidyverse)
 library(readxl)
 library(naniar)
 library(lubridate)
-library(zoo)
-library(plotly)
-library(knitr)
+library(incidence)
+library(EpiEstim)
 ```
 
 
 ```{r}
 # Load data and format columns
 
+# Update input path to file location on your computer
 input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
@@ -105,74 +105,124 @@ covid_clean <- covid_data_initial %>%
 summary(covid_clean)
 ```
 
+
 ```{r}
-# Save data
-file_path <- c("C:/R/covid19/")
+# Check doubling time
 
+inc_data <- covid_clean %>% 
+   rename(dates = test_date) %>% 
+   filter(!is.na(dates)) %>% 
+   filter(dates > Sys.Date() - 42 & dates < Sys.Date() - 14) %>% 
+   arrange(dates) %>% 
+   select(dates, case) %>% 
+   group_by(dates) %>% 
+   mutate(total_cases = sum(case, na.rm = TRUE)) %>% 
+   arrange(dates) %>% 
+   ungroup()
 
-write_rds(covid_clean, paste0(file_path, "covid_data_clean.rds"))
+inc_data2 <- incidence(inc_data$dates)
+
+plot(inc_data2)
+
+inc_fit <- fit(inc_data2)
+inc_fit
+inc_fit$info$doubling # doubling time to report to D'Shane
+
+#plot(inc_fit)
+
+#find_peak(inc_data2)
 ```
 
-# clean up variant/breakthrough/reinfection report data
+
 ```{r}
-input_path <- c("C:/R/covid19/")
-covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>% 
-   select(-age, -sex, -case)
+## Missoula county R results using county data
 
-input_path2 <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
+case_data <- covid_clean %>% 
+   rename(dates = test_date) %>% 
+   filter(!is.na(dates)) %>% 
+   filter(dates > "2020-12-31" & dates < Sys.Date() - 13) %>% 
+   arrange(dates) %>% 
+   select(dates, case) %>% 
+   arrange(dates) %>% 
+   ungroup() 
 
-variant_data_initial <- 
-   read_xlsx(paste0(input_path2, "Breakthroughs Reinfections and Variants 8.19.2021.xlsx"), sheet = 1, 
-             na = c(" ", "", "n/a")) 
+latest_date <- format(Sys.Date() - 14, "%Y-%m-%d")
 
-summary(variant_data_initial)
+incidence_data <- incidence(case_data$dates, last_date = latest_date)
 
-variant_data_clean <- variant_data_initial %>% 
-   mutate(`Case #:` = as.character(`Case #:`),
-          `Reinfection Original Case #:` = as.character(`Reinfection Original Case #:`),
-          row_id = as.numeric(row_number())) %>% 
-   pivot_longer(cols = c(`Reinfection Original Case #:`, `Case #:`), names_to = "case_episode", 
-                values_to = "case_id") %>% 
-   filter(!is.na(case_id)) %>% 
-   mutate(breakthrough = fct_collapse(`Vaccine Breakthrough?`,
-                                      no = c("no", "No"),
-                                      yes = c("yes", "Yes")),
-          sex = fct_collapse(`Sex:`,
-                             female = c("f", "F"),
-                             male = c("m", "M")),
-          reinfect_breakthrough = factor(`Reinfection AND Breakthrough`,
-                                         levels = c("FALSE", "TRUE"),
-                                         labels = c("no", "yes")),
-          variant = factor(`Variant:`,
-                           levels = c("B.1.1.7", "B.1.427", "B.1.429", "B.1.525", 
-                                      "B.1.526", "B.1.617.2", "P.1"),
-                           labels = c("Alpha", "B.1.427", "B.1.429", "Eta", 
-                                      "Iota", "Delta", "Gamma")),
-          variant = as.character(variant),
-          variant = if_else(is.na(variant), "None listed", variant),
-          variant = as.factor(variant),
-          variant_classification = factor(`Variant of Concern Or Interest?`,
-                                          labels = c("Variant of Concern",
-                                                     "Variant of Interest")),
-          age = as.numeric(`Age:`),
-          followup_status = as.factor(`Follow Up Status:`),
-          case_episode = factor(case_episode,
-                                levels = c("Case #:", "Reinfection Original Case #:"),
-                                labels = c("Case #", "Reinfect Original Case #")),
-          case_episode2 = factor(case_episode,
-                                levels = c("Case #", "Reinfect Original Case #"),
-                                labels = c("Episode 2", "Episode 1")),
-          case_id = as.factor(case_id),
-          case = 1) %>% 
-   select(row_id, age, followup_status, case_episode:case) %>% 
-   arrange(row_id) %>% 
-   #filter(case_episode == "Case #:")
-   left_join(covid_data, by = "case_id")
-
-summary(variant_data_clean)
+# Set dates for 14-day rolling averages
+county_n <- as.data.frame(incidence_data$dates)
+time_var <- nrow(county_n)
+time_start <- seq(2, time_var-13)
+time_end <- time_start + 13
 
 
-file_path <- c("C:/R/covid19/")
-write_rds(variant_data_clean, paste0(file_path, "variant_data_clean.rds"))
+# Serial Interval derived from State of Montana paired case data
+serial_interval_mean <- 5.29
+serial_interval_sd <- 4.45
+
+r_results <- estimate_R(incidence_data, method="parametric_si", 
+                           config = make_config(list(mean_si = serial_interval_mean, 
+                                                     std_si = serial_interval_sd,
+                                                     t_start =  time_start,
+                                                     t_end = time_end)))
+
+# Format and save analysis results
+colomns <- c(1:4, 8)
+county_r <- (r_results$R[,colomns]) %>% 
+   mutate(region = "Missoula County") %>% 
+   rename(mean_r = `Mean(R)`,
+          sd_r = `Std(R)`,
+          median_r = `Median(R)`)
+
+county_dates <- as.data.frame(r_results$dates)
+county_i <- as.data.frame(r_results$I)
+county_cil <- as.data.frame(r_results$R$`Quantile.0.025(R)`)
+county_cih <- as.data.frame(r_results$R$`Quantile.0.975(R)`)
+county_dates_new <- cbind(county_dates, county_i) %>% 
+   rename(dates = 1,
+          incidence = 2) %>% 
+   mutate(dates = ymd(dates))
+county_dates_new <- county_dates_new[-(1:14), 1:2]
+county_dates_new <- cbind(county_dates_new, county_cil, county_cih) %>% 
+   rename(cl_low = 3,
+          cl_high = 4)
+county_r <- cbind(county_r, county_dates_new) # Report mean_r from latest date
+
+# Or estimate Rt from plot below
+
+
+county_r_plot <- county_r %>% 
+   filter(dates > "2020-12-31") %>% 
+   ggplot() +
+   geom_line(aes(dates, mean_r), size = 1.5, color = "black") +
+   #geom_line(aes(dates, cl_low), size = 1.5, color = "grey") +
+   #geom_line(aes(dates, cl_high), size = 1.5, color = "grey") +
+   labs(title = "COVID-19 Rolling 14-day R-number, Missoula County",
+        color = "") +
+   ylab("R-number") +
+   xlab("") +
+   geom_hline(yintercept = 1, color = "red", size = 1.2) +
+   scale_x_date(date_breaks = "5 days", date_labels = "%d-%b") +
+   scale_y_continuous(breaks = seq(0, 5, 0.1), labels = seq(0, 5, 0.1)) +
+   theme_minimal() +
+   theme(strip.text = element_text(size = 16, colour = "black"),
+         title = element_text(size = 18, colour = "black"),
+         panel.grid = element_blank(),
+         panel.grid.major.y = element_line(colour = "grey"),
+         axis.text.x = element_text(size = 16, colour = "black", 
+                                    angle = 90, vjust = 0.4),
+         axis.text.y = element_text(size = 16, colour = "black"),
+         legend.text = element_text(size = 16, colour = "black"),
+         axis.title.y = element_text(size = 16, colour = "black",
+                                     margin = unit(c(0, 5, 0, 0), "mm")),
+         axis.title.x = element_text(size = 16, colour = "black",
+                                     margin = unit(c(5, 0, 0, 0), "mm")),
+         axis.line.x = element_blank(), 
+         axis.line.y = element_blank(), 
+         axis.ticks = element_blank()) +
+   scale_color_manual(values = c("black")) 
+county_r_plot
+
+#ggsave("C:/R/covid19/missoula_r_plot.png", width = 12, height = 6)
 ```
-
