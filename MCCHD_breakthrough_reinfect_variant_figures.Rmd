@@ -1,7 +1,7 @@
 ---
 title: "Missoula County COVID-19 Breakthrough, Reinfection, and Variant Cases"
 author: "Ethan Walker, University of Montana"
-date: "Data as of Aug 19, 2021"
+date: "Data as of September 9, 2021"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}

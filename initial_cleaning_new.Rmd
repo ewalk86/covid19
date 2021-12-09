@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 23 Nov 2020, Updated 23 August 2021"
+date: "Started 23 Nov 2020, Updated 9 Dec 2021"
 output:
   pdf_document: default
   html_document:
@@ -31,18 +31,16 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID Data 8.19.2021.xlsx"), sheet = 1,
-             range = "A2:N20000", na = c(" ", ""),
+   read_xlsx(paste0(input_path, "COVID Data_12.09.2021.xlsx"), sheet = 1,
+             range = "A2:M20000", na = c(" ", ""),
                         col_names = c("case_id", "case_status", "health_worker", 
                                       "cong_living", "cong_living_where", "age", 
-                                      "sex", "zip", "test_date", "um_student", "race", 
-                                      "ethnicity", "ever_hosp", 
-                                      "epi_linked"),
-                        col_types = c("text", "text", "text", 
+                                      "sex", "zipcode", "test_date", "um_student", "race", 
+                                      "ethnicity", "ever_hosp"),
+                        col_types = c("text", "text", "text",
                                       "text", "text", "text",
                                       "text", "text", "date", "text", "text",
-                                      "text", "text", 
-                                      "text"))
+                                      "text", "text"))
 ```
 
 
@@ -87,7 +85,7 @@ covid_clean <- covid_data_initial %>%
           hospitalizations = fct_collapse(ever_hosp,
                                           "no" = c("n", NA),
                                           "yes" = c("y", "yes")),
-          epi_linked = as.factor(epi_linked),
+          #epi_linked = as.factor(epi_linked),
           age_group = as.factor(age_group),
           age_group2 = as.factor(age_group2),
           test_date = ymd(test_date),
@@ -122,7 +120,7 @@ covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) %>%
 input_path2 <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 variant_data_initial <- 
-   read_xlsx(paste0(input_path2, "Breakthroughs Reinfections and Variants 8.19.2021.xlsx"), sheet = 1, 
+   read_xlsx(paste0(input_path2, "Breakthroughs Reinfections and Variants 9.9.2021.xlsx"), sheet = 1, 
              na = c(" ", "", "n/a")) 
 
 summary(variant_data_initial)

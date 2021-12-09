@@ -67,7 +67,7 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data -- change file name in next line
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_08162021.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_12062021.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("midis_add_datetime", 
                                         "inv_start_date", 
@@ -77,7 +77,7 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_08162021.xlsx"),
                                         "onset_date", "spec_coll_date", "diagnosis_date",
                                         "reinfection",
                                         "breakthrough", "variant_class",
-                                        "variant_type", "inv_rpt_date"),
+                                        "variant_type", "zipcode", "inv_rpt_date"),
                           col_types = c("date", 
                                         "date", "numeric", "numeric",
                                         "text", "text", "text", "text", "text",  
@@ -85,7 +85,7 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_08162021.xlsx"),
                                         "date", "date", "date",
                                         "numeric",
                                         "text", "text",
-                                        "text", "date")) %>% 
+                                        "text", "text", "date")) %>% 
    rownames_to_column(var = "case_no") %>% 
    mutate(case = 1) %>% 
    left_join(mt_county_fips, by = "county_fips") %>% 
@@ -133,7 +133,8 @@ mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_08162021.xlsx"),
                                  inv_start_date - mean_onset_inv_diff, onset_date_3)) %>% 
    separate(onset_date_4, into = c("dates", "time"), sep = " ") %>% 
    mutate(dates = ymd(dates),
-          region = as.factor(region)) %>% 
+          region = as.factor(region),
+          zipcode = as.factor(zipcode)) %>% 
    select(-time) %>% 
    filter(!is.na(dates)) %>% 
    arrange(dates) %>% 
