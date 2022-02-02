@@ -18,6 +18,7 @@ library(distcrete)
 library(epitrix)
 library(jsonlite)
 library(httr)
+library(sf)
 library(rlist)
 library(Rsftp)
 library(googledrive)
@@ -28,17 +29,32 @@ library(taskscheduleR)
 
 
 ############## Query and prep data
-query_url <- "https://services.arcgis.com/qnjIrwR8z5Izc0ij/ArcGIS/rest/services/COVID_Cases_Production_View/FeatureServer/2/query?where=1%3D1&objectIds=&time=&resultType=none&outFields=OBJECTID%2C+Case_No%2C+Date_Reported_to_CDEpi%2C+County%2C+Age_Group%2C+Sex%2C+Hospitalization%2C+Outcome%2C+MT_case&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&sqlFormat=none&f=pjson&token="
+# In Jan 2022 the max record count dropped to 2000 on the State website
+# We have to query with a loop to pull all of the records - sf_read uses pagination to do this
+# See email from Matthew Trebesch; it recommended using the sf package and st_read function
+# https://community.esri.com/t5/gis-blog/accessing-arcgis-rest-services-using-r/ba-p/898451 
 
-initial_pull <- GET(query_url)
+# New version of query after lowering Max Record Count
+# st_read uses pagination to pull all records
+url <- parse_url("https://services.arcgis.com/qnjIrwR8z5Izc0ij/ArcGIS/rest/services")
+url$path <- paste(url$path, "COVID_Cases_Production_View/FeatureServer/2/query", sep = "/")
+url$query <- list(where = "1=1",
+                  outFields = "*",
+                  f = "geojson")
+request <- build_url(url)
 
-text_data <- content(initial_pull, as = "text")
+state_data <- st_read(request)
 
-parsed_data <- content(initial_pull, as = "parsed")
 
-json_data <- fromJSON(text_data)
+# Old code for data pulls prior to Jan 2022 changes
+#query_url <- "https://services.arcgis.com/qnjIrwR8z5Izc0ij/ArcGIS/rest/services/COVID_Cases_Production_View/FeatureServer/2/query?where=1%3D1&objectIds=&time=&resultType=none&outFields=OBJECTID%2C+Case_No%2C+Date_Reported_to_CDEpi%2C+County%2C+Age_Group%2C+Sex%2C+Hospitalization%2C+Outcome%2C+MT_case&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&sqlFormat=none&f=pjson&token="
+#query_url <- "https://services.arcgis.com/qnjIrwR8z5Izc0ij/ArcGIS/rest/services/COVID_Cases_Test_View/FeatureServer/2/query?where=1%3D1&objectIds=&time=&resultType=none&outFields=OBJECTID%2C+Case_No%2C+Date_Reported_to_CDEpi%2C+County%2C+Age_Group%2C+Sex%2C+Hospitalization%2C+Outcome%2C+MT_case&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=2000&resultRecordCount=&sqlFormat=none&f=pjson&token="
 
-state_data <- as.data.frame(json_data$features$attributes) 
+#initial_pull <- GET(query_url)
+#text_data <- content(initial_pull, as = "text")
+#parsed_data <- content(initial_pull, as = "parsed")
+#json_data <- fromJSON(text_data)
+#state_data <- as.data.frame(json_data$features$attributes) 
 
 reg1 <- as.data.frame(c("Carter", "Custer", "Daniels", "Dawson", "Fallon", "Garfield", "McCone",
                         "Phillips", "Powder River", "Prairie", "Richland", "Roosevelt", "Rosebud",
@@ -71,10 +87,16 @@ counties_regions <- rbind(reg1, reg2, reg3, reg4, reg5)
 
 state_data_clean <- state_data %>% 
    rename_all(tolower) %>% 
-   mutate(date_reported_to_cdepi = date_reported_to_cdepi/1000,
-          dates = as.POSIXct(date_reported_to_cdepi, origin = "1970-01-01")) %>% 
+   mutate(date_reported_to_cdepi = as.numeric(date_reported_to_cdepi),
+          date_reported_to_cdepi = date_reported_to_cdepi/1000,
+          dates = as.POSIXct(date_reported_to_cdepi, origin = "1970-01-01"),
+          onset_date = as.numeric(onset_date),
+          onset_date = onset_date/1000,
+          onset_date = as.POSIXct(onset_date, origin = "1970-01-01")) %>% 
    separate(dates, c("dates", "trash"), sep = " ") %>% 
-   mutate(dates = ymd(dates)) %>% 
+   separate(onset_date, c("onset_date", "trash"), sep = " ") %>% 
+   mutate(dates = ymd(dates),
+          onset_date = ymd(onset_date)) %>% 
    select(case_no, dates, county:mt_case) %>% 
    left_join(counties_regions, by = "county") %>% 
    mutate(case = 1) %>% 
@@ -94,7 +116,9 @@ state_data_clean <- state_data %>%
                                    levels = c("Y", "N", "P", "U"),
                                    labels = c("Hosp: Yes", "Hosp: No", 
                                               "Hosp: Past", "Hosp: Unknown"))) %>% 
-   select(-age_group2, -age_group, -age_group_new_percent, -state_pop, -case_no) %>% 
+   as.data.frame() %>% 
+   select(-age_group2, -age_group, -age_group_new_percent, -state_pop, -case_no,
+          -geometry) %>% 
    rownames_to_column(var = "case_no")
 
 output_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
@@ -253,17 +277,25 @@ write_csv(county_data_combined, "C:/R/covid19/state_daily_results/county_data_co
 
 
 #################### Run and save daily case, hosp, outcome, test data
-query_url <- "https://services.arcgis.com/qnjIrwR8z5Izc0ij/ArcGIS/rest/services/COVID_Cases_Production_View/FeatureServer/1/query?where=1%3D1&objectIds=&time=&resultType=none&outFields=OBJECTID%2C+Total_Tests_Completed%2C+New_Tests_Completed%2C+Test_Date%2C+ScriptRunDate&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&sqlFormat=none&f=pjson&token="
 
-initial_pull <- GET(query_url)
+# Old version of query prior to lowering Max Record Count
+#query_url <- "https://services.arcgis.com/qnjIrwR8z5Izc0ij/ArcGIS/rest/services/COVID_Cases_Test_View/FeatureServer/1/query?where=1%3D1&objectIds=&time=&resultType=none&outFields=OBJECTID%2C+Total_Tests_Completed%2C+New_Tests_Completed%2C+Test_Date%2C+ScriptRunDate&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&sqlFormat=none&f=pjson&token="
+#initial_pull <- GET(query_url)
+#text_data <- content(initial_pull, as = "text")
+#parsed_data <- content(initial_pull, as = "parsed")
+#json_data <- fromJSON(text_data)
+#state_test_data <- as.data.frame(json_data$features$attributes) 
 
-text_data <- content(initial_pull, as = "text")
+# New version of query after lowering Max Record Count
+# st_read uses pagination to pull all records
+url <- parse_url("https://services.arcgis.com/qnjIrwR8z5Izc0ij/ArcGIS/rest/services")
+url$path <- paste(url$path, "COVID_Cases_Production_View/FeatureServer/1/query", sep = "/")
+url$query <- list(where = "1=1",
+                  outFields = "*",
+                  f = "geojson")
+request <- build_url(url)
 
-parsed_data <- content(initial_pull, as = "parsed")
-
-json_data <- fromJSON(text_data)
-
-state_test_data <- as.data.frame(json_data$features$attributes) 
+state_test_data <- st_read(request)
 
 state_test_data_clean <- state_test_data %>% 
    rename_all(tolower) %>% 
@@ -273,7 +305,8 @@ state_test_data_clean <- state_test_data %>%
    mutate(dates = ymd(dates)) %>% 
    mutate(total_tests_completed_new = if_else(total_tests_completed < new_tests_completed, new_tests_completed, total_tests_completed),
           new_tests_completed_new = if_else(new_tests_completed > total_tests_completed, total_tests_completed, new_tests_completed)) %>% 
-   select(dates, total_tests_completed_new, new_tests_completed_new) %>% 
+   as.data.frame() %>% 
+   select(dates, total_tests_completed_new, new_tests_completed_new, -geometry) %>% 
    rename(total_tests_completed = total_tests_completed_new,
           new_tests_completed = new_tests_completed_new) %>% 
    arrange(dates, desc(total_tests_completed)) %>% 
@@ -380,7 +413,8 @@ write_csv(case_hosp_test_outcome, "C:/R/covid19/state_daily_results/mt_case_hosp
 # Clean up and summarize hosp data for dashboard plot
 hosp_data_initial <- state_data %>% 
    rename_all(tolower) %>% 
-   mutate(date_reported_to_cdepi = date_reported_to_cdepi/1000,
+   mutate(date_reported_to_cdepi = as.numeric(date_reported_to_cdepi),
+          date_reported_to_cdepi = date_reported_to_cdepi/1000,
           dates = as.POSIXct(date_reported_to_cdepi, origin = "1970-01-01")) %>% 
    separate(dates, c("dates", "trash"), sep = " ") %>% 
    mutate(dates = ymd(dates)) %>% 
@@ -403,7 +437,8 @@ hosp_data_initial <- state_data %>%
                                    levels = c("Y", "N", "P", "U"),
                                    labels = c("Hosp: Yes", "Hosp: No", 
                                               "Hosp: Past", "Hosp: Unknown"))) %>% 
-   select(-case_no) %>% 
+   as.data.frame() %>% 
+   select(-case_no, -geometry) %>% 
    rownames_to_column(var = "case_no")
 
 
@@ -528,3 +563,4 @@ mt_data <- case_hosp_test_outcome %>%
 sheet_write(mt_data, 
             ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
             sheet = 6)
+
