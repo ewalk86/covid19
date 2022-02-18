@@ -67,7 +67,7 @@ mt_county_fips <- read_csv(paste0(file_path, "Input/mt_county_fips.csv")) %>%
 
 
 # Load/format case data -- change file name in next line
-mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_01312022.xlsx"),
+mt_case_data <- read_xlsx(paste0(file_path, "Input/uom_covid_02142022.xlsx"),
                           sheet = 1, skip = 1,
                           col_names = c("midis_add_datetime", 
                                         "inv_start_date", 

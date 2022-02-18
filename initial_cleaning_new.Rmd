@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 23 Nov 2020, Updated 31 Jan 2022"
+date: "Started 23 Nov 2020, Updated 17 Feb 2022"
 output:
   pdf_document: default
   html_document:
@@ -31,8 +31,8 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID Data_01.31.2022.xlsx"), sheet = 1,
-             range = "A2:M30000", na = c(" ", ""),
+   read_xlsx(paste0(input_path, "COVID Data_02.17.2022.xlsx"), sheet = 1,
+             range = "A2:M40000", na = c(" ", ""),
                         col_names = c("case_id", "case_status", "health_worker", 
                                       "cong_living", "cong_living_where", "age", 
                                       "sex", "zipcode", "test_date", "um_student", "race", 
