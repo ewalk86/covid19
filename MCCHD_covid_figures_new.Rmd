@@ -1,6 +1,6 @@
 ---
 title: "Missoula County COVID-19 Cases"
-date: "Data as of February 17, 2022"
+date: "Data as of February 21, 2022"
 output: pdf_document
 header-includes:
     - \usepackage[labelformat=empty, font={Large, bf}]{caption}
