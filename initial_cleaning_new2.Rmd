@@ -1,7 +1,7 @@
 ---
 title: "MCCHD Covid-19 initial data cleaning"
 author: "Ethan Walker"
-date: "Started 23 Nov 2020, Updated 4 April 2022"
+date: "Started 11 April 2022, Updated 11 April 2022"
 output:
   pdf_document: default
   html_document:
@@ -31,25 +31,29 @@ input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
 
 
 covid_data_initial <- 
-   read_xlsx(paste0(input_path, "COVID Data_04.04.2022.xlsx"), sheet = 1,
-             range = "A2:M40000", na = c(" ", ""),
-                        col_names = c("case_id", "case_status", "health_worker", 
-                                      "cong_living", "cong_living_where", "age", 
+   read_xlsx(paste0(input_path, "COVID Data_04.11.2022.xlsx"), sheet = 1,
+             range = "A2:P40000", na = c(" ", ""),
+                        col_names = c("investigation_status", "inv_start_date", "health_worker", 
+                                      "cong_living", "age", "age_unit",
                                       "sex", "zipcode", "test_date", "um_student", "race", 
-                                      "ethnicity", "ever_hosp"),
-                        col_types = c("text", "text", "text",
+                                      "ethnicity", "ever_hosp", "patient_died",
+                                      "breakthrough_case", "reinfection_case"),
+                        col_types = c("text", "date", "text",
                                       "text", "text", "text",
                                       "text", "text", "date", "text", "text",
+                                      "text", "text", "text",
                                       "text", "text"))
+
+#summary(covid_data_initial)
 ```
 
 
 ```{r}
 # Clean data
-
 covid_clean <- covid_data_initial %>% 
-   #select(case_id, case_status, age, sex, test_date) %>% 
-   filter(!is.na(case_id)) %>% 
+   # Filter out empty rows/observations
+   filter(!is.na(investigation_status)) %>% 
+   # Format age and age groups with age group percentages
    mutate(age = as.numeric(age),
           age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 130),
                           labels = c("0 to 9, 0.101", "10 to 19, 0.117", "20 to 29, 0.191", 
@@ -62,33 +66,33 @@ covid_clean <- covid_data_initial %>%
                                      "18 to 24, 0.137", "25 to 29, 0.086", 
                                      "30 to 39, 0.143", "40 to 49, 0.115", "50 to 59, 0.112", 
                                      "60 to 69, 0.118", "70 to 79, 0.072", "80+, 0.032"), right = FALSE)) %>% 
+   # Separate age groups from percentages
    separate(age_group, c("age_group", "age_group_percent"), sep = ", ") %>% 
    separate(age_group3, c("age_group3", "age_group3_percent"), sep = ", ") %>% 
-   mutate_if(is.character, tolower) %>% 
-   mutate_if(is.factor, tolower) %>% 
-   replace_with_na_all(condition = ~.x %in% c("n/a", "na", "unknown", "unkown")) %>% 
-   separate(test_date, into = c("test_date", "time"), sep = " ") %>% 
    mutate(age_group_percent = as.numeric(age_group_percent),
-          age_group3_percent = as.numeric(age_group3_percent),
-          county_pop = as.numeric(119600),
+          age_group3_percent = as.numeric(age_group3_percent)) %>% 
+   # Format character variables to factor and lower case
+   mutate_if(is.factor, tolower) %>% 
+   mutate_if(is.character, tolower) %>% 
+   mutate_if(is.character, as.factor) %>% 
+   # Consistently label NA values throughout dataset
+   replace_with_na_all(condition = ~.x %in% c("n/a", "na", "unknown", "unkown")) %>% 
+   # Excel had dates formatted as datetime, so separate into date and time
+   separate(test_date, into = c("test_date", "time"), sep = " ") %>% 
+   separate(inv_start_date, into = c("inv_start_date", "time2"), sep = " ") %>% 
+   # Format specific variables
+   mutate(county_pop = as.numeric(119600),
           case = 1,
-          sex = as.factor(sex),
-          case_status = as.factor(case_status),
-          health_worker = as.factor(health_worker),
-          cong_living = as.factor(cong_living),
-          race = as.factor(race),
-          ethnicity = as.factor(ethnicity),
-          ever_hosp = sub("\\s", "", ever_hosp),
-          ever_hosp = if_else(ever_hosp != "y" & ever_hosp != "yes", "no", ever_hosp),
-          ever_hosp = if_else(is.na(ever_hosp), "no", ever_hosp),
-          ever_hosp = as.factor(ever_hosp),
           hospitalizations = fct_collapse(ever_hosp,
                                           "no" = c("n", NA),
-                                          "yes" = c("y", "yes")),
-          #epi_linked = as.factor(epi_linked),
-          age_group = as.factor(age_group),
-          age_group2 = as.factor(age_group2),
+                                          "yes" = c("y", "yes"),
+                                          "unknown" = "unk"),
+          reinfection_case = fct_collapse(reinfection_case,
+                                          "no" = c("n"),
+                                          "yes" = c("y"),
+                                          "unknown" = "unk"),
           test_date = ymd(test_date),
+          inv_start_date = ymd(inv_start_date),
           age_group3 = factor(age_group3,
                               levels = c("0 to 4", "5 to 13", "14 to 17", 
                                      "18 to 24", "25 to 29", 
@@ -97,7 +101,8 @@ covid_clean <- covid_data_initial %>%
                               labels = c("0 to 4", "5 to 13", "14 to 17", 
                                      "18 to 24", "25 to 29", 
                                      "30 to 39", "40 to 49", "50 to 59", 
-                                     "60 to 69", "70 to 79", "80+"))) 
+                                     "60 to 69", "70 to 79", "80+"))) %>% 
+   select(-time, -time2, -ever_hosp)
    
 
 summary(covid_clean)

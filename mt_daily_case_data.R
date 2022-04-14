@@ -564,3 +564,7 @@ sheet_write(mt_data,
             ss = "https://docs.google.com/spreadsheets/d/1NI1_oMUU7KhTafBIWWw_8V-u7Y8uNmuyzAg9At8mjUM/edit#gid=133815338",
             sheet = 6)
 
+
+# https://www.r-bloggers.com/2020/05/how-to-schedule-r-scripts/
+#taskscheduler_create(taskname = "state_daily_covid_pull", rscript = "C:/R/covid19/mt_daily_case_data.R", 
+ #                    schedule = "DAILY", startdate = format(Sys.Date(), "%m/%d/%Y"), starttime = "14:00")

@@ -29,21 +29,7 @@ library(EpiEstim)
 library(viridis)
 library(ggthemes)
 library(epitools)
-```
 
-
-```{r}
-# Load data
-input_path <- c("C:/R/covid19/")
-
-file_path <- c("C:/Users/ethan.walker/Box/Ethan Walker UM/R/covid19/")
-
-
-covid_data <- read_rds(paste0(input_path, "covid_data_clean.rds")) 
-
-jv_palette <- c("#330099","#CC0066","#FF6633", 
-                 "#0099CC", "#FF9900","#CC6633",
-                  "#FF3366", "#33CC99", "#33999")
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#CC6633",
                "#0072B2", "#D55E00", "#CC79A7", "#999999")
 colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", 
@@ -51,9 +37,104 @@ colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288",
                         "#6699CC", "#AA4499", "#888888")
 ```
 
+## Load and clean the Covid data
+
+```{r}
+# File path on local drive
+input_path <- c("C:/Users/ethan.walker/Box/Missoula_COVID19EpiProfile_Working/")
+
+# Read in Excel file and format columns
+covid_data_initial <- 
+   read_xlsx(paste0(input_path, "COVID Data_04.11.2022.xlsx"), sheet = 1,
+             range = "A2:P40000", na = c(" ", ""),
+                        col_names = c("investigation_status", "inv_start_date", "health_worker", 
+                                      "cong_living", "age", "age_unit",
+                                      "sex", "zipcode", "test_date", "um_student", "race", 
+                                      "ethnicity", "ever_hosp", "patient_died",
+                                      "breakthrough_case", "reinfection_case"),
+                        col_types = c("text", "date", "text",
+                                      "text", "text", "text",
+                                      "text", "text", "date", "text", "text",
+                                      "text", "text", "text",
+                                      "text", "text"))
+
+#summary(covid_data_initial)
+```
+
+
+```{r}
+# Clean data
+covid_data <- covid_data_initial %>% 
+   # Filter out empty rows/observations
+   filter(!is.na(investigation_status)) %>% 
+   # Format age and age groups with age group percentages
+   mutate(age = as.numeric(age),
+          age_group = cut(age, breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 130),
+                          labels = c("0 to 9, 0.101", "10 to 19, 0.117", "20 to 29, 0.191", 
+                                     "30 to 39, 0.143", "40 to 49, 0.115", "50 to 59, 0.112", 
+                                     "60 to 69, 0.118", "70 to 79, 0.072", "80+, 0.032"), right = FALSE),
+          age_group2 = cut(age, breaks = c(0, 18, 65, 130),
+                          labels = c("<18", "18 to 64", "65+"), right = FALSE),
+          age_group3 = cut(age, breaks = c(0, 5, 14, 18, 25, 30, 40, 50, 60, 70, 80, 130),
+                          labels = c("0 to 4, 0.0503", "5 to 13, 0.095", "14 to 17, 0.0405", 
+                                     "18 to 24, 0.137", "25 to 29, 0.086", 
+                                     "30 to 39, 0.143", "40 to 49, 0.115", "50 to 59, 0.112", 
+                                     "60 to 69, 0.118", "70 to 79, 0.072", "80+, 0.032"), right = FALSE)) %>% 
+   # Separate age groups from percentages
+   separate(age_group, c("age_group", "age_group_percent"), sep = ", ") %>% 
+   separate(age_group3, c("age_group3", "age_group3_percent"), sep = ", ") %>% 
+   mutate(age_group_percent = as.numeric(age_group_percent),
+          age_group3_percent = as.numeric(age_group3_percent)) %>% 
+   # Format character variables to factor and lower case
+   mutate_if(is.factor, tolower) %>% 
+   mutate_if(is.character, tolower) %>% 
+   mutate_if(is.character, as.factor) %>% 
+   # Consistently label NA values throughout dataset
+   replace_with_na_all(condition = ~.x %in% c("n/a", "na", "unknown", "unkown")) %>% 
+   # Excel had dates formatted as datetime, so separate into date and time
+   separate(test_date, into = c("test_date", "time"), sep = " ") %>% 
+   separate(inv_start_date, into = c("inv_start_date", "time2"), sep = " ") %>% 
+   # Format specific variables
+   mutate(county_pop = as.numeric(119600),
+          case = 1,
+          hospitalizations = fct_collapse(ever_hosp,
+                                          "no" = c("n", NA),
+                                          "yes" = c("y", "yes"),
+                                          "unknown" = "unk"),
+          reinfection_case = fct_collapse(reinfection_case,
+                                          "no" = c("n"),
+                                          "yes" = c("y"),
+                                          "unknown" = "unk"),
+          test_date = ymd(test_date),
+          inv_start_date = ymd(inv_start_date),
+          age_group3 = factor(age_group3,
+                              levels = c("0 to 4", "5 to 13", "14 to 17", 
+                                     "18 to 24", "25 to 29", 
+                                     "30 to 39", "40 to 49", "50 to 59", 
+                                     "60 to 69", "70 to 79", "80+"),
+                              labels = c("0 to 4", "5 to 13", "14 to 17", 
+                                     "18 to 24", "25 to 29", 
+                                     "30 to 39", "40 to 49", "50 to 59", 
+                                     "60 to 69", "70 to 79", "80+"))) %>% 
+   select(-time, -time2, -ever_hosp)
+   
+
+summary(covid_data)
+```
+
+
+```{r}
+# Save data as RDS if you want
+file_path <- c("C:/R/covid19/")
+
+write_rds(covid_data, paste0(file_path, "covid_data_clean.rds"))
+```
+
+
+## Covid analysis and figures using the cleaned data from above
+
 ```{r, include=FALSE, eval=FALSE}
 # Check doubling time
-
 inc_data <- covid_data %>% 
    rename(dates = test_date) %>% 
    filter(!is.na(dates)) %>% 
@@ -72,6 +153,7 @@ plot(inc_data2)
 inc_fit <- fit(inc_data2)
 inc_fit
 inc_fit$info$doubling # doubling time to report to D'Shane
+#inc_fit$info$halving # halving time to report to D'Shane
 
 #plot(inc_fit)
 
@@ -80,7 +162,7 @@ inc_fit$info$doubling # doubling time to report to D'Shane
 
 
 ```{r}
-# Incidence data
+# Incidence data to use in figures below
 age_incidence <- covid_data %>% 
    select(case, age_group, age_group_percent, county_pop) %>% 
    mutate(total_cases = n()) %>% 
@@ -117,6 +199,7 @@ age_incidence2 <- covid_data %>%
 \pagebreak  
 
 ```{r}
+# Save number of cases to use in figure below
 age_n <- covid_data %>% 
    filter(!is.na(age_group))
 age_cases <- sum(age_n$case)
@@ -158,6 +241,7 @@ age_count_plot
 \pagebreak  
 
 ```{r}
+# Save number of cases to use in figure below
 age_n <- covid_data %>% 
    filter(!is.na(age_group) & !is.na(test_date)) %>% 
    filter(test_date > "2021-08-31")
@@ -220,6 +304,7 @@ age_count_month_plot
 \pagebreak  
 
 ```{r}
+# Save number of cases to use in figure below
 age_n <- covid_data %>% 
    filter(!is.na(age_group3) & !is.na(test_date)) %>% 
    filter(test_date > "2021-08-31") %>% 
@@ -286,6 +371,7 @@ age_count_month_plot2
 \pagebreak  
 
 ```{r}
+# Save number of cases to use in figure below
 age_n <- covid_data %>% 
    filter(!is.na(age_group))
 age_cases <- sum(age_n$case)
@@ -324,6 +410,7 @@ age_incidence_plot_bar
 \pagebreak  
 
 ```{r}
+# Save number of cases to use in figure below
 age_n <- covid_data %>% 
    filter(!is.na(age_group) & !is.na(test_date)) %>% 
    filter(test_date > "2021-08-31")
@@ -396,6 +483,7 @@ age_incidence_plot_line
 \pagebreak  
 
 ```{r}
+# Save number of cases to use in figure below
 age_n <- covid_data %>% 
    filter(!is.na(age_group) & !is.na(test_date)) %>% 
    filter(test_date > "2021-08-31") %>% 
@@ -548,10 +636,7 @@ epi_curve_test_date
 \pagebreak  
 
 ```{r}
-## Missoula county R results using county data
-## Using State data to be able to incorporate local vs imported cases
-## Only updates once per week
-
+## Missoula county Rt results using county data
 case_data <- covid_data %>% 
    rename(dates = test_date) %>% 
    filter(!is.na(dates)) %>% 
@@ -883,139 +968,5 @@ incidence_plot_line
 
 #ggsave("C:/R/covid19/age_incidence_plot_line.png", width = 12, height = 6)
 ```
-
-
-```{r, include=FALSE, eval=FALSE}
-# Epi curve - test date
-
-plot_data <- covid_data %>% 
-   filter(um_case == "yes") %>% 
-   filter(test_date > "2020-08-31") 
-
-total_cases <- sum(plot_data$case)
-date_today <- format(Sys.Date(), "%d %b %Y")
-date_14 <- format(Sys.Date() - 14, "%d %b %Y")
-
-epi_curve_test_date <- plot_data %>% 
-   ggplot() +
-     geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
-               fill = "gray80", alpha = 0.05) +
-     geom_col(aes(test_date, case), color = "steelblue") +
-     geom_vline(xintercept = as.numeric(as.Date("2020-09-07")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-09-07"), label = "Labor Day", vjust = -0.5,
-                 y = 12), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-10-31")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-10-31"), label = "Halloween", vjust = -0.5,
-                 y = 12), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_vline(xintercept = as.numeric(as.Date("2020-11-26")), color = "black", 
-              size = 1, linetype = "dashed") +
-     geom_text(aes(x = as.Date("2020-11-26"), label = "Thanksgiving", vjust = -0.5,
-                 y = 12), colour = "black", angle = 90, text = element_text(size=14)) +
-     geom_label(aes(x = Sys.Date()-10, y = 15, 
-                    label = "Cases from the shaded \n dates may not yet be \n reflected in the graph."),
-                fill = NA) +
-     labs(title = "UM COVID-19 Cases Since September 1, 2020",
-          subtitle = paste0("Cases in plot = ", total_cases),
-          fill = " ") +
-     ylab("Number of Cases") +
-     xlab("Test Date") +
-     scale_x_date(breaks = seq.Date(from = as.Date("2020-09-01"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "3 days"),
-                  labels = seq.Date(from = as.Date("2020-09-01"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "3 days"),
-                  date_labels = "%d-%b") + 
-     scale_y_continuous(breaks = seq(0, 50, 5), labels = seq(0, 50, 5)) + 
-     theme_minimal() +
-     theme(strip.text = element_text(size = 16, colour = "black"),
-           title = element_text(size = 12, colour = "black"),
-           panel.grid = element_blank(),
-           panel.grid.major.y = element_line(colour = "gray75"),
-           axis.text.x = element_text(size = 12, colour = "black", 
-                                     angle = 90, vjust = 0.4),
-           axis.text.y = element_text(size = 12, colour = "black"),
-           axis.title.y = element_text(size = 12, colour = "black",
-                                       margin = unit(c(0, 5, 0, 0), "mm")),
-           axis.title.x = element_text(size = 12, colour = "black",
-                                       margin = unit(c(5, 0, 0, 0), "mm")),
-           legend.text = element_text(size = 12, colour = "black"),
-           axis.line.x = element_blank(), 
-           axis.line.y = element_blank(), 
-           axis.ticks = element_blank()) +
-     scale_fill_manual(values = cbPalette)   
-
-epi_curve_test_date
-
-#ggsave("um_epi_curve_test_date.jpg", width = 12, height = 5.5)
-```
-
-
-```{r, include=FALSE, eval=FALSE}
-total_n <- covid_data %>% 
-   filter(!is.na(test_date)) %>% 
-   filter(test_date > "2020-03-01")
-total_cases <- sum(total_n$case)
-
-# Incidence line plot by age and month
-incidence_plot_line <- covid_data %>% 
-   filter(test_date > "2020-03-01" & test_date < Sys.Date()) %>% 
-   mutate(week_of_year = cut.Date(test_date, breaks = "1 week", start.on.monday = FALSE),
-          week_of_year = ymd(week_of_year),
-          hospitalizations = if_else(hospitalizations == "yes", 1, 0)) %>% 
-   select(case, county_pop, week_of_year, hospitalizations) %>% 
-   mutate(total_cases = n()) %>% 
-   group_by(week_of_year) %>% 
-   mutate(group_cases = n(),
-          group_hosp = sum(hospitalizations),
-          group_inc = group_cases/county_pop*100000,
-          hosp_inc = group_hosp/county_pop*100000) %>% 
-   ungroup() %>% 
-   distinct(week_of_year, .keep_all = TRUE) %>% 
-   mutate(region = "Missoula County") %>% 
-   select(region, week_of_year, group_cases, group_inc, county_pop, hosp_inc, group_hosp) %>% 
-   arrange(week_of_year) %>% 
-   filter(!is.na(week_of_year)) %>% 
-   ggplot() +
-      geom_rect(aes(xmin = Sys.Date() - 14, xmax = Sys.Date(), ymin=0, ymax=Inf),
-               fill = "gray80", alpha = 0.05) +
-      #geom_line(aes(week_of_year, group_inc), size = 1.5) +
-      geom_line(aes(week_of_year, hosp_inc), size = 1.5, color = "red") +
-      theme_minimal() +
-      labs(title = "COVID-19 hospitalization incidence per week",
-        subtitle = paste0("Missoula County, N = ", total_cases, " cases.")) +
-      ylab("Incidence per 100,000") +
-      xlab("") +
-      scale_x_date(breaks = seq.Date(from = as.Date("2020-03-01"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "14 days"),
-                  labels = seq.Date(from = as.Date("2020-03-01"), 
-                                    to = as.Date(Sys.Date()), 
-                                    by = "14 days"),
-                  date_labels = "%d-%b") +
-      scale_y_continuous(breaks = c(seq(0, 25, 2)), labels = c(seq(0, 25, 2))) +
-      theme(strip.text = element_text(size = 16, colour = "black"),
-         title = element_text(size = 18, colour = "black"),
-         panel.grid = element_blank(),
-         panel.grid.major.y = element_line(colour = "grey"),
-         axis.text.x = element_text(size = 16, colour = "black", 
-                                    angle = 90, vjust = 0.4),
-         axis.text.y = element_text(size = 16, colour = "black"),
-         legend.text = element_text(size = 16, colour = "black"),
-         axis.title.y = element_text(size = 16, colour = "black",
-                                     margin = unit(c(0, 5, 0, 0), "mm")),
-         axis.title.x = element_text(size = 16, colour = "black",
-                                     margin = unit(c(5, 0, 0, 0), "mm")),
-         axis.line.x = element_blank(), 
-         axis.line.y = element_blank(), 
-         axis.ticks = element_blank()) 
-
-incidence_plot_line
-
-#ggsave("C:/R/covid19/age_incidence_plot_line.png", width = 12, height = 6)
-```
-
 
 
